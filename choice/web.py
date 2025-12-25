@@ -21,13 +21,25 @@ from .models import (
 )
 
 
+# Section: Utility Functions
 def _find_free_port() -> int:
+    """Find an available ephemeral port on localhost."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return int(s.getsockname()[1])
 
 
+# Section: HTML Rendering
 def _render_html(req: ProvideChoiceRequest, choice_id: str) -> str:
+    """
+    Generate the HTML content for the choice interface.
+    
+    Includes:
+    - Option buttons
+    - Custom input field (if applicable)
+    - Cancel button (if allowed)
+    - JavaScript for handling interactions and submitting data
+    """
     option_buttons = "".join(
         f"""
         <div class='option'>

@@ -13,8 +13,10 @@ class ValidationError(ValueError):
     """Raised when incoming tool payloads are invalid."""
 
 
+# Section: Data Models
 @dataclass
 class ProvideChoiceOption:
+    """Represents a single selectable option."""
     id: str
     label: str
     description: str
@@ -22,6 +24,7 @@ class ProvideChoiceOption:
 
 @dataclass
 class ProvideChoiceRequest:
+    """Internal representation of a validated choice request."""
     title: str
     prompt: str
     type: str
@@ -34,6 +37,7 @@ class ProvideChoiceRequest:
 
 @dataclass
 class ProvideChoiceSelection:
+    """The actual data selected or entered by the user."""
     selected_ids: List[str] = field(default_factory=list)
     custom_input: Optional[str] = None
     transport: str = TRANSPORT_TERMINAL
@@ -43,6 +47,7 @@ class ProvideChoiceSelection:
 
 @dataclass
 class ProvideChoiceResponse:
+    """The final response envelope returned to the MCP client."""
     action_status: str
     selection: ProvideChoiceSelection
 
@@ -52,12 +57,17 @@ VALID_ACTIONS = {"selected", "custom_input", "cancelled", "timeout"}
 VALID_TRANSPORTS = {TRANSPORT_TERMINAL, TRANSPORT_WEB}
 
 
+# Section: Validation Logic
 def _ensure_non_empty(value: str, field_name: str) -> None:
     if not value or not value.strip():
         raise ValidationError(f"{field_name} must be a non-empty string")
 
 
 def _validate_options(options: Sequence[dict | ProvideChoiceOption]) -> List[ProvideChoiceOption]:
+    """
+    Validate and normalize the list of options.
+    Ensures all options have required fields and unique IDs.
+    """
     if not options:
         raise ValidationError("options must contain at least one entry")
     parsed: List[ProvideChoiceOption] = []

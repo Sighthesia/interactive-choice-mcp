@@ -18,20 +18,26 @@ from .models import (
 )
 
 
+# Section: Environment Checks
 def is_terminal_available() -> bool:
+    """Check if the current process is attached to an interactive terminal."""
     return sys.stdin is not None and sys.stdin.isatty()
 
 
 def _clear_terminal() -> None:
+    """Clear the terminal screen to provide a clean UI for the summary."""
     # ANSI clear screen and move cursor home
     print("\033[2J\033[H", end="")
 
 
+# Section: UI Construction
 def _build_choices(options: Iterable[ProvideChoiceOption]) -> List[questionary.Choice]:
+    """Convert internal options to questionary Choice objects."""
     return [questionary.Choice(title=opt.label, value=opt.id, short=opt.label) for opt in options]
 
 
 def _summary_line(selection: ProvideChoiceResponse) -> str:
+    """Generate a concise summary string for the final output."""
     sel = selection.selection
     if sel.custom_input:
         return f"Custom input: {sel.custom_input}"
@@ -40,7 +46,14 @@ def _summary_line(selection: ProvideChoiceResponse) -> str:
     return "No selection"
 
 
+# Section: Interaction Logic
 def _run_prompt_sync(req: ProvideChoiceRequest) -> ProvideChoiceResponse:
+    """
+    Execute the synchronous questionary prompt.
+    
+    This function blocks until the user provides input or cancels.
+    It handles the different prompt types (select, checkbox, text, hybrid).
+    """
     choices = _build_choices(req.options)
 
     try:
@@ -64,6 +77,7 @@ def _run_prompt_sync(req: ProvideChoiceRequest) -> ProvideChoiceResponse:
             return normalize_response(req=req, selected_ids=[], custom_input=str(answer_text), transport=TRANSPORT_TERMINAL)
 
         if req.type == "hybrid":
+            # Hybrid mode: Add a special "Custom input" option to the list
             hybrid_choices = choices + [questionary.Choice(title="Custom input", value="__custom__", short="Custom")]
             picked = questionary.select(req.prompt, choices=hybrid_choices).unsafe_ask()
             if picked is None:
@@ -81,6 +95,7 @@ def _run_prompt_sync(req: ProvideChoiceRequest) -> ProvideChoiceResponse:
 
 
 async def _run_with_timeout(func: Callable[[], ProvideChoiceResponse], timeout_seconds: int) -> ProvideChoiceResponse:
+    """Run a blocking function in a separate thread with a timeout."""
     loop = asyncio.get_running_loop()
     try:
         return await asyncio.wait_for(loop.run_in_executor(None, func), timeout=timeout_seconds)
@@ -89,6 +104,11 @@ async def _run_with_timeout(func: Callable[[], ProvideChoiceResponse], timeout_s
 
 
 async def run_terminal_choice(req: ProvideChoiceRequest, *, timeout_seconds: int) -> ProvideChoiceResponse:
+    """
+    Main entry point for terminal interaction.
+    
+    Wraps the synchronous prompt in a timeout handler and manages screen clearing.
+    """
     result = await _run_with_timeout(lambda: _run_prompt_sync(req), timeout_seconds)
     _clear_terminal()
     print(_summary_line(result))
