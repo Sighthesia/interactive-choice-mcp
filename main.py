@@ -1,5 +1,8 @@
+from server import mcp
+
+
 def main():
-    print("Hello from interactive-choice-mcp!")
+    mcp.run()
 
 
 if __name__ == "__main__":
