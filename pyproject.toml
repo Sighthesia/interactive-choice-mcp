@@ -1,0 +1,12 @@
+[project]
+name = "interactive-choice-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.127.0",
+    "fastmcp>=2.14.1",
+    "questionary>=2.1.1",
+    "uvicorn>=0.40.0",
+]
