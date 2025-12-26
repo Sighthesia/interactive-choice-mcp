@@ -33,7 +33,7 @@ def _clear_terminal() -> None:
 # Section: UI Construction
 def _build_choices(options: Iterable[ProvideChoiceOption]) -> List[questionary.Choice]:
     """Convert internal options to questionary Choice objects."""
-    return [questionary.Choice(title=opt.label, value=opt.id, short=opt.label) for opt in options]
+    return [questionary.Choice(title=opt.label, value=opt.id) for opt in options]
 
 
 def _summary_line(selection: ProvideChoiceResponse) -> str:
@@ -78,7 +78,7 @@ def _run_prompt_sync(req: ProvideChoiceRequest) -> ProvideChoiceResponse:
 
         if req.type == "hybrid":
             # Hybrid mode: Add a special "Custom input" option to the list
-            hybrid_choices = choices + [questionary.Choice(title="Custom input", value="__custom__", short="Custom")]
+            hybrid_choices = choices + [questionary.Choice(title="Custom input", value="__custom__")]
             picked = questionary.select(req.prompt, choices=hybrid_choices).unsafe_ask()
             if picked is None:
                 return cancelled_response(transport=TRANSPORT_TERMINAL)

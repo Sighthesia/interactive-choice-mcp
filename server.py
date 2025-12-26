@@ -1,6 +1,6 @@
 from fastmcp import FastMCP
 
-from choice.orchestrator import ChoiceOrchestrator
+from choice.orchestrator import ChoiceOrchestrator, safe_handle
 
 # Section: Initialization
 # Initialize the FastMCP server instance and the choice orchestrator.
@@ -29,7 +29,10 @@ async def provide_choice(
 
 	# Delegate the execution to the orchestrator.
 	# The orchestrator handles validation, transport selection, and the actual interaction loop.
-	result = await orchestrator.handle(
+	# We use safe_handle to ensure that any errors (like validation or timeouts)
+	# are caught and returned as a structured response instead of crashing the server.
+	result = await safe_handle(
+		orchestrator,
 		title=title,
 		prompt=prompt,
 		type=type,

@@ -30,9 +30,9 @@ class ProvideChoiceRequest:
     type: str
     options: List[ProvideChoiceOption]
     allow_cancel: bool
+    timeout_seconds: int
     placeholder: Optional[str] = None
     transport: Optional[str] = None
-    timeout_seconds: Optional[int] = None
 
 
 @dataclass
