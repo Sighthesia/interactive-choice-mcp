@@ -39,14 +39,14 @@ async def provide_choice(
 	)
 	
 	selection = result.selection
-	return {
-		"action_status": result.action_status,
-		"selected_ids": list(selection.selected_ids),
-		"custom_input": selection.custom_input,
-		"transport": selection.transport,
-		"summary": selection.summary,
-		"url": selection.url,
-	}
+	out = {"action_status": result.action_status}
+	if selection.selected_indices:
+		out["selected_indices"] = list(selection.selected_indices)
+	if selection.option_annotations:
+		out["option_annotations"] = selection.option_annotations
+	if selection.global_annotation:
+		out["global_annotation"] = selection.global_annotation
+	return out
 
 
 if __name__ == "__main__":

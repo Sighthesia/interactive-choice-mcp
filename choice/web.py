@@ -5,6 +5,7 @@ import json
 import socket
 import uuid
 import webbrowser
+from datetime import datetime
 from pathlib import Path
 from string import Template
 from typing import Dict, Optional
@@ -56,22 +57,17 @@ def _render_html(
     """Generate HTML that includes a configuration panel and the choice UI."""
 
     option_payload = [
-        {"id": o.id, "label": o.label, "description": o.description}
+        {"label": o.label, "description": o.description}
         for o in req.options
     ]
 
     # Build defaults payload for JavaScript
     defaults_payload = {
         "transport": defaults.transport,
-        "visible_option_ids": defaults.visible_option_ids,
         "timeout_seconds": defaults.timeout_seconds,
-        "placeholder": defaults.placeholder or "",
-        "default_selection_ids": defaults.default_selection_ids,
-        "min_selections": defaults.min_selections,
-        "max_selections": defaults.max_selections,
         "single_submit_mode": defaults.single_submit_mode,
-        "placeholder_enabled": defaults.placeholder_enabled,
-        "annotations_enabled": defaults.annotations_enabled,
+        "timeout_default_enabled": defaults.timeout_default_enabled,
+        "timeout_default_index": defaults.timeout_default_index,
     }
 
     # Build transport options HTML
@@ -88,20 +84,8 @@ def _render_html(
         )
 
     # Compute template substitution values
-    max_sel_display = str(defaults.max_selections) if defaults.max_selections is not None else ""
-    show_placeholder_row = req.type in {"text_input", "hybrid"}
+    show_placeholder_row = False
 
-    # Build custom input block if needed
-    custom_block = ""
-    if req.type in {"text_input", "hybrid"}:
-        placeholder_shown = defaults.placeholder_enabled and (defaults.placeholder or req.placeholder)
-        placeholder = (defaults.placeholder or req.placeholder or "Enter a value") if placeholder_shown else ""
-        custom_block = f"""
-            <div class="card custom-input-section">
-                <input id="customInput" type="text" placeholder="{placeholder}" />
-                <button class="btn btn-primary" onclick="submitCustom()">Submit Custom</button>
-            </div>
-        """
 
     # Load and render external template
     template = _load_template()
@@ -115,13 +99,13 @@ def _render_html(
         transport_options="\n".join(transport_options),
         timeout_value=defaults.timeout_seconds,
         single_submit_checked="checked" if defaults.single_submit_mode else "",
-        min_selections=defaults.min_selections,
-        max_selections=max_sel_display,
-        placeholder_row_display="" if show_placeholder_row else "display:none;",
-        placeholder_enabled_checked="checked" if defaults.placeholder_enabled else "",
-        placeholder_value=defaults.placeholder or "",
-        annotations_enabled_checked="checked" if defaults.annotations_enabled else "",
-        custom_block_placeholder=custom_block,
+        placeholder_row_display="display:none;",
+        placeholder_enabled_checked="",
+        placeholder_value="",
+        timeout_default_enabled_checked="checked" if defaults.timeout_default_enabled else "",
+        timeout_default_index=defaults.timeout_default_index if defaults.timeout_default_index is not None else 0,
+        mcp_version="0.1.0",
+        invocation_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     )
 
 
@@ -154,67 +138,70 @@ async def run_web_choice(
             raise HTTPException(status_code=404)
         if result_future.done():
             return JSONResponse({"status": "already-set"})
-        action = str(payload.get("action_status", ""))
-        config_payload = payload.get("config") or {}
-        if not isinstance(config_payload, dict):
-            raise HTTPException(status_code=400, detail="config must be object")
+        
         try:
+            action = str(payload.get("action_status", ""))
+            config_payload = payload.get("config") or {}
+            if not isinstance(config_payload, dict):
+                raise HTTPException(status_code=400, detail="config must be object")
+            
             parsed_config = _parse_config_payload(defaults, config_payload, req)
             adjusted_req = apply_configuration(req, parsed_config)
-        except ValidationError as exc:  # noqa: BLE001
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-        else:
+            
             nonlocal config_used
             config_used = parsed_config
 
-        # Extract annotations from payload
-        option_annotations_raw = payload.get("option_annotations") or {}
-        option_annotations: dict[str, str] = {}
-        if isinstance(option_annotations_raw, dict):
-            option_annotations = {str(k): str(v) for k, v in option_annotations_raw.items() if v}
-        global_annotation_raw = payload.get("global_annotation")
-        global_annotation: str | None = str(global_annotation_raw) if global_annotation_raw else None
+            # Extract annotations from payload
+            option_annotations_raw = payload.get("option_annotations") or {}
+            option_annotations: dict[int, str] = {}
+            if isinstance(option_annotations_raw, dict):
+                option_annotations = {int(k): str(v) for k, v in option_annotations_raw.items() if v}
+            global_annotation_raw = payload.get("global_annotation")
+            global_annotation: str | None = str(global_annotation_raw) if global_annotation_raw else None
 
-        if action == "cancelled":
-            result_future.set_result(cancelled_response(transport=TRANSPORT_WEB, url=session_url))
-            return {"status": "ok"}
-        if action == "selected":
-            selected_ids = payload.get("selected_ids")
-            if not isinstance(selected_ids, list):
-                raise HTTPException(status_code=400, detail="selected_ids must be list")
-            ordered_ids = [str(x) for x in selected_ids]
-            valid_ids = {opt.id for opt in adjusted_req.options}
-            if not set(ordered_ids).issubset(valid_ids):
-                raise HTTPException(status_code=400, detail="selected_ids not allowed")
-            try:
+            if action == "cancelled":
                 result_future.set_result(
-                    normalize_response(
-                        req=adjusted_req,
-                        selected_ids=ordered_ids,
-                        custom_input=None,
+                    cancelled_response(
                         transport=TRANSPORT_WEB,
                         url=session_url,
                         option_annotations=option_annotations,
                         global_annotation=global_annotation,
                     )
                 )
-            except ValidationError as exc:
-                raise HTTPException(status_code=400, detail=str(exc)) from exc
-            return {"status": "ok"}
-        if action == "custom_input":
-            custom_input = payload.get("custom_input", "")
-            result_future.set_result(
-                normalize_response(
-                    req=adjusted_req,
-                    selected_ids=[],
-                    custom_input=str(custom_input),
-                    transport=TRANSPORT_WEB,
-                    url=session_url,
-                    global_annotation=global_annotation,
+                return {"status": "ok"}
+            
+            if action == "selected":
+                selected_indices = payload.get("selected_indices")
+                if not isinstance(selected_indices, list):
+                    raise HTTPException(status_code=400, detail="selected_indices must be list")
+                indices = [int(x) for x in selected_indices]
+                if any(idx < 0 or idx >= len(adjusted_req.options) for idx in indices):
+                    raise HTTPException(status_code=400, detail="selected_indices out of range")
+                
+                result_future.set_result(
+                    normalize_response(
+                        req=adjusted_req,
+                        selected_indices=indices,
+                        transport=TRANSPORT_WEB,
+                        url=session_url,
+                        option_annotations=option_annotations,
+                        global_annotation=global_annotation,
+                    )
                 )
-            )
-            return {"status": "ok"}
-        raise HTTPException(status_code=400, detail="invalid action_status")
+                return {"status": "ok"}
+                
+            raise HTTPException(status_code=400, detail="invalid action_status")
+            
+        except HTTPException:
+            raise
+        except ValidationError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except Exception as exc:
+            # Log the error and return 500 with detail
+            import traceback
+            print(f"Internal Server Error in submit_choice: {exc}")
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(exc)}") from exc
 
     port = _find_free_port()
     session_url = f"http://127.0.0.1:{port}/choice/{choice_id}"
@@ -237,7 +224,7 @@ async def run_web_choice(
         result = await asyncio.wait_for(result_future, timeout=defaults.timeout_seconds)
         final_config = config_used
     except asyncio.TimeoutError:
-        result = timeout_response(transport=TRANSPORT_WEB, url=session_url)
+        result = timeout_response(req=req, transport=TRANSPORT_WEB, url=session_url)
         final_config = defaults
     finally:
         server.should_exit = True
@@ -246,19 +233,12 @@ async def run_web_choice(
     return result, final_config
 
 
-def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, object], req: ProvideChoiceRequest) -> ProvideChoiceConfig:
+def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, object], req: ProvideChoiceRequest) -> ProvideChoiceConfig:  # noqa: ARG001
     """Parse config payload from web form submission."""
     transport_raw = payload.get("transport")
     transport = str(transport_raw) if transport_raw else TRANSPORT_WEB
     if transport not in VALID_TRANSPORTS:
         transport = TRANSPORT_WEB
-
-    visible_raw = payload.get("visible_option_ids") or []
-    visible_ids: list[str] = []
-    if isinstance(visible_raw, list):
-        visible_ids = [str(v) for v in visible_raw if any(opt.id == str(v) for opt in req.options)]
-    if not visible_ids:
-        visible_ids = [opt.id for opt in req.options]
 
     timeout_raw = payload.get("timeout_seconds")
     timeout_val = defaults.timeout_seconds
@@ -270,60 +250,28 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
     if timeout_val <= 0:
         timeout_val = defaults.timeout_seconds
 
-    placeholder_raw = payload.get("placeholder")
-    placeholder_val = defaults.placeholder
-    if isinstance(placeholder_raw, str):
-        placeholder_val = placeholder_raw
-
-    # Extended config fields
-    default_sel_raw = payload.get("default_selection_ids") or []
-    default_sel_ids: list[str] = []
-    if isinstance(default_sel_raw, list):
-        default_sel_ids = [str(d) for d in default_sel_raw if any(opt.id == str(d) for opt in req.options)]
-
-    min_sel_raw = payload.get("min_selections")
-    min_sel_val = defaults.min_selections
-    if isinstance(min_sel_raw, (int, float, str)):
-        try:
-            min_sel_val = int(min_sel_raw)
-        except Exception:
-            min_sel_val = defaults.min_selections
-    if min_sel_val < 0:
-        min_sel_val = 0
-
-    max_sel_raw = payload.get("max_selections")
-    max_sel_val = defaults.max_selections
-    if max_sel_raw is not None:
-        if isinstance(max_sel_raw, (int, float, str)):
-            try:
-                max_sel_val = int(max_sel_raw) if max_sel_raw != "" else None
-            except Exception:
-                max_sel_val = defaults.max_selections
-
     single_submit_raw = payload.get("single_submit_mode")
     single_submit_val = defaults.single_submit_mode
     if isinstance(single_submit_raw, bool):
         single_submit_val = single_submit_raw
 
-    placeholder_enabled_raw = payload.get("placeholder_enabled")
-    placeholder_enabled_val = defaults.placeholder_enabled
-    if isinstance(placeholder_enabled_raw, bool):
-        placeholder_enabled_val = placeholder_enabled_raw
+    # Timeout default
+    timeout_default_enabled = payload.get("timeout_default_enabled")
+    if not isinstance(timeout_default_enabled, bool):
+        timeout_default_enabled = defaults.timeout_default_enabled
 
-    annotations_enabled_raw = payload.get("annotations_enabled")
-    annotations_enabled_val = defaults.annotations_enabled
-    if isinstance(annotations_enabled_raw, bool):
-        annotations_enabled_val = annotations_enabled_raw
+    timeout_default_idx_raw = payload.get("timeout_default_index")
+    timeout_default_idx = defaults.timeout_default_index
+    if isinstance(timeout_default_idx_raw, (int, float, str)):
+        try:
+            timeout_default_idx = int(timeout_default_idx_raw)
+        except Exception:
+            timeout_default_idx = defaults.timeout_default_index
 
     return ProvideChoiceConfig(
         transport=transport,
-        visible_option_ids=visible_ids,
         timeout_seconds=timeout_val,
-        placeholder=placeholder_val,
-        default_selection_ids=default_sel_ids,
-        min_selections=min_sel_val,
-        max_selections=max_sel_val,
         single_submit_mode=single_submit_val,
-        placeholder_enabled=placeholder_enabled_val,
-        annotations_enabled=annotations_enabled_val,
+        timeout_default_enabled=timeout_default_enabled,
+        timeout_default_index=timeout_default_idx,
     )

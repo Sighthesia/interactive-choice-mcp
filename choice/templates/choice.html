@@ -34,7 +34,69 @@
             color: var(--text);
             line-height: 1.5;
             min-height: 100vh;
-            padding: 24px 16px;
+            padding: 72px 16px 24px;
+        }
+
+        /* Section: Header Bar */
+        .header-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: #1e293b;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 0.8125rem;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-bar .brand {
+            font-weight: 700;
+            margin-right: 24px;
+            color: #818cf8;
+        }
+
+        .header-bar .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 20px;
+            color: #94a3b8;
+        }
+
+        .header-bar .status-item span {
+            color: #f8fafc;
+        }
+
+        .header-bar .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+        }
+
+        .header-bar .status-dot.offline {
+            background: #ef4444;
+        }
+
+        .header-bar .status-dot.busy {
+            background: #f59e0b;
+        }
+
+        .header-bar .spacer {
+            flex: 1;
+        }
+
+        .header-bar .timeout-text {
+            font-family: monospace;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
         }
 
         /* Section: Two-Column Layout */
@@ -259,15 +321,30 @@
             box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
         }
 
-        /* Section: Custom Input */
-        .custom-input-section {
-            display: flex;
-            gap: 8px;
-            margin-top: 16px;
+        /* Section: Timeout Progress */
+        .timeout-progress-container {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            display: none;
         }
 
-        .custom-input-section input {
-            flex: 1;
+        .timeout-progress-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 100%;
+            transition: width 1s linear, background-color 0.3s;
+        }
+
+        .timeout-progress-bar.warning {
+            background: #f59e0b;
+        }
+
+        .timeout-progress-bar.danger {
+            background: var(--danger);
         }
 
         /* Section: Annotation */
@@ -284,6 +361,8 @@
         /* Section: Actions */
         .actions {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
             gap: 12px;
             margin-top: 20px;
             flex-wrap: wrap;
@@ -442,11 +521,53 @@
 </head>
 
 <body>
+    <header class="header-bar">
+        <div class="brand">Interactive Choice MCP Web Console</div>
+
+        <div class="status-item">
+            <div id="connectionDot" class="status-dot"></div>
+            Status: <span id="statusText">Connected</span>
+        </div>
+
+        <div class="status-item">
+            Version: <span>${mcp_version}</span>
+        </div>
+
+        <div class="status-item">
+            Invoked: <span>${invocation_time}</span>
+        </div>
+
+        <div class="spacer"></div>
+
+        <div class="status-item">
+            Time Left: <span id="timeoutText" class="timeout-text">--:--</span>
+        </div>
+
+        <!-- Progress Bar integrated at bottom of header -->
+        <div id="timeoutContainer" class="timeout-progress-container"
+            style="position: absolute; bottom: 0; left: 0; margin-bottom: 0; height: 3px; border-radius: 0;">
+            <div id="timeoutProgressBar" class="timeout-progress-bar"></div>
+        </div>
+    </header>
+
     <div class="layout">
         <!-- Main Content (Left) -->
         <div class="main-column">
             <h1>${title}</h1>
             <p class="prompt">${prompt}</p>
+
+            <!-- Error Display -->
+            <div id="error" class="error-message"></div>
+
+            <!-- Options List -->
+            <div id="options" tabindex="0"></div>
+
+            <!-- Annotation Section -->
+            <div id="annotationSection" class="card annotation-section">
+                <div class="card-header">Global Annotation</div>
+                <textarea id="globalAnnotation"
+                    placeholder="Optional note when provided options don't fully meet your needs"></textarea>
+            </div>
 
             <!-- Keyboard Navigation Hint -->
             <div class="keyboard-hint">
@@ -456,28 +577,13 @@
                 <span><kbd>Esc</kbd> Cancel</span>
             </div>
 
-            <!-- Error Display -->
-            <div id="error" class="error-message"></div>
-
-            <!-- Options List -->
-            <div id="options" tabindex="0"></div>
-
-            <!-- Annotation Section -->
-            <div id="annotationSection" class="card annotation-section" style="display:none;">
-                <div class="card-header">Global Annotation</div>
-                <textarea id="globalAnnotation"
-                    placeholder="Optional note when provided options don't fully meet your needs"></textarea>
-            </div>
-
             <!-- Actions -->
             <div class="actions">
-                <button id="submitBatchBtn" class="btn btn-primary" style="display:none;" onclick="submitBatch()">Submit
+                <button id="submitBatchBtn" class="btn btn-primary" onclick="submitBatch()">Submit
                     Selection</button>
                 <button id="cancelButton" class="btn btn-danger" onclick="submitCancel()">Cancel</button>
             </div>
 
-            <!-- Custom Input -->
-            $custom_block_placeholder
 
             <!-- Status -->
             <div id="status" class="status" style="display:none;"></div>
@@ -507,22 +613,13 @@
                         <div class="config-row">
                             <label>
                                 <input id="singleSubmitMode" type="checkbox" ${single_submit_checked} />
-                                Auto-submit
+                                Auto Submit (Single Selection Mode)
                             </label>
                         </div>
 
-                        <div class="config-row">
-                            <label>Min
-                                <input id="minSelections" type="number" min="0" value="${min_selections}"
-                                    style="width:50px;" />
-                            </label>
-                            <label>Max
-                                <input id="maxSelections" type="number" min="0" value="${max_selections}"
-                                    placeholder="∞" style="width:50px;" />
-                            </label>
-                        </div>
 
-                        <div class="config-row" id="placeholderRow" style="${placeholder_row_display}">
+
+                        <div class="config-row" id="placeholderRow" style="display:none;">
                             <label>
                                 <input id="placeholderEnabled" type="checkbox" ${placeholder_enabled_checked} />
                                 Placeholder
@@ -530,38 +627,21 @@
                             <input id="placeholderInput" type="text" value="${placeholder_value}" placeholder="Text"
                                 style="flex:1;min-width:80px;" />
                         </div>
-
-                        <div class="config-row">
-                            <label>
-                                <input id="annotationsEnabled" type="checkbox" ${annotations_enabled_checked} />
-                                Annotations
-                            </label>
-                        </div>
-
-                        <div class="config-row">
-                            <span style="font-size:0.75rem;color:var(--text-muted);">Visible:</span>
-                            <div class="options-grid" id="visibilityToggles"></div>
-                        </div>
-
-                        <div class="config-row">
-                            <span style="font-size:0.75rem;color:var(--text-muted);">Preselected:</span>
-                            <div class="options-grid" id="defaultToggles"></div>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script type="application/json" id="mcp-defaults">${defaults_json}</script>
+    <script type="application/json" id="mcp-options">${options_json}</script>
     <script>
         const choiceId = '${choice_id}';
-        const defaults = ${defaults_json};
-        const options = ${options_json};
+        const defaults = JSON.parse(document.getElementById('mcp-defaults').textContent);
+        const options = JSON.parse(document.getElementById('mcp-options').textContent);
         const promptType = '${prompt_type}';
         let submitting = false;
-        let visibleOptionIds = new Set(defaults.visible_option_ids.length ? defaults.visible_option_ids : options.map(o => o.id));
-        let defaultSelectionIds = new Set(defaults.default_selection_ids || []);
-        let selectedIds = new Set(defaults.default_selection_ids || []);
+        let selectedIndices = new Set();
         let optionAnnotations = {};
         let focusedIndex = -1;
 
@@ -578,76 +658,22 @@
             return document.getElementById('singleSubmitMode').checked;
         }
 
-        function getMinMax() {
-            const min = parseInt(document.getElementById('minSelections').value) || 0;
-            const maxRaw = document.getElementById('maxSelections').value;
-            const max = maxRaw ? parseInt(maxRaw) : null;
-            return { min, max };
-        }
-
         function validateSelection() {
-            const { min, max } = getMinMax();
-            const count = selectedIds.size;
-            if (count < min) return 'Please select at least ' + min + ' option(s)';
-            if (max !== null && count > max) return 'Please select at most ' + max + ' option(s)';
+            // Min/Max constraints removed — always accept selection (no limits)
             return null;
         }
 
-        function getVisibleOptions() {
-            return options.filter(o => visibleOptionIds.has(o.id));
-        }
-
         // Section: Render Functions
-        function renderVisibilityToggles() {
-            const container = document.getElementById('visibilityToggles');
-            container.innerHTML = '';
-            options.forEach(opt => {
-                const label = document.createElement('label');
-                const cb = document.createElement('input');
-                cb.type = 'checkbox';
-                cb.value = opt.id;
-                cb.className = 'vis-toggle';
-                cb.checked = visibleOptionIds.has(opt.id);
-                cb.onchange = syncVisibilityFromCheckboxes;
-                label.appendChild(cb);
-                label.appendChild(document.createTextNode(opt.label));
-                container.appendChild(label);
-            });
-        }
-
-        function renderDefaultToggles() {
-            const container = document.getElementById('defaultToggles');
-            container.innerHTML = '';
-            options.forEach(opt => {
-                const label = document.createElement('label');
-                const cb = document.createElement('input');
-                cb.type = 'checkbox';
-                cb.value = opt.id;
-                cb.className = 'default-toggle';
-                cb.checked = defaultSelectionIds.has(opt.id);
-                cb.onchange = () => {
-                    if (cb.checked) defaultSelectionIds.add(opt.id);
-                    else defaultSelectionIds.delete(opt.id);
-                    selectedIds = new Set(defaultSelectionIds);
-                    renderOptions();
-                };
-                label.appendChild(cb);
-                label.appendChild(document.createTextNode(opt.label));
-                container.appendChild(label);
-            });
-        }
 
         function renderOptions() {
             const container = document.getElementById('options');
             container.innerHTML = '';
             const singleSubmit = isSingleSubmit();
-            const annotationsEnabled = document.getElementById('annotationsEnabled').checked;
-            const visibleOpts = getVisibleOptions();
+            const visibleOpts = options;
 
             visibleOpts.forEach((opt, idx) => {
                 const block = document.createElement('div');
-                block.className = 'option' + (selectedIds.has(opt.id) ? ' selected' : '');
-                block.dataset.optionId = opt.id;
+                block.className = 'option' + (selectedIndices.has(idx) ? ' selected' : '');
                 block.dataset.index = idx;
                 block.tabIndex = 0;
 
@@ -665,23 +691,23 @@
                     if (singleSubmit && promptType !== 'multi_select') {
                         submitPayload({
                             action_status: 'selected',
-                            selected_ids: [opt.id],
-                            option_annotations: annotationsEnabled ? optionAnnotations : {}
+                            selected_indices: [idx],
+                            option_annotations: optionAnnotations
                         });
                     } else {
-                        toggleOptionSelection(opt.id, block);
+                        toggleOptionSelection(idx, block);
                     }
                 };
 
                 if (!singleSubmit || promptType === 'multi_select') {
                     const cb = document.createElement('input');
                     cb.type = 'checkbox';
-                    cb.value = opt.id;
-                    cb.checked = selectedIds.has(opt.id);
+                    cb.value = idx;
+                    cb.checked = selectedIndices.has(idx);
                     cb.onchange = (e) => {
                         e.stopPropagation();
-                        if (cb.checked) selectedIds.add(opt.id);
-                        else { selectedIds.delete(opt.id); block.classList.remove('selected'); }
+                        if (cb.checked) selectedIndices.add(idx);
+                        else { selectedIndices.delete(idx); block.classList.remove('selected'); }
                         block.classList.toggle('selected', cb.checked);
                         updateSubmitBtn();
                     };
@@ -693,13 +719,13 @@
                 content.innerHTML = '<div class="option-label">' + opt.label + '</div><div class="option-desc">' + opt.description + '</div>';
                 block.appendChild(content);
 
-                if (annotationsEnabled && !singleSubmit) {
+                if (!singleSubmit) {
                     const noteInput = document.createElement('input');
                     noteInput.type = 'text';
                     noteInput.placeholder = 'Add note...';
                     noteInput.className = 'option-note';
-                    noteInput.value = optionAnnotations[opt.id] || '';
-                    noteInput.oninput = () => { optionAnnotations[opt.id] = noteInput.value; };
+                    noteInput.value = optionAnnotations[idx] || '';
+                    noteInput.addEventListener('input', () => { optionAnnotations[idx] = noteInput.value; updateCancelBtn(); });
                     noteInput.onclick = (e) => e.stopPropagation();
                     block.appendChild(noteInput);
                 }
@@ -707,26 +733,20 @@
                 container.appendChild(block);
             });
 
-            const submitBtn = document.getElementById('submitBatchBtn');
-            submitBtn.style.display = (!singleSubmit || promptType === 'multi_select') ? 'inline-block' : 'none';
-
-            const annotationSection = document.getElementById('annotationSection');
-            annotationSection.style.display = annotationsEnabled ? 'block' : 'none';
-
             updateSubmitBtn();
         }
 
-        function toggleOptionSelection(optionId, block) {
-            if (selectedIds.has(optionId)) {
-                selectedIds.delete(optionId);
+        function toggleOptionSelection(optionIdx, block) {
+            if (selectedIndices.has(optionIdx)) {
+                selectedIndices.delete(optionIdx);
                 block.classList.remove('selected');
             } else {
-                selectedIds.add(optionId);
+                selectedIndices.add(optionIdx);
                 block.classList.add('selected');
             }
             // Update checkbox if present
             const cb = block.querySelector('input[type="checkbox"]');
-            if (cb) cb.checked = selectedIds.has(optionId);
+            if (cb) cb.checked = selectedIndices.has(optionIdx);
             updateSubmitBtn();
         }
 
@@ -737,28 +757,22 @@
         }
 
         function updateSubmitBtn() {
+            const singleSubmit = isSingleSubmit();
             const err = validateSelection();
             document.getElementById('error').innerText = err || '';
             const btn = document.getElementById('submitBatchBtn');
-            btn.disabled = !!err;
-        }
 
-        function syncVisibilityFromCheckboxes() {
-            const checks = Array.from(document.querySelectorAll('.vis-toggle')).filter(cb => cb.checked).map(cb => cb.value);
-            visibleOptionIds = checks.length ? new Set(checks) : new Set(options.map(o => o.id));
-            focusedIndex = -1;
-            renderVisibilityToggles();
-            renderOptions();
+            // Disable if validation fails OR if in single-submit mode (where clicking options submits immediately)
+            const isAutoSubmitActive = singleSubmit && promptType !== 'multi_select';
+            btn.disabled = !!err || isAutoSubmitActive;
         }
 
         // Section: Keyboard Navigation
         function handleKeyNavigation(e) {
-            const visibleOpts = getVisibleOptions();
-            const optionCount = visibleOpts.length;
+            const optionCount = options.length;
             if (optionCount === 0) return;
 
             const singleSubmit = isSingleSubmit();
-            const annotationsEnabled = document.getElementById('annotationsEnabled').checked;
 
             switch (e.key) {
                 case 'ArrowDown':
@@ -780,16 +794,15 @@
                 case ' ':
                     e.preventDefault();
                     if (focusedIndex >= 0 && focusedIndex < optionCount) {
-                        const opt = visibleOpts[focusedIndex];
                         const block = document.querySelector('.option[data-index="' + focusedIndex + '"]');
                         if (singleSubmit && promptType !== 'multi_select') {
                             submitPayload({
                                 action_status: 'selected',
-                                selected_ids: [opt.id],
-                                option_annotations: annotationsEnabled ? optionAnnotations : {}
+                                selected_indices: [focusedIndex],
+                                option_annotations: optionAnnotations
                             });
                         } else if (block) {
-                            toggleOptionSelection(opt.id, block);
+                            toggleOptionSelection(focusedIndex, block);
                         }
                     }
                     break;
@@ -797,11 +810,10 @@
                 case 'Enter':
                     e.preventDefault();
                     if (singleSubmit && promptType !== 'multi_select' && focusedIndex >= 0) {
-                        const opt = visibleOpts[focusedIndex];
                         submitPayload({
                             action_status: 'selected',
-                            selected_ids: [opt.id],
-                            option_annotations: annotationsEnabled ? optionAnnotations : {}
+                            selected_indices: [focusedIndex],
+                            option_annotations: optionAnnotations
                         });
                     } else {
                         submitBatch();
@@ -843,18 +855,12 @@
             const transportSelect = document.getElementById('transportSelect');
             const transport = transportSelect ? transportSelect.value : 'web';
             const placeholder = document.getElementById('placeholderInput')?.value ?? defaults.placeholder ?? '';
-            const { min, max } = getMinMax();
             return {
                 transport,
-                visible_option_ids: Array.from(visibleOptionIds),
                 timeout_seconds: timeout,
                 placeholder,
-                default_selection_ids: Array.from(defaultSelectionIds),
-                min_selections: min,
-                max_selections: max,
                 single_submit_mode: isSingleSubmit(),
                 placeholder_enabled: document.getElementById('placeholderEnabled')?.checked ?? true,
-                annotations_enabled: document.getElementById('annotationsEnabled').checked,
             };
         }
 
@@ -863,6 +869,12 @@
             if (submitting) return;
             submitting = true;
             const statusEl = document.getElementById('status');
+            const headerStatusText = document.getElementById('statusText');
+            const headerStatusDot = document.getElementById('connectionDot');
+
+            headerStatusText.innerText = 'Submitting...';
+            headerStatusDot.className = 'status-dot busy';
+
             try {
                 const res = await fetch('/choice/' + choiceId + '/submit', {
                     method: 'POST',
@@ -870,20 +882,37 @@
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) {
-                    const data = await res.json().catch(() => ({}));
+                    let errorDetail = 'Submission failed';
+                    try {
+                        const data = await res.json();
+                        errorDetail = data.detail || errorDetail;
+                    } catch (e) {
+                        // If not JSON, try text
+                        const text = await res.text().catch(() => '');
+                        if (text) errorDetail = text.substring(0, 200);
+                    }
                     statusEl.className = 'status error';
-                    statusEl.innerText = 'Error: ' + (data.detail || 'Submission failed');
+                    statusEl.innerText = 'Error (' + res.status + '): ' + errorDetail;
                     statusEl.style.display = 'block';
+
+                    headerStatusText.innerText = 'Error';
+                    headerStatusDot.className = 'status-dot offline';
                     submitting = false;
                 } else {
                     statusEl.className = 'status success';
                     statusEl.innerText = '✓ Submitted successfully. You can close this tab.';
                     statusEl.style.display = 'block';
+
+                    headerStatusText.innerText = 'Submitted';
+                    headerStatusDot.className = 'status-dot';
                 }
             } catch (e) {
                 statusEl.className = 'status error';
                 statusEl.innerText = 'Network error. Please try again.';
                 statusEl.style.display = 'block';
+
+                headerStatusText.innerText = 'Offline';
+                headerStatusDot.className = 'status-dot offline';
                 submitting = false;
             }
         }
@@ -891,29 +920,46 @@
         function submitBatch() {
             const err = validateSelection();
             if (err) { document.getElementById('error').innerText = err; return; }
-            const annotationsEnabled = document.getElementById('annotationsEnabled').checked;
             const globalAnnotation = document.getElementById('globalAnnotation').value || null;
             submitPayload({
                 action_status: 'selected',
-                selected_ids: Array.from(selectedIds),
-                option_annotations: annotationsEnabled ? optionAnnotations : {},
-                global_annotation: annotationsEnabled ? globalAnnotation : null,
+                selected_indices: Array.from(selectedIndices),
+                option_annotations: optionAnnotations,
+                global_annotation: globalAnnotation,
             });
         }
 
-        function submitCustom() {
-            const val = document.getElementById('customInput').value || '';
-            const annotationsEnabled = document.getElementById('annotationsEnabled').checked;
-            const globalAnnotation = document.getElementById('globalAnnotation').value || null;
-            submitPayload({
-                action_status: 'custom_input',
-                custom_input: val,
-                global_annotation: annotationsEnabled ? globalAnnotation : null,
-            });
+
+        function hasAnnotations() {
+            const g = document.getElementById('globalAnnotation')?.value || '';
+            if (g && String(g).trim()) return true;
+            for (const k in optionAnnotations) {
+                if (optionAnnotations[k] && String(optionAnnotations[k]).trim()) return true;
+            }
+            return false;
+        }
+
+        function updateCancelBtn() {
+            const btn = document.getElementById('cancelButton');
+            if (!btn) return;
+            if (hasAnnotations()) {
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-warning');
+                btn.innerText = 'Cancel with annotations';
+            } else {
+                btn.classList.remove('btn-warning');
+                btn.classList.add('btn-danger');
+                btn.innerText = 'Cancel';
+            }
         }
 
         function submitCancel() {
-            submitPayload({ action_status: 'cancelled' });
+            const payload = { action_status: 'cancelled' };
+            if (hasAnnotations()) {
+                payload.option_annotations = optionAnnotations;
+                payload.global_annotation = document.getElementById('globalAnnotation')?.value || null;
+            }
+            submitPayload(payload);
         }
 
         function submitPayload(base) {
@@ -922,11 +968,11 @@
             postSelection(base);
         }
 
+        // Update cancel button when global annotation changes
+        document.getElementById('globalAnnotation').addEventListener('input', updateCancelBtn);
+
         // Section: Event Listeners
         document.getElementById('singleSubmitMode').onchange = renderOptions;
-        document.getElementById('annotationsEnabled').onchange = renderOptions;
-        document.getElementById('minSelections').onchange = updateSubmitBtn;
-        document.getElementById('maxSelections').onchange = updateSubmitBtn;
 
         // Keyboard navigation
         document.addEventListener('keydown', (e) => {
@@ -947,14 +993,89 @@
         });
 
         // Section: Init
-        renderVisibilityToggles();
-        renderDefaultToggles();
+        syncMinMaxInputs();
         renderOptions();
+        updateCancelBtn();
+
+        // Section: Timeout Countdown
+        let _timeoutTimerId = null;
+        let _timeoutTotal = 0;
+        let _timeoutRemaining = 0;
+
+        function stopTimeout() {
+            if (_timeoutTimerId !== null) {
+                clearInterval(_timeoutTimerId);
+                _timeoutTimerId = null;
+            }
+        }
+
+        function startTimeout(seconds) {
+            stopTimeout();
+            const timeoutText = document.getElementById('timeoutText');
+            const container = document.getElementById('timeoutContainer');
+            const bar = document.getElementById('timeoutProgressBar');
+
+            const sec = Number.isFinite(Number(seconds)) ? parseInt(seconds, 10) : 0;
+            if (!sec || sec <= 0) {
+                timeoutText.innerText = 'No Timeout';
+                container.style.display = 'none';
+                bar.style.width = '0%';
+                bar.classList.remove('warning', 'danger');
+                return;
+            }
+
+            container.style.display = 'block';
+            _timeoutTotal = sec;
+            _timeoutRemaining = sec;
+            bar.style.width = '100%';
+            bar.classList.remove('warning', 'danger');
+
+            const updateText = (s) => {
+                const mins = Math.floor(s / 60);
+                const secs = s % 60;
+                timeoutText.innerText = mins + ':' + (secs < 10 ? '0' : '') + secs;
+            };
+
+            updateText(_timeoutRemaining);
+
+            _timeoutTimerId = setInterval(() => {
+                if (submitting) {
+                    stopTimeout();
+                    return;
+                }
+
+                _timeoutRemaining -= 1;
+                updateText(Math.max(0, _timeoutRemaining));
+                const percentage = Math.max(0, (_timeoutRemaining / _timeoutTotal) * 100);
+                bar.style.width = percentage + '%';
+
+                bar.classList.toggle('warning', percentage < 50 && percentage >= 20);
+                bar.classList.toggle('danger', percentage < 20);
+
+                if (_timeoutRemaining <= 0) {
+                    stopTimeout();
+                    const headerStatusText = document.getElementById('statusText');
+                    const headerStatusDot = document.getElementById('connectionDot');
+                    headerStatusText.innerText = 'Timeout';
+                    headerStatusDot.className = 'status-dot offline';
+                    submitPayload({ action_status: 'timeout' });
+                }
+            }, 1000);
+        }
+
+        // Initialize using the current timeout input (fallback to template default)
+        startTimeout(parseInt(document.getElementById('timeoutInput')?.value || '${timeout_value}', 10));
+
+        // When the user changes the timeout, restart the countdown using that value
+        document.getElementById('timeoutInput').addEventListener('change', (e) => {
+            const v = parseInt(e.target.value, 10);
+            startTimeout(v);
+        });
 
         // Auto-focus options for keyboard navigation
         setTimeout(() => {
             document.getElementById('options').focus();
-            if (getVisibleOptions().length > 0) {
+            if (options.length > 0) {
                 focusedIndex = 0;
                 updateFocusVisual();
             }
