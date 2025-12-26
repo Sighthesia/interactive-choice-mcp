@@ -16,7 +16,6 @@ async def provide_choice(
 	prompt: str,
 	type: str,
 	options: list[dict],
-	allow_cancel: bool,
 	placeholder: str | None = None,
 	transport: str | None = None,
 	timeout_seconds: int | None = None,
@@ -29,15 +28,12 @@ async def provide_choice(
 
 	# Delegate the execution to the orchestrator.
 	# The orchestrator handles validation, transport selection, and the actual interaction loop.
-	# We use safe_handle to ensure that any errors (like validation or timeouts)
-	# are caught and returned as a structured response instead of crashing the server.
 	result = await safe_handle(
 		orchestrator,
 		title=title,
 		prompt=prompt,
 		type=type,
 		options=options,
-		allow_cancel=allow_cancel,
 		placeholder=placeholder,
 		transport=transport,
 		timeout_seconds=timeout_seconds,
@@ -46,13 +42,8 @@ async def provide_choice(
 	# Return a structured response that separates the status from the data.
 	return {
 		"action_status": result.action_status,
-		"selection": {
-			"selected_ids": result.selection.selected_ids,
-			"custom_input": result.selection.custom_input,
-			"transport": result.selection.transport,
-			"summary": result.selection.summary,
-			"url": result.selection.url,
-		},
+		"selected_ids": result.selection.selected_ids,
+		"custom_input": result.selection.custom_input,
 	}
 
 
