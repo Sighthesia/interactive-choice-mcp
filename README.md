@@ -23,12 +23,20 @@
 
 本项目使用 `uv` 进行依赖管理。
 
-```bash
-# 克隆仓库
-git clone https://github.com/your-username/interactive-choice-mcp.git
-cd interactive-choice-mcp
+1. 克隆仓库：
 
-# 安装依赖
+```bash
+git clone https://github.com/Sighthesia/interactive-choice-mcp.git
+```
+2. 进入项目目录：
+
+```bash
+cd interactive-choice-mcp
+```
+
+3. 安装依赖
+
+```bash
 uv sync
 ```
 
@@ -37,6 +45,8 @@ uv sync
 ### 配置 MCP 客户端
 
 将此服务器添加到你的 MCP 客户端配置文件中（例如 Claude Desktop 的 `claude_desktop_config.json`）。
+
+- 其中 `/path/to/interactive-choice-mcp` 应改为克隆仓库的实际位置（如 `~/interactive-choice-mcp`）。
 
 ```json
 {
@@ -47,8 +57,6 @@ uv sync
         "--directory",
         "/path/to/interactive-choice-mcp",
         "run",
-        "mcp",
-        "dev",
         "server.py"
       ]
     }
@@ -87,6 +95,8 @@ interactive-choice-mcp/
 ```
 
 ### 运行开发服务器
+
+运行此命令进入 MCP Instpector 进行调试：
 
 ```bash
 uv run mcp dev server.py
