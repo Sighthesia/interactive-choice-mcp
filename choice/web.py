@@ -91,6 +91,18 @@ def _render_html(
     max_sel_display = str(defaults.max_selections) if defaults.max_selections is not None else ""
     show_placeholder_row = req.type in {"text_input", "hybrid"}
 
+    # Build custom input block if needed
+    custom_block = ""
+    if req.type in {"text_input", "hybrid"}:
+        placeholder_shown = defaults.placeholder_enabled and (defaults.placeholder or req.placeholder)
+        placeholder = (defaults.placeholder or req.placeholder or "Enter a value") if placeholder_shown else ""
+        custom_block = f"""
+            <div class="card custom-input-section">
+                <input id="customInput" type="text" placeholder="{placeholder}" />
+                <button class="btn btn-primary" onclick="submitCustom()">Submit Custom</button>
+            </div>
+        """
+
     # Load and render external template
     template = _load_template()
     return template.substitute(
@@ -109,6 +121,7 @@ def _render_html(
         placeholder_enabled_checked="checked" if defaults.placeholder_enabled else "",
         placeholder_value=defaults.placeholder or "",
         annotations_enabled_checked="checked" if defaults.annotations_enabled else "",
+        custom_block_placeholder=custom_block,
     )
 
 
