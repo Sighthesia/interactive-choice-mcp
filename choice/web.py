@@ -51,7 +51,7 @@ def _render_html(
 
     custom_block = ""
     if req.type in {"text_input", "hybrid"}:
-        placeholder = req.placeholder or "Enter a value"
+        placeholder = defaults.placeholder or req.placeholder or "Enter a value"
         custom_block = f"""
   <div class='custom'>
     <input id='customInput' placeholder='{placeholder}' />
@@ -59,15 +59,21 @@ def _render_html(
   </div>
         """
 
-    cancel_block = ""
-    if req.allow_cancel:
-        cancel_block = "<button class='cancel' onclick=submitCancel()>Cancel</button>"
+    cancel_display = "inline-block" if defaults.allow_cancel else "none"
+    cancel_block = f"<button id='cancelButton' class='cancel' onclick=submitCancel() style='display:{cancel_display};'>Cancel</button>"
 
     defaults_payload = {
         "transport": defaults.transport,
         "visible_option_ids": defaults.visible_option_ids,
         "timeout_seconds": defaults.timeout_seconds,
+        "allow_cancel": defaults.allow_cancel,
+        "placeholder": defaults.placeholder or "",
     }
+
+    transport_options = ["<option value='web' {sel}>Web</option>".format(sel="selected" if defaults.transport == TRANSPORT_WEB else "")]
+    if allow_terminal:
+        transport_options.append("<option value='terminal' {sel}>Terminal</option>".format(sel="selected" if defaults.transport != TRANSPORT_WEB else ""))
+    transport_options_html = "\n".join(transport_options)
 
     template = Template(
         """
@@ -95,16 +101,25 @@ def _render_html(
   <h1>$title</h1>
   <div class='prompt'>$prompt</div>
   <div class='panel'>
+    <div class='config-row'><strong>Configuration</strong></div>
     <div class='config-row'>
       <label>Transport
         <select id='transportSelect'>
-          <option value='web' $transport_selected>Web</option>
+          $transport_options
         </select>
       </label>
     </div>
     <div class='config-row'>
       <label>Timeout (seconds)
         <input id='timeoutInput' type='number' min='1' value='$timeout_value' />
+      </label>
+    </div>
+    <div class='config-row'>
+      <label><input id='allowCancel' type='checkbox' $allow_cancel_checked /> Allow cancel</label>
+    </div>
+    <div class='config-row'>
+      <label>Placeholder (text/hybrid)
+        <input id='placeholderInput' type='text' value='$placeholder_value' />
       </label>
     </div>
     <div class='config-row'>
@@ -175,10 +190,14 @@ def _render_html(
       const timeout = Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : defaults.timeout_seconds;
       const transportSelect = document.getElementById('transportSelect');
       const transport = transportSelect ? transportSelect.value : 'web';
+      const allowCancel = document.getElementById('allowCancel').checked;
+      const placeholder = document.getElementById('placeholderInput')?.value ?? defaults.placeholder ?? '';
       return {
         transport,
         visible_option_ids: Array.from(visibleOptionIds),
         timeout_seconds: timeout,
+        allow_cancel: allowCancel,
+        placeholder,
       };
     }
 
@@ -217,8 +236,20 @@ def _render_html(
       postSelection(base);
     }
 
+    function syncCancelVisibility() {
+      const btn = document.getElementById('cancelButton');
+      if (!btn) return;
+      btn.style.display = document.getElementById('allowCancel').checked ? 'inline-block' : 'none';
+    }
+
+    const allowCancelToggle = document.getElementById('allowCancel');
+    if (allowCancelToggle) {
+      allowCancelToggle.onchange = syncCancelVisibility;
+    }
+
     renderVisibilityToggles();
     renderOptions();
+    syncCancelVisibility();
   </script>
 </body>
 </html>
@@ -230,6 +261,9 @@ def _render_html(
         prompt=req.prompt,
         transport_selected="selected" if defaults.transport == TRANSPORT_WEB else "",
         timeout_value=defaults.timeout_seconds,
+        allow_cancel_checked="checked" if defaults.allow_cancel else "",
+        placeholder_value=defaults.placeholder or "",
+        transport_options=transport_options_html,
         custom_block=custom_block,
         cancel_block=cancel_block,
         choice_id=choice_id,
@@ -277,8 +311,8 @@ async def run_web_choice(
         except ValidationError as exc:  # noqa: BLE001
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         else:
-          nonlocal config_used
-          config_used = parsed_config
+            nonlocal config_used
+            config_used = parsed_config
 
         if action == "cancelled":
             result_future.set_result(cancelled_response(transport=TRANSPORT_WEB, url=session_url))
@@ -361,11 +395,27 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
     timeout_raw = payload.get("timeout_seconds")
     timeout_val = defaults.timeout_seconds
     if isinstance(timeout_raw, (int, float, str)):
-      try:
-        timeout_val = int(timeout_raw)
-      except Exception:
-        timeout_val = defaults.timeout_seconds
+        try:
+            timeout_val = int(timeout_raw)
+        except Exception:
+            timeout_val = defaults.timeout_seconds
     if timeout_val <= 0:
         timeout_val = defaults.timeout_seconds
 
-    return ProvideChoiceConfig(transport=TRANSPORT_WEB, visible_option_ids=visible_ids, timeout_seconds=timeout_val)
+    allow_cancel_raw = payload.get("allow_cancel")
+    allow_cancel_val = defaults.allow_cancel
+    if isinstance(allow_cancel_raw, bool):
+        allow_cancel_val = allow_cancel_raw
+
+    placeholder_raw = payload.get("placeholder")
+    placeholder_val = defaults.placeholder
+    if isinstance(placeholder_raw, str):
+        placeholder_val = placeholder_raw
+
+    return ProvideChoiceConfig(
+        transport=transport,
+        visible_option_ids=visible_ids,
+        timeout_seconds=timeout_val,
+        allow_cancel=allow_cancel_val,
+        placeholder=placeholder_val,
+    )

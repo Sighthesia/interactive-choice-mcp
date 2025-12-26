@@ -14,6 +14,8 @@ def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
             transport=models.TRANSPORT_TERMINAL,
             visible_option_ids=["a"],
             timeout_seconds=defaults.timeout_seconds,
+            allow_cancel=defaults.allow_cancel,
+            placeholder=defaults.placeholder,
         )
 
     monkeypatch.setattr("choice.orchestrator.prompt_terminal_configuration", fake_prompt)

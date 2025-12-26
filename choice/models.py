@@ -42,6 +42,8 @@ class ProvideChoiceConfig:
     transport: str
     visible_option_ids: List[str]
     timeout_seconds: int
+    allow_cancel: bool
+    placeholder: Optional[str] = None
 
 
 @dataclass
@@ -177,8 +179,8 @@ def apply_configuration(
         prompt=req.prompt,
         type=req.type,
         options=filtered_options,
-        allow_cancel=req.allow_cancel,
-        placeholder=req.placeholder,
+        allow_cancel=bool(config.allow_cancel),
+        placeholder=config.placeholder if config.placeholder is not None else req.placeholder,
         transport=config.transport,
         timeout_seconds=config.timeout_seconds,
     )

@@ -141,6 +141,12 @@ async def prompt_configuration(
             if chosen_transport is None:
                 return None
 
+            allow_cancel_choice = questionary.confirm(
+                "Allow cancel", default=bool(defaults.allow_cancel)
+            ).unsafe_ask()
+            if allow_cancel_choice is None:
+                return None
+
             choice_defaults = defaults.visible_option_ids or [opt.id for opt in req.options]
             visible = questionary.checkbox(
                 "Visible options", choices=_build_config_choices(req.options, choice_defaults)
@@ -161,10 +167,20 @@ async def prompt_configuration(
             if timeout_val <= 0:
                 timeout_val = defaults.timeout_seconds
 
+            placeholder_default = defaults.placeholder if defaults.placeholder is not None else (req.placeholder or "")
+            placeholder_value = placeholder_default
+            if req.type in {"text_input", "hybrid"}:
+                placeholder_input = questionary.text("Placeholder (for text entry)", default=placeholder_default).unsafe_ask()
+                if placeholder_input is None:
+                    return None
+                placeholder_value = placeholder_input
+
             return ProvideChoiceConfig(
                 transport=chosen_transport,
                 visible_option_ids=visible_ids,
                 timeout_seconds=timeout_val,
+                allow_cancel=bool(allow_cancel_choice),
+                placeholder=str(placeholder_value) if placeholder_value != "" else None,
             )
         except KeyboardInterrupt:
             return None

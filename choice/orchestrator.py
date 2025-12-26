@@ -93,6 +93,8 @@ class ChoiceOrchestrator:
         saved = self._last_config
         transport_pref = saved.transport if saved else req.transport or TRANSPORT_TERMINAL
         timeout_pref = saved.timeout_seconds if saved else req.timeout_seconds
+        allow_cancel_pref = saved.allow_cancel if saved else req.allow_cancel
+        placeholder_pref = saved.placeholder if saved and saved.placeholder is not None else req.placeholder
         visible_pref = [vid for vid in (saved.visible_option_ids if saved else visible_ids) if vid in visible_ids]
         if not visible_pref:
             visible_pref = list(visible_ids)
@@ -100,6 +102,8 @@ class ChoiceOrchestrator:
             transport=transport_pref,
             visible_option_ids=visible_pref,
             timeout_seconds=timeout_pref,
+            allow_cancel=allow_cancel_pref,
+            placeholder=placeholder_pref,
         )
 
     def _load_config(self) -> Optional[ProvideChoiceConfig]:
@@ -110,10 +114,14 @@ class ChoiceOrchestrator:
             transport = payload.get("transport")
             visible_option_ids = payload.get("visible_option_ids") or []
             timeout_seconds = int(payload.get("timeout_seconds", 0))
+            allow_cancel = bool(payload.get("allow_cancel", True))
+            placeholder = payload.get("placeholder")
             config = ProvideChoiceConfig(
                 transport=transport or TRANSPORT_TERMINAL,
                 visible_option_ids=list(map(str, visible_option_ids)),
                 timeout_seconds=timeout_seconds if timeout_seconds > 0 else DEFAULT_TIMEOUT_SECONDS,
+                allow_cancel=allow_cancel,
+                placeholder=str(placeholder) if placeholder is not None else None,
             )
             return config
         except Exception:
@@ -125,6 +133,8 @@ class ChoiceOrchestrator:
                 "transport": config.transport,
                 "visible_option_ids": config.visible_option_ids,
                 "timeout_seconds": config.timeout_seconds,
+                "allow_cancel": config.allow_cancel,
+                "placeholder": config.placeholder,
             }
             self._config_path.write_text(json.dumps(data))
             self._last_config = config

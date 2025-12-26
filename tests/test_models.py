@@ -71,7 +71,13 @@ def test_apply_configuration_filters_and_timeout():
         ],
         allow_cancel=True,
     )
-    config = models.ProvideChoiceConfig(transport=models.TRANSPORT_WEB, visible_option_ids=["b"], timeout_seconds=42)
+    config = models.ProvideChoiceConfig(
+        transport=models.TRANSPORT_WEB,
+        visible_option_ids=["b"],
+        timeout_seconds=42,
+        allow_cancel=True,
+        placeholder=None,
+    )
     adjusted = models.apply_configuration(req, config)
     assert [opt.id for opt in adjusted.options] == ["b"]
     assert adjusted.timeout_seconds == 42
@@ -89,6 +95,12 @@ def test_apply_configuration_empty_visibility_falls_back():
         ],
         allow_cancel=True,
     )
-    config = models.ProvideChoiceConfig(transport=models.TRANSPORT_TERMINAL, visible_option_ids=[], timeout_seconds=10)
+    config = models.ProvideChoiceConfig(
+        transport=models.TRANSPORT_TERMINAL,
+        visible_option_ids=[],
+        timeout_seconds=10,
+        allow_cancel=True,
+        placeholder=None,
+    )
     adjusted = models.apply_configuration(req, config)
     assert [opt.id for opt in adjusted.options] == ["a", "b"]
