@@ -29,10 +29,15 @@ class ProvideChoiceRequest:
     prompt: str
     type: str
     options: List[ProvideChoiceOption]
-    allow_cancel: bool
     timeout_seconds: int
     placeholder: Optional[str] = None
     transport: Optional[str] = None
+    # Extended schema fields
+    default_selection_ids: List[str] = field(default_factory=list)
+    min_selections: int = 0
+    max_selections: Optional[int] = None
+    single_submit_mode: bool = True
+    placeholder_enabled: bool = True
 
 
 @dataclass
@@ -42,8 +47,14 @@ class ProvideChoiceConfig:
     transport: str
     visible_option_ids: List[str]
     timeout_seconds: int
-    allow_cancel: bool
     placeholder: Optional[str] = None
+    # Extended settings
+    default_selection_ids: List[str] = field(default_factory=list)
+    min_selections: int = 0
+    max_selections: Optional[int] = None
+    single_submit_mode: bool = True
+    placeholder_enabled: bool = True
+    annotations_enabled: bool = False
 
 
 @dataclass
@@ -54,6 +65,9 @@ class ProvideChoiceSelection:
     transport: str = TRANSPORT_TERMINAL
     summary: str = ""
     url: Optional[str] = None
+    # Annotation fields
+    option_annotations: dict[str, str] = field(default_factory=dict)
+    global_annotation: Optional[str] = None
 
 
 @dataclass
@@ -118,10 +132,17 @@ def parse_request(
     prompt: str,
     type: str,
     options: Sequence[dict | ProvideChoiceOption],
-    allow_cancel: bool,
     placeholder: Optional[str] = None,
     transport: Optional[str] = None,
     timeout_seconds: Optional[int] = None,
+    # Extended schema fields
+    default_selection_ids: Optional[List[str]] = None,
+    min_selections: Optional[int] = None,
+    max_selections: Optional[int] = None,
+    single_submit_mode: Optional[bool] = None,
+    placeholder_enabled: Optional[bool] = None,
+    # Legacy: allow_cancel is ignored, cancel always enabled
+    allow_cancel: bool = True,  # noqa: ARG001
 ) -> ProvideChoiceRequest:
     """Validate and normalize tool inputs into a request model."""
 
@@ -145,15 +166,38 @@ def parse_request(
     if normalized_timeout <= 0:
         raise ValidationError("timeout_seconds must be positive")
 
+    # Validate min/max selection bounds
+    valid_option_ids = {opt.id for opt in parsed_options}
+    norm_min = min_selections if min_selections is not None else 0
+    norm_max = max_selections
+    if norm_min < 0:
+        raise ValidationError("min_selections must be non-negative")
+    if norm_max is not None and norm_max < 1:
+        raise ValidationError("max_selections must be at least 1")
+    if norm_max is not None and norm_min > norm_max:
+        raise ValidationError("min_selections must not exceed max_selections")
+
+    # Validate default_selection_ids against options
+    norm_defaults: List[str] = []
+    if default_selection_ids:
+        for did in default_selection_ids:
+            if did not in valid_option_ids:
+                raise ValidationError(f"default_selection_ids contains invalid option: {did}")
+            norm_defaults.append(did)
+
     return ProvideChoiceRequest(
         title=title.strip(),
         prompt=prompt.strip(),
         type=type,
         options=parsed_options,
-        allow_cancel=bool(allow_cancel),
         placeholder=placeholder.strip() if placeholder else None,
         transport=validated_transport,
         timeout_seconds=normalized_timeout,
+        default_selection_ids=norm_defaults,
+        min_selections=norm_min,
+        max_selections=norm_max,
+        single_submit_mode=single_submit_mode if single_submit_mode is not None else True,
+        placeholder_enabled=placeholder_enabled if placeholder_enabled is not None else True,
     )
 
 
@@ -161,7 +205,7 @@ def apply_configuration(
     req: ProvideChoiceRequest,
     config: ProvideChoiceConfig,
 ) -> ProvideChoiceRequest:
-    """Apply user configuration to the request (transport, visible options, timeout)."""
+    """Apply user configuration to the request (transport, visible options, timeout, extended settings)."""
 
     if config.transport not in VALID_TRANSPORTS:
         raise ValidationError(f"transport must be one of {sorted(VALID_TRANSPORTS)}")
@@ -174,15 +218,33 @@ def apply_configuration(
     if not filtered_options:
         filtered_options = list(req.options)
 
+    # Validate min/max from config
+    norm_min = config.min_selections
+    norm_max = config.max_selections
+    if norm_min < 0:
+        norm_min = 0
+    if norm_max is not None and norm_max < 1:
+        norm_max = None
+    if norm_max is not None and norm_min > norm_max:
+        norm_min = 0  # fall back to safe default
+
+    # Filter defaults against visible options
+    visible_set = {opt.id for opt in filtered_options}
+    filtered_defaults = [d for d in config.default_selection_ids if d in visible_set]
+
     return ProvideChoiceRequest(
         title=req.title,
         prompt=req.prompt,
         type=req.type,
         options=filtered_options,
-        allow_cancel=bool(config.allow_cancel),
         placeholder=config.placeholder if config.placeholder is not None else req.placeholder,
         transport=config.transport,
         timeout_seconds=config.timeout_seconds,
+        default_selection_ids=filtered_defaults,
+        min_selections=norm_min,
+        max_selections=norm_max,
+        single_submit_mode=config.single_submit_mode,
+        placeholder_enabled=config.placeholder_enabled,
     )
 
 
@@ -193,7 +255,12 @@ def normalize_response(
     custom_input: Optional[str],
     transport: str,
     url: Optional[str] = None,
+    option_annotations: Optional[dict[str, str]] = None,
+    global_annotation: Optional[str] = None,
 ) -> ProvideChoiceResponse:
+    """
+    Normalize response, enforcing min/max selection counts (except for custom_input).
+    """
     if transport not in VALID_TRANSPORTS:
         raise ValidationError("invalid transport for response")
 
@@ -204,11 +271,23 @@ def normalize_response(
         selected_ids = []
     ordered_ids = list(selected_ids)
 
+    # Enforce min/max constraints on selections (custom input bypasses)
+    if action_status == "selected":
+        count = len(ordered_ids)
+        if count < req.min_selections:
+            raise ValidationError(f"selection count {count} below minimum {req.min_selections}")
+        if req.max_selections is not None and count > req.max_selections:
+            raise ValidationError(f"selection count {count} exceeds maximum {req.max_selections}")
+
     summary_parts: list[str] = []
     if ordered_ids:
         summary_parts.append(f"options={ordered_ids}")
     if custom_input:
         summary_parts.append(f"custom_input={custom_input}")
+    if option_annotations:
+        summary_parts.append(f"option_annotations={option_annotations}")
+    if global_annotation:
+        summary_parts.append(f"global_annotation={global_annotation}")
     summary = ", ".join(summary_parts) if summary_parts else "no selection"
 
     selection = ProvideChoiceSelection(
@@ -217,6 +296,8 @@ def normalize_response(
         transport=transport,
         summary=summary,
         url=url,
+        option_annotations=option_annotations or {},
+        global_annotation=global_annotation,
     )
 
     return ProvideChoiceResponse(action_status=action_status, selection=selection)

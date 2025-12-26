@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${title}</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #22c55e;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --border: #e5e7eb;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --radius: 8px;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+
+        /* Section: Two-Column Layout */
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .main-column {
+            min-width: 0;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 24px;
+            align-self: start;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .prompt {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-header {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .config-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .config-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .config-row label {
+            font-size: 0.875rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            background: var(--card-bg);
+            color: var(--text);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--focus-ring);
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .options-grid label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: var(--bg);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .options-grid label:hover {
+            background: var(--border);
+        }
+
+        /* Section: Options */
+        #options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .option:hover {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.02);
+        }
+
+        .option:focus,
+        .option.focused {
+            border-color: var(--primary);
+            box-shadow: var(--focus-ring);
+        }
+
+        .option.selected {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .option button {
+            padding: 10px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .option button:hover,
+        .option button:focus {
+            background: var(--primary-hover);
+        }
+
+        .option-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .option-label {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .option-desc {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        .option-note {
+            flex: 0 0 180px;
+            padding: 6px 10px;
+            font-size: 0.8125rem;
+        }
+
+        /* Section: Keyboard Hint */
+        .keyboard-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: var(--bg);
+            border-radius: var(--radius);
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .keyboard-hint kbd {
+            display: inline-block;
+            padding: 2px 6px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.75rem;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Section: Custom Input */
+        .custom-input-section {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .custom-input-section input {
+            flex: 1;
+        }
+
+        /* Section: Annotation */
+        .annotation-section {
+            margin-top: 16px;
+        }
+
+        .annotation-section textarea {
+            width: 100%;
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        /* Section: Actions */
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-hover);
+        }
+
+        /* Section: Status */
+        .status {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: var(--radius);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-top: 8px;
+        }
+
+        /* Section: Collapsible Config */
+        .config-toggle {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .config-toggle::before {
+            content: '▶';
+            font-size: 0.75rem;
+            transition: transform 0.2s;
+        }
+
+        .config-toggle.expanded::before {
+            transform: rotate(90deg);
+        }
+
+        .config-content {
+            margin-top: 12px;
+        }
+
+        /* Section: Responsive */
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+                order: -1;
+            }
+
+            .config-content {
+                display: none;
+            }
+
+            .config-content.show {
+                display: block;
+            }
+        }
+
+        @media (min-width: 901px) {
+            .config-content {
+                display: block !important;
+            }
+
+            .config-toggle::before {
+                display: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .config-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .option {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .option-note {
+                flex: none;
+                width: 100%;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .keyboard-hint {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layout">
+        <!-- Main Content (Left) -->
+        <div class="main-column">
+            <h1>${title}</h1>
+            <p class="prompt">${prompt}</p>
+
+            <!-- Keyboard Navigation Hint -->
+            <div class="keyboard-hint">
+                <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+                <span><kbd>Space</kbd> Toggle selection</span>
+                <span><kbd>Enter</kbd> Submit</span>
+                <span><kbd>Esc</kbd> Cancel</span>
+            </div>
+
+            <!-- Error Display -->
+            <div id="error" class="error-message"></div>
+
+            <!-- Options List -->
+            <div id="options" tabindex="0"></div>
+
+            <!-- Annotation Section -->
+            <div id="annotationSection" class="card annotation-section" style="display:none;">
+                <div class="card-header">Global Annotation</div>
+                <textarea id="globalAnnotation"
+                    placeholder="Optional note when provided options don't fully meet your needs"></textarea>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <button id="submitBatchBtn" class="btn btn-primary" style="display:none;" onclick="submitBatch()">Submit
+                    Selection</button>
+                <button id="cancelButton" class="btn btn-danger" onclick="submitCancel()">Cancel</button>
+            </div>
+
+            <!-- Status -->
+            <div id="status" class="status" style="display:none;"></div>
+        </div>
+
+        <!-- Sidebar (Right) - Configuration Panel -->
+        <div class="sidebar">
+            <div class="card">
+                <div class="card-header config-toggle" onclick="toggleConfig()" id="configToggle">Configuration</div>
+                <div class="config-content" id="configContent">
+                    <div class="config-grid">
+                        <div class="config-row">
+                            <label>Transport
+                                <select id="transportSelect">
+                                    ${transport_options}
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="config-row">
+                            <label>Timeout (s)
+                                <input id="timeoutInput" type="number" min="1" value="${timeout_value}"
+                                    style="width:70px;" />
+                            </label>
+                        </div>
+
+                        <div class="config-row">
+                            <label>
+                                <input id="singleSubmitMode" type="checkbox" ${single_submit_checked} />
+                                Auto-submit
+                            </label>
+                        </div>
+
+                        <div class="config-row">
+                            <label>Min
+                                <input id="minSelections" type="number" min="0" value="${min_selections}"
+                                    style="width:50px;" />
+                            </label>
+                            <label>Max
+                                <input id="maxSelections" type="number" min="0" value="${max_selections}"
+                                    placeholder="∞" style="width:50px;" />
+                            </label>
+                        </div>
+
+                        <div class="config-row" id="placeholderRow" style="${placeholder_row_display}">
+                            <label>
+                                <input id="placeholderEnabled" type="checkbox" ${placeholder_enabled_checked} />
+                                Placeholder
+                            </label>
+                            <input id="placeholderInput" type="text" value="${placeholder_value}" placeholder="Text"
+                                style="flex:1;min-width:80px;" />
+                        </div>
+
+                        <div class="config-row">
+                            <label>
+                                <input id="annotationsEnabled" type="checkbox" ${annotations_enabled_checked} />
+                                Annotations
+                            </label>
+                        </div>
+
+                        <div class="config-row">
+                            <span style="font-size:0.75rem;color:var(--text-muted);">Visible:</span>
+                            <div class="options-grid" id="visibilityToggles"></div>
+                        </div>
+
+                        <div class="config-row">
+                            <span style="font-size:0.75rem;color:var(--text-muted);">Preselected:</span>
+                            <div class="options-grid" id="defaultToggles"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const choiceId = '${choice_id}';
+        const defaults = ${ defaults_json };
+        const options = ${ options_json };
+        const promptType = '${prompt_type}';
+        let submitting = false;
+        let visibleOptionIds = new Set(defaults.visible_option_ids.length ? defaults.visible_option_ids : options.map(o => o.id));
+        let defaultSelectionIds = new Set(defaults.default_selection_ids || []);
+        let selectedIds = new Set(defaults.default_selection_ids || []);
+        let optionAnnotations = {};
+        let focusedIndex = -1;
+
+        // Section: Config Toggle
+        function toggleConfig() {
+            const toggle = document.getElementById('configToggle');
+            const content = document.getElementById('configContent');
+            toggle.classList.toggle('expanded');
+            content.classList.toggle('show');
+        }
+
+        // Section: Helpers
+        function isSingleSubmit() {
+            return document.getElementById('singleSubmitMode').checked;
+        }
+
+        function getMinMax() {
+            const min = parseInt(document.getElementById('minSelections').value) || 0;
+            const maxRaw = document.getElementById('maxSelections').value;
+            const max = maxRaw ? parseInt(maxRaw) : null;
+            return { min, max };
+        }
+
+        function validateSelection() {
+            const { min, max } = getMinMax();
+            const count = selectedIds.size;
+            if (count < min) return 'Please select at least ' + min + ' option(s)';
+            if (max !== null && count > max) return 'Please select at most ' + max + ' option(s)';
+            return null;
+        }
+
+        function getVisibleOptions() {
+            return options.filter(o => visibleOptionIds.has(o.id));
+        }
+
+        // Section: Render Functions
+        function renderVisibilityToggles() {
+            const container = document.getElementById('visibilityToggles');
+            container.innerHTML = '';
+            options.forEach(opt => {
+                const label = document.createElement('label');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = opt.id;
+                cb.className = 'vis-toggle';
+                cb.checked = visibleOptionIds.has(opt.id);
+                cb.onchange = syncVisibilityFromCheckboxes;
+                label.appendChild(cb);
+                label.appendChild(document.createTextNode(opt.label));
+                container.appendChild(label);
+            });
+        }
+
+        function renderDefaultToggles() {
+            const container = document.getElementById('defaultToggles');
+            container.innerHTML = '';
+            options.forEach(opt => {
+                const label = document.createElement('label');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = opt.id;
+                cb.className = 'default-toggle';
+                cb.checked = defaultSelectionIds.has(opt.id);
+                cb.onchange = () => {
+                    if (cb.checked) defaultSelectionIds.add(opt.id);
+                    else defaultSelectionIds.delete(opt.id);
+                    selectedIds = new Set(defaultSelectionIds);
+                    renderOptions();
+                };
+                label.appendChild(cb);
+                label.appendChild(document.createTextNode(opt.label));
+                container.appendChild(label);
+            });
+        }
+
+        function renderOptions() {
+            const container = document.getElementById('options');
+            container.innerHTML = '';
+            const singleSubmit = isSingleSubmit();
+            const annotationsEnabled = document.getElementById('annotationsEnabled').checked;
+            const visibleOpts = getVisibleOptions();
+
+            visibleOpts.forEach((opt, idx) => {
+                const block = document.createElement('div');
+                block.className = 'option' + (selectedIds.has(opt.id) ? ' selected' : '');
+                block.dataset.optionId = opt.id;
+                block.dataset.index = idx;
+                block.tabIndex = 0;
+
+                if (idx === focusedIndex) {
+                    block.classList.add('focused');
+                }
+
+                // Click handler for the whole option block
+                block.onclick = (e) => {
+                    // Don't trigger if clicking on checkbox or note input
+                    if (e.target.tagName === 'INPUT') return;
+                    focusedIndex = idx;
+                    updateFocusVisual();
+
+                    if (singleSubmit && promptType !== 'multi_select') {
+                        submitPayload({
+                            action_status: 'selected',
+                            selected_ids: [opt.id],
+                            option_annotations: annotationsEnabled ? optionAnnotations : {}
+                        });
+                    } else {
+                        toggleOptionSelection(opt.id, block);
+                    }
+                };
+
+                if (!singleSubmit || promptType === 'multi_select') {
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.value = opt.id;
+                    cb.checked = selectedIds.has(opt.id);
+                    cb.onchange = (e) => {
+                        e.stopPropagation();
+                        if (cb.checked) selectedIds.add(opt.id);
+                        else { selectedIds.delete(opt.id); block.classList.remove('selected'); }
+                        block.classList.toggle('selected', cb.checked);
+                        updateSubmitBtn();
+                    };
+                    block.appendChild(cb);
+                }
+
+                const content = document.createElement('div');
+                content.className = 'option-content';
+                content.innerHTML = '<div class="option-label">' + opt.label + '</div><div class="option-desc">' + opt.description + '</div>';
+                block.appendChild(content);
+
+                if (annotationsEnabled && !singleSubmit) {
+                    const noteInput = document.createElement('input');
+                    noteInput.type = 'text';
+                    noteInput.placeholder = 'Add note...';
+                    noteInput.className = 'option-note';
+                    noteInput.value = optionAnnotations[opt.id] || '';
+                    noteInput.oninput = () => { optionAnnotations[opt.id] = noteInput.value; };
+                    noteInput.onclick = (e) => e.stopPropagation();
+                    block.appendChild(noteInput);
+                }
+
+                container.appendChild(block);
+            });
+
+            const submitBtn = document.getElementById('submitBatchBtn');
+            submitBtn.style.display = (!singleSubmit || promptType === 'multi_select') ? 'inline-block' : 'none';
+
+            const annotationSection = document.getElementById('annotationSection');
+            annotationSection.style.display = annotationsEnabled ? 'block' : 'none';
+
+            updateSubmitBtn();
+        }
+
+        function toggleOptionSelection(optionId, block) {
+            if (selectedIds.has(optionId)) {
+                selectedIds.delete(optionId);
+                block.classList.remove('selected');
+            } else {
+                selectedIds.add(optionId);
+                block.classList.add('selected');
+            }
+            // Update checkbox if present
+            const cb = block.querySelector('input[type="checkbox"]');
+            if (cb) cb.checked = selectedIds.has(optionId);
+            updateSubmitBtn();
+        }
+
+        function updateFocusVisual() {
+            document.querySelectorAll('.option').forEach((el, idx) => {
+                el.classList.toggle('focused', idx === focusedIndex);
+            });
+        }
+
+        function updateSubmitBtn() {
+            const err = validateSelection();
+            document.getElementById('error').innerText = err || '';
+            const btn = document.getElementById('submitBatchBtn');
+            btn.disabled = !!err;
+        }
+
+        function syncVisibilityFromCheckboxes() {
+            const checks = Array.from(document.querySelectorAll('.vis-toggle')).filter(cb => cb.checked).map(cb => cb.value);
+            visibleOptionIds = checks.length ? new Set(checks) : new Set(options.map(o => o.id));
+            focusedIndex = -1;
+            renderVisibilityToggles();
+            renderOptions();
+        }
+
+        // Section: Keyboard Navigation
+        function handleKeyNavigation(e) {
+            const visibleOpts = getVisibleOptions();
+            const optionCount = visibleOpts.length;
+            if (optionCount === 0) return;
+
+            const singleSubmit = isSingleSubmit();
+            const annotationsEnabled = document.getElementById('annotationsEnabled').checked;
+
+            switch (e.key) {
+                case 'ArrowDown':
+                case 'j':
+                    e.preventDefault();
+                    focusedIndex = (focusedIndex + 1) % optionCount;
+                    updateFocusVisual();
+                    scrollOptionIntoView();
+                    break;
+
+                case 'ArrowUp':
+                case 'k':
+                    e.preventDefault();
+                    focusedIndex = focusedIndex <= 0 ? optionCount - 1 : focusedIndex - 1;
+                    updateFocusVisual();
+                    scrollOptionIntoView();
+                    break;
+
+                case ' ':
+                    e.preventDefault();
+                    if (focusedIndex >= 0 && focusedIndex < optionCount) {
+                        const opt = visibleOpts[focusedIndex];
+                        const block = document.querySelector('.option[data-index="' + focusedIndex + '"]');
+                        if (singleSubmit && promptType !== 'multi_select') {
+                            submitPayload({
+                                action_status: 'selected',
+                                selected_ids: [opt.id],
+                                option_annotations: annotationsEnabled ? optionAnnotations : {}
+                            });
+                        } else if (block) {
+                            toggleOptionSelection(opt.id, block);
+                        }
+                    }
+                    break;
+
+                case 'Enter':
+                    e.preventDefault();
+                    if (singleSubmit && promptType !== 'multi_select' && focusedIndex >= 0) {
+                        const opt = visibleOpts[focusedIndex];
+                        submitPayload({
+                            action_status: 'selected',
+                            selected_ids: [opt.id],
+                            option_annotations: annotationsEnabled ? optionAnnotations : {}
+                        });
+                    } else {
+                        submitBatch();
+                    }
+                    break;
+
+                case 'Escape':
+                    e.preventDefault();
+                    submitCancel();
+                    break;
+
+                case 'Home':
+                    e.preventDefault();
+                    focusedIndex = 0;
+                    updateFocusVisual();
+                    scrollOptionIntoView();
+                    break;
+
+                case 'End':
+                    e.preventDefault();
+                    focusedIndex = optionCount - 1;
+                    updateFocusVisual();
+                    scrollOptionIntoView();
+                    break;
+            }
+        }
+
+        function scrollOptionIntoView() {
+            const focused = document.querySelector('.option.focused');
+            if (focused) {
+                focused.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+
+        // Section: Config Collection
+        function collectConfig() {
+            const rawTimeout = parseInt(document.getElementById('timeoutInput').value || defaults.timeout_seconds, 10);
+            const timeout = Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : defaults.timeout_seconds;
+            const transportSelect = document.getElementById('transportSelect');
+            const transport = transportSelect ? transportSelect.value : 'web';
+            const placeholder = document.getElementById('placeholderInput')?.value ?? defaults.placeholder ?? '';
+            const { min, max } = getMinMax();
+            return {
+                transport,
+                visible_option_ids: Array.from(visibleOptionIds),
+                timeout_seconds: timeout,
+                placeholder,
+                default_selection_ids: Array.from(defaultSelectionIds),
+                min_selections: min,
+                max_selections: max,
+                single_submit_mode: isSingleSubmit(),
+                placeholder_enabled: document.getElementById('placeholderEnabled')?.checked ?? true,
+                annotations_enabled: document.getElementById('annotationsEnabled').checked,
+            };
+        }
+
+        // Section: Submission
+        async function postSelection(payload) {
+            if (submitting) return;
+            submitting = true;
+            const statusEl = document.getElementById('status');
+            try {
+                const res = await fetch('/choice/' + choiceId + '/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    statusEl.className = 'status error';
+                    statusEl.innerText = 'Error: ' + (data.detail || 'Submission failed');
+                    statusEl.style.display = 'block';
+                    submitting = false;
+                } else {
+                    statusEl.className = 'status success';
+                    statusEl.innerText = '✓ Submitted successfully. You can close this tab.';
+                    statusEl.style.display = 'block';
+                }
+            } catch (e) {
+                statusEl.className = 'status error';
+                statusEl.innerText = 'Network error. Please try again.';
+                statusEl.style.display = 'block';
+                submitting = false;
+            }
+        }
+
+        function submitBatch() {
+            const err = validateSelection();
+            if (err) { document.getElementById('error').innerText = err; return; }
+            const annotationsEnabled = document.getElementById('annotationsEnabled').checked;
+            const globalAnnotation = document.getElementById('globalAnnotation').value || null;
+            submitPayload({
+                action_status: 'selected',
+                selected_ids: Array.from(selectedIds),
+                option_annotations: annotationsEnabled ? optionAnnotations : {},
+                global_annotation: annotationsEnabled ? globalAnnotation : null,
+            });
+        }
+
+        function submitCustom() {
+            const val = document.getElementById('customInput').value || '';
+            const annotationsEnabled = document.getElementById('annotationsEnabled').checked;
+            const globalAnnotation = document.getElementById('globalAnnotation').value || null;
+            submitPayload({
+                action_status: 'custom_input',
+                custom_input: val,
+                global_annotation: annotationsEnabled ? globalAnnotation : null,
+            });
+        }
+
+        function submitCancel() {
+            submitPayload({ action_status: 'cancelled' });
+        }
+
+        function submitPayload(base) {
+            const config = collectConfig();
+            base.config = config;
+            postSelection(base);
+        }
+
+        // Section: Event Listeners
+        document.getElementById('singleSubmitMode').onchange = renderOptions;
+        document.getElementById('annotationsEnabled').onchange = renderOptions;
+        document.getElementById('minSelections').onchange = updateSubmitBtn;
+        document.getElementById('maxSelections').onchange = updateSubmitBtn;
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            // Don't capture keys when typing in inputs
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                if (e.key === 'Escape') {
+                    e.target.blur();
+                    document.getElementById('options').focus();
+                }
+                return;
+            }
+            handleKeyNavigation(e);
+        });
+
+        // Focus options container on click
+        document.getElementById('options').addEventListener('click', () => {
+            document.getElementById('options').focus();
+        });
+
+        // Section: Init
+        renderVisibilityToggles();
+        renderDefaultToggles();
+        renderOptions();
+
+        // Auto-focus options for keyboard navigation
+        setTimeout(() => {
+            document.getElementById('options').focus();
+            if (getVisibleOptions().length > 0) {
+                focusedIndex = 0;
+                updateFocusVisual();
+            }
+        }, 100);
+    </script>
+</body>
+
+</html>

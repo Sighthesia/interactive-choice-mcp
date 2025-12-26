@@ -5,6 +5,7 @@ import json
 import socket
 import uuid
 import webbrowser
+from pathlib import Path
 from string import Template
 from typing import Dict, Optional
 
@@ -26,12 +27,22 @@ from .models import (
 )
 
 
+# Section: Constants
+_TEMPLATE_DIR = Path(__file__).parent / "templates"
+
+
 # Section: Utility Functions
 def _find_free_port() -> int:
     """Find an available ephemeral port on localhost."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return int(s.getsockname()[1])
+
+
+def _load_template() -> Template:
+    """Load HTML template from external file."""
+    template_path = _TEMPLATE_DIR / "choice.html"
+    return Template(template_path.read_text(encoding="utf-8"))
 
 
 # Section: HTML Rendering
@@ -49,226 +60,55 @@ def _render_html(
         for o in req.options
     ]
 
-    custom_block = ""
-    if req.type in {"text_input", "hybrid"}:
-        placeholder = defaults.placeholder or req.placeholder or "Enter a value"
-        custom_block = f"""
-  <div class='custom'>
-    <input id='customInput' placeholder='{placeholder}' />
-    <button onclick=submitCustom()>Submit</button>
-  </div>
-        """
-
-    cancel_display = "inline-block" if defaults.allow_cancel else "none"
-    cancel_block = f"<button id='cancelButton' class='cancel' onclick=submitCancel() style='display:{cancel_display};'>Cancel</button>"
-
+    # Build defaults payload for JavaScript
     defaults_payload = {
         "transport": defaults.transport,
         "visible_option_ids": defaults.visible_option_ids,
         "timeout_seconds": defaults.timeout_seconds,
-        "allow_cancel": defaults.allow_cancel,
         "placeholder": defaults.placeholder or "",
+        "default_selection_ids": defaults.default_selection_ids,
+        "min_selections": defaults.min_selections,
+        "max_selections": defaults.max_selections,
+        "single_submit_mode": defaults.single_submit_mode,
+        "placeholder_enabled": defaults.placeholder_enabled,
+        "annotations_enabled": defaults.annotations_enabled,
     }
 
-    transport_options = ["<option value='web' {sel}>Web</option>".format(sel="selected" if defaults.transport == TRANSPORT_WEB else "")]
+    # Build transport options HTML
+    transport_options = [
+        "<option value='web' {sel}>Web Portal</option>".format(
+            sel="selected" if defaults.transport == TRANSPORT_WEB else ""
+        )
+    ]
     if allow_terminal:
-        transport_options.append("<option value='terminal' {sel}>Terminal</option>".format(sel="selected" if defaults.transport != TRANSPORT_WEB else ""))
-    transport_options_html = "\n".join(transport_options)
+        transport_options.append(
+            "<option value='terminal' {sel}>Terminal</option>".format(
+                sel="selected" if defaults.transport != TRANSPORT_WEB else ""
+            )
+        )
 
-    template = Template(
-        """
-<!doctype html>
-<html>
-<head>
-  <meta charset='utf-8' />
-  <title>$title</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 820px; margin: 24px auto; }
-    h1 { margin-bottom: 8px; }
-    .prompt { margin-bottom: 16px; }
-    .panel { padding: 12px; border: 1px solid #ddd; margin-bottom: 16px; }
-    .option { margin: 8px 0; }
-    .option button { padding: 8px 12px; }
-    .desc { color: #555; font-size: 14px; margin-left: 8px; display: inline-block; }
-    .custom { margin-top: 16px; display: flex; gap: 8px; }
-    .custom input { flex: 1; padding: 8px; }
-    .cancel { margin-top: 16px; background: #eee; }
-    .config-row { margin-bottom: 8px; }
-    .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
-  </style>
-</head>
-<body>
-  <h1>$title</h1>
-  <div class='prompt'>$prompt</div>
-  <div class='panel'>
-    <div class='config-row'><strong>Configuration</strong></div>
-    <div class='config-row'>
-      <label>Transport
-        <select id='transportSelect'>
-          $transport_options
-        </select>
-      </label>
-    </div>
-    <div class='config-row'>
-      <label>Timeout (seconds)
-        <input id='timeoutInput' type='number' min='1' value='$timeout_value' />
-      </label>
-    </div>
-    <div class='config-row'>
-      <label><input id='allowCancel' type='checkbox' $allow_cancel_checked /> Allow cancel</label>
-    </div>
-    <div class='config-row'>
-      <label>Placeholder (text/hybrid)
-        <input id='placeholderInput' type='text' value='$placeholder_value' />
-      </label>
-    </div>
-    <div class='config-row'>
-      <div>Visible options</div>
-      <div class='options-grid' id='visibilityToggles'></div>
-    </div>
-  </div>
-  <div id='status'></div>
-  <div id='options'></div>
-  $custom_block
-  $cancel_block
-  <script>
-    const choiceId = '$choice_id';
-    const defaults = $defaults_json;
-    const options = $options_json;
-    let submitting = false;
-    let visibleOptionIds = new Set(defaults.visible_option_ids.length ? defaults.visible_option_ids : options.map(o => o.id));
+    # Compute template substitution values
+    max_sel_display = str(defaults.max_selections) if defaults.max_selections is not None else ""
+    show_placeholder_row = req.type in {"text_input", "hybrid"}
 
-    function renderVisibilityToggles() {
-      const container = document.getElementById('visibilityToggles');
-      container.innerHTML = '';
-      options.forEach(opt => {
-        const wrapper = document.createElement('label');
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.value = opt.id;
-        cb.className = 'vis-toggle';
-        cb.checked = visibleOptionIds.has(opt.id);
-        cb.onchange = syncVisibilityFromCheckboxes;
-        wrapper.appendChild(cb);
-        wrapper.appendChild(document.createTextNode(' ' + opt.label));
-        container.appendChild(wrapper);
-      });
-    }
-
-    function renderOptions() {
-      const container = document.getElementById('options');
-      container.innerHTML = '';
-      options.forEach(opt => {
-        if (!visibleOptionIds.has(opt.id)) return;
-        const block = document.createElement('div');
-        block.className = 'option';
-        const btn = document.createElement('button');
-        btn.innerText = opt.label;
-        btn.onclick = () => submitPayload({ action_status: 'selected', selected_ids: [opt.id] });
-        const desc = document.createElement('div');
-        desc.className = 'desc';
-        desc.innerText = opt.description;
-        block.appendChild(btn);
-        block.appendChild(desc);
-        container.appendChild(block);
-      });
-    }
-
-    function syncVisibilityFromCheckboxes() {
-      const checks = Array.from(document.querySelectorAll('.vis-toggle')).filter(cb => cb.checked).map(cb => cb.value);
-      if (checks.length === 0) {
-        visibleOptionIds = new Set(options.map(o => o.id));
-        renderVisibilityToggles();
-      } else {
-        visibleOptionIds = new Set(checks);
-      }
-      renderOptions();
-    }
-
-    function collectConfig() {
-      const rawTimeout = parseInt(document.getElementById('timeoutInput').value || defaults.timeout_seconds, 10);
-      const timeout = Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : defaults.timeout_seconds;
-      const transportSelect = document.getElementById('transportSelect');
-      const transport = transportSelect ? transportSelect.value : 'web';
-      const allowCancel = document.getElementById('allowCancel').checked;
-      const placeholder = document.getElementById('placeholderInput')?.value ?? defaults.placeholder ?? '';
-      return {
-        transport,
-        visible_option_ids: Array.from(visibleOptionIds),
-        timeout_seconds: timeout,
-        allow_cancel: allowCancel,
-        placeholder,
-      };
-    }
-
-    async function postSelection(payload) {
-      if (submitting) return;
-      submitting = true;
-      const res = await fetch('/choice/' + choiceId + '/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        document.getElementById('status').innerText = 'Submit failed';
-        submitting = false;
-      } else {
-        document.getElementById('status').innerText = 'Submitted, you can close this tab.';
-      }
-    }
-
-    async function selectOption(id) {
-      submitPayload({ action_status: 'selected', selected_ids: [id] });
-    }
-
-    async function submitCustom() {
-      const val = document.getElementById('customInput').value || '';
-      submitPayload({ action_status: 'custom_input', custom_input: val });
-    }
-
-    async function submitCancel() {
-      submitPayload({ action_status: 'cancelled' });
-    }
-
-    function submitPayload(base) {
-      const config = collectConfig();
-      base.config = config;
-      postSelection(base);
-    }
-
-    function syncCancelVisibility() {
-      const btn = document.getElementById('cancelButton');
-      if (!btn) return;
-      btn.style.display = document.getElementById('allowCancel').checked ? 'inline-block' : 'none';
-    }
-
-    const allowCancelToggle = document.getElementById('allowCancel');
-    if (allowCancelToggle) {
-      allowCancelToggle.onchange = syncCancelVisibility;
-    }
-
-    renderVisibilityToggles();
-    renderOptions();
-    syncCancelVisibility();
-  </script>
-</body>
-</html>
-        """
-    )
-
+    # Load and render external template
+    template = _load_template()
     return template.substitute(
         title=req.title,
         prompt=req.prompt,
-        transport_selected="selected" if defaults.transport == TRANSPORT_WEB else "",
-        timeout_value=defaults.timeout_seconds,
-        allow_cancel_checked="checked" if defaults.allow_cancel else "",
-        placeholder_value=defaults.placeholder or "",
-        transport_options=transport_options_html,
-        custom_block=custom_block,
-        cancel_block=cancel_block,
+        prompt_type=req.type,
         choice_id=choice_id,
         defaults_json=json.dumps(defaults_payload),
         options_json=json.dumps(option_payload),
+        transport_options="\n".join(transport_options),
+        timeout_value=defaults.timeout_seconds,
+        single_submit_checked="checked" if defaults.single_submit_mode else "",
+        min_selections=defaults.min_selections,
+        max_selections=max_sel_display,
+        placeholder_row_display="" if show_placeholder_row else "display:none;",
+        placeholder_enabled_checked="checked" if defaults.placeholder_enabled else "",
+        placeholder_value=defaults.placeholder or "",
+        annotations_enabled_checked="checked" if defaults.annotations_enabled else "",
     )
 
 
@@ -314,6 +154,14 @@ async def run_web_choice(
             nonlocal config_used
             config_used = parsed_config
 
+        # Extract annotations from payload
+        option_annotations_raw = payload.get("option_annotations") or {}
+        option_annotations: dict[str, str] = {}
+        if isinstance(option_annotations_raw, dict):
+            option_annotations = {str(k): str(v) for k, v in option_annotations_raw.items() if v}
+        global_annotation_raw = payload.get("global_annotation")
+        global_annotation: str | None = str(global_annotation_raw) if global_annotation_raw else None
+
         if action == "cancelled":
             result_future.set_result(cancelled_response(transport=TRANSPORT_WEB, url=session_url))
             return {"status": "ok"}
@@ -325,15 +173,20 @@ async def run_web_choice(
             valid_ids = {opt.id for opt in adjusted_req.options}
             if not set(ordered_ids).issubset(valid_ids):
                 raise HTTPException(status_code=400, detail="selected_ids not allowed")
-            result_future.set_result(
-                normalize_response(
-                    req=adjusted_req,
-                    selected_ids=ordered_ids,
-                    custom_input=None,
-                    transport=TRANSPORT_WEB,
-                    url=session_url,
+            try:
+                result_future.set_result(
+                    normalize_response(
+                        req=adjusted_req,
+                        selected_ids=ordered_ids,
+                        custom_input=None,
+                        transport=TRANSPORT_WEB,
+                        url=session_url,
+                        option_annotations=option_annotations,
+                        global_annotation=global_annotation,
+                    )
                 )
-            )
+            except ValidationError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
             return {"status": "ok"}
         if action == "custom_input":
             custom_input = payload.get("custom_input", "")
@@ -344,6 +197,7 @@ async def run_web_choice(
                     custom_input=str(custom_input),
                     transport=TRANSPORT_WEB,
                     url=session_url,
+                    global_annotation=global_annotation,
                 )
             )
             return {"status": "ok"}
@@ -380,6 +234,7 @@ async def run_web_choice(
 
 
 def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, object], req: ProvideChoiceRequest) -> ProvideChoiceConfig:
+    """Parse config payload from web form submission."""
     transport_raw = payload.get("transport")
     transport = str(transport_raw) if transport_raw else TRANSPORT_WEB
     if transport not in VALID_TRANSPORTS:
@@ -402,20 +257,60 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
     if timeout_val <= 0:
         timeout_val = defaults.timeout_seconds
 
-    allow_cancel_raw = payload.get("allow_cancel")
-    allow_cancel_val = defaults.allow_cancel
-    if isinstance(allow_cancel_raw, bool):
-        allow_cancel_val = allow_cancel_raw
-
     placeholder_raw = payload.get("placeholder")
     placeholder_val = defaults.placeholder
     if isinstance(placeholder_raw, str):
         placeholder_val = placeholder_raw
 
+    # Extended config fields
+    default_sel_raw = payload.get("default_selection_ids") or []
+    default_sel_ids: list[str] = []
+    if isinstance(default_sel_raw, list):
+        default_sel_ids = [str(d) for d in default_sel_raw if any(opt.id == str(d) for opt in req.options)]
+
+    min_sel_raw = payload.get("min_selections")
+    min_sel_val = defaults.min_selections
+    if isinstance(min_sel_raw, (int, float, str)):
+        try:
+            min_sel_val = int(min_sel_raw)
+        except Exception:
+            min_sel_val = defaults.min_selections
+    if min_sel_val < 0:
+        min_sel_val = 0
+
+    max_sel_raw = payload.get("max_selections")
+    max_sel_val = defaults.max_selections
+    if max_sel_raw is not None:
+        if isinstance(max_sel_raw, (int, float, str)):
+            try:
+                max_sel_val = int(max_sel_raw) if max_sel_raw != "" else None
+            except Exception:
+                max_sel_val = defaults.max_selections
+
+    single_submit_raw = payload.get("single_submit_mode")
+    single_submit_val = defaults.single_submit_mode
+    if isinstance(single_submit_raw, bool):
+        single_submit_val = single_submit_raw
+
+    placeholder_enabled_raw = payload.get("placeholder_enabled")
+    placeholder_enabled_val = defaults.placeholder_enabled
+    if isinstance(placeholder_enabled_raw, bool):
+        placeholder_enabled_val = placeholder_enabled_raw
+
+    annotations_enabled_raw = payload.get("annotations_enabled")
+    annotations_enabled_val = defaults.annotations_enabled
+    if isinstance(annotations_enabled_raw, bool):
+        annotations_enabled_val = annotations_enabled_raw
+
     return ProvideChoiceConfig(
         transport=transport,
         visible_option_ids=visible_ids,
         timeout_seconds=timeout_val,
-        allow_cancel=allow_cancel_val,
         placeholder=placeholder_val,
+        default_selection_ids=default_sel_ids,
+        min_selections=min_sel_val,
+        max_selections=max_sel_val,
+        single_submit_mode=single_submit_val,
+        placeholder_enabled=placeholder_enabled_val,
+        annotations_enabled=annotations_enabled_val,
     )

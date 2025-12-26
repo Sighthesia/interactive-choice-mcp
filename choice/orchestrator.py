@@ -44,10 +44,17 @@ class ChoiceOrchestrator:
         prompt: str,
         type: str,
         options: List[Dict[str, object]],
-        allow_cancel: bool,
         placeholder: Optional[str] = None,
         transport: Optional[str] = None,
         timeout_seconds: Optional[int] = None,
+        # Extended schema fields
+        default_selection_ids: Optional[List[str]] = None,
+        min_selections: Optional[int] = None,
+        max_selections: Optional[int] = None,
+        single_submit_mode: Optional[bool] = None,
+        placeholder_enabled: Optional[bool] = None,
+        # Legacy: allow_cancel ignored, cancel always enabled
+        allow_cancel: bool = True,  # noqa: ARG002
     ) -> ProvideChoiceResponse:
         """
         Process a choice request from start to finish.
@@ -60,10 +67,14 @@ class ChoiceOrchestrator:
             prompt=prompt,
             type=type,
             options=options,
-            allow_cancel=allow_cancel,
             placeholder=placeholder,
             transport=transport,
             timeout_seconds=timeout_seconds,
+            default_selection_ids=default_selection_ids,
+            min_selections=min_selections,
+            max_selections=max_selections,
+            single_submit_mode=single_submit_mode,
+            placeholder_enabled=placeholder_enabled,
         )
         config_defaults = self._build_default_config(req)
         # If terminal is unavailable, force web transport.
@@ -80,7 +91,7 @@ class ChoiceOrchestrator:
                 self._persist_config(final_config)
                 return response
             filtered_req = apply_configuration(req, config)
-            response = await run_terminal_choice(filtered_req, timeout_seconds=config.timeout_seconds)
+            response = await run_terminal_choice(filtered_req, timeout_seconds=config.timeout_seconds, config=config)
             self._persist_config(config)
             return response
 
@@ -93,20 +104,34 @@ class ChoiceOrchestrator:
         saved = self._last_config
         transport_pref = saved.transport if saved else req.transport or TRANSPORT_TERMINAL
         timeout_pref = saved.timeout_seconds if saved else req.timeout_seconds
-        allow_cancel_pref = saved.allow_cancel if saved else req.allow_cancel
         placeholder_pref = saved.placeholder if saved and saved.placeholder is not None else req.placeholder
         visible_pref = [vid for vid in (saved.visible_option_ids if saved else visible_ids) if vid in visible_ids]
         if not visible_pref:
             visible_pref = list(visible_ids)
+
+        # Extended settings: inherit from saved config or request defaults
+        default_selection_pref = list(saved.default_selection_ids) if saved else list(req.default_selection_ids)
+        min_sel_pref = saved.min_selections if saved else req.min_selections
+        max_sel_pref = saved.max_selections if saved else req.max_selections
+        single_submit_pref = saved.single_submit_mode if saved else req.single_submit_mode
+        placeholder_enabled_pref = saved.placeholder_enabled if saved else req.placeholder_enabled
+        annotations_enabled_pref = saved.annotations_enabled if saved else False
+
         return ProvideChoiceConfig(
             transport=transport_pref,
             visible_option_ids=visible_pref,
             timeout_seconds=timeout_pref,
-            allow_cancel=allow_cancel_pref,
             placeholder=placeholder_pref,
+            default_selection_ids=default_selection_pref,
+            min_selections=min_sel_pref,
+            max_selections=max_sel_pref,
+            single_submit_mode=single_submit_pref,
+            placeholder_enabled=placeholder_enabled_pref,
+            annotations_enabled=annotations_enabled_pref,
         )
 
     def _load_config(self) -> Optional[ProvideChoiceConfig]:
+        """Load persisted config from disk, migrating older formats safely."""
         try:
             if not self._config_path.exists():
                 return None
@@ -114,14 +139,27 @@ class ChoiceOrchestrator:
             transport = payload.get("transport")
             visible_option_ids = payload.get("visible_option_ids") or []
             timeout_seconds = int(payload.get("timeout_seconds", 0))
-            allow_cancel = bool(payload.get("allow_cancel", True))
             placeholder = payload.get("placeholder")
+            # Extended fields with safe defaults for migration
+            default_selection_ids = payload.get("default_selection_ids") or []
+            min_selections = int(payload.get("min_selections", 0))
+            max_selections_raw = payload.get("max_selections")
+            max_selections = int(max_selections_raw) if max_selections_raw is not None else None
+            single_submit_mode = bool(payload.get("single_submit_mode", True))
+            placeholder_enabled = bool(payload.get("placeholder_enabled", True))
+            annotations_enabled = bool(payload.get("annotations_enabled", False))
+
             config = ProvideChoiceConfig(
                 transport=transport or TRANSPORT_TERMINAL,
                 visible_option_ids=list(map(str, visible_option_ids)),
                 timeout_seconds=timeout_seconds if timeout_seconds > 0 else DEFAULT_TIMEOUT_SECONDS,
-                allow_cancel=allow_cancel,
                 placeholder=str(placeholder) if placeholder is not None else None,
+                default_selection_ids=list(map(str, default_selection_ids)),
+                min_selections=min_selections if min_selections >= 0 else 0,
+                max_selections=max_selections,
+                single_submit_mode=single_submit_mode,
+                placeholder_enabled=placeholder_enabled,
+                annotations_enabled=annotations_enabled,
             )
             return config
         except Exception:
@@ -133,8 +171,13 @@ class ChoiceOrchestrator:
                 "transport": config.transport,
                 "visible_option_ids": config.visible_option_ids,
                 "timeout_seconds": config.timeout_seconds,
-                "allow_cancel": config.allow_cancel,
                 "placeholder": config.placeholder,
+                "default_selection_ids": config.default_selection_ids,
+                "min_selections": config.min_selections,
+                "max_selections": config.max_selections,
+                "single_submit_mode": config.single_submit_mode,
+                "placeholder_enabled": config.placeholder_enabled,
+                "annotations_enabled": config.annotations_enabled,
             }
             self._config_path.write_text(json.dumps(data))
             self._last_config = config

@@ -14,13 +14,12 @@ def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
             transport=models.TRANSPORT_TERMINAL,
             visible_option_ids=["a"],
             timeout_seconds=defaults.timeout_seconds,
-            allow_cancel=defaults.allow_cancel,
             placeholder=defaults.placeholder,
         )
 
     monkeypatch.setattr("choice.orchestrator.prompt_terminal_configuration", fake_prompt)
 
-    async def fake_run(req, timeout_seconds):
+    async def fake_run(req, timeout_seconds, config=None):
         return models.normalize_response(
             req=req,
             selected_ids=["a"],
@@ -36,7 +35,6 @@ def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
             prompt="Prompt",
             type="single_select",
             options=[{"id": "a", "label": "A", "description": "desc"}],
-            allow_cancel=True,
         )
     )
 
@@ -67,7 +65,6 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
             prompt="Prompt",
             type="single_select",
             options=[{"id": "b", "label": "B", "description": "desc"}],
-            allow_cancel=False,
         )
     )
 

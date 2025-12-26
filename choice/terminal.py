@@ -54,47 +54,127 @@ def _summary_line(selection: ProvideChoiceResponse) -> str:
 
 
 # Section: Interaction Logic
-def _run_prompt_sync(req: ProvideChoiceRequest) -> ProvideChoiceResponse:
+def _run_prompt_sync(
+    req: ProvideChoiceRequest,
+    config: Optional[ProvideChoiceConfig] = None,
+) -> ProvideChoiceResponse:
     """
     Execute the synchronous questionary prompt.
     
     This function blocks until the user provides input or cancels.
-    It handles the different prompt types (select, checkbox, text, hybrid).
+    It handles the different prompt types (select, checkbox, text, hybrid),
+    respects single_submit_mode, default selections, and annotations.
     """
     choices = _build_choices(req.options)
+    default_ids = set(req.default_selection_ids) if req.default_selection_ids else set()
+    annotations_enabled = config.annotations_enabled if config else False
+    option_annotations: dict[str, str] = {}
+    global_annotation: Optional[str] = None
 
     try:
+        # Single select: auto-submit or select from list
         if req.type == "single_select":
-            answer = questionary.select(req.prompt, choices=choices).unsafe_ask()
+            default_val = req.default_selection_ids[0] if req.default_selection_ids else None
+            answer = questionary.select(req.prompt, choices=choices, default=default_val).unsafe_ask()
             if answer is None:
                 return cancelled_response(transport=TRANSPORT_TERMINAL)
-            return normalize_response(req=req, selected_ids=[answer], custom_input=None, transport=TRANSPORT_TERMINAL)
 
-        if req.type == "multi_select":
-            answer_list = questionary.checkbox(req.prompt, choices=choices).unsafe_ask()
+            # Capture optional annotation for the selected option
+            if annotations_enabled:
+                opt_note = questionary.text(f"Note for '{answer}' (optional)", default="").unsafe_ask()
+                if opt_note:
+                    option_annotations[answer] = opt_note
+                global_annotation = questionary.text("Global annotation (optional)", default="").unsafe_ask() or None
+
+            return normalize_response(
+                req=req,
+                selected_ids=[answer],
+                custom_input=None,
+                transport=TRANSPORT_TERMINAL,
+                option_annotations=option_annotations,
+                global_annotation=global_annotation,
+            )
+
+        # Multi select or batch submission mode
+        if req.type == "multi_select" or (req.type == "single_select" and not req.single_submit_mode):
+            default_checked = [questionary.Choice(title=opt.label, value=opt.id, checked=opt.id in default_ids) for opt in req.options]
+            answer_list = questionary.checkbox(req.prompt, choices=default_checked).unsafe_ask()
             if answer_list is None:
                 return cancelled_response(transport=TRANSPORT_TERMINAL)
             ordered_ids = [str(a) for a in answer_list]
-            return normalize_response(req=req, selected_ids=ordered_ids, custom_input=None, transport=TRANSPORT_TERMINAL)
+
+            # Capture per-option annotations
+            if annotations_enabled:
+                for oid in ordered_ids:
+                    opt_note = questionary.text(f"Note for '{oid}' (optional)", default="").unsafe_ask()
+                    if opt_note:
+                        option_annotations[oid] = opt_note
+                global_annotation = questionary.text("Global annotation (optional)", default="").unsafe_ask() or None
+
+            return normalize_response(
+                req=req,
+                selected_ids=ordered_ids,
+                custom_input=None,
+                transport=TRANSPORT_TERMINAL,
+                option_annotations=option_annotations,
+                global_annotation=global_annotation,
+            )
 
         if req.type == "text_input":
-            answer_text = questionary.text(req.prompt, default=req.placeholder or "").unsafe_ask()
+            placeholder_text = req.placeholder if req.placeholder_enabled and req.placeholder else ""
+            answer_text = questionary.text(req.prompt, default=placeholder_text).unsafe_ask()
             if answer_text is None:
                 return cancelled_response(transport=TRANSPORT_TERMINAL)
-            return normalize_response(req=req, selected_ids=[], custom_input=str(answer_text), transport=TRANSPORT_TERMINAL)
+
+            if annotations_enabled:
+                global_annotation = questionary.text("Global annotation (optional)", default="").unsafe_ask() or None
+
+            return normalize_response(
+                req=req,
+                selected_ids=[],
+                custom_input=str(answer_text),
+                transport=TRANSPORT_TERMINAL,
+                global_annotation=global_annotation,
+            )
 
         if req.type == "hybrid":
             # Hybrid mode: Add a special "Custom input" option to the list
             hybrid_choices = choices + [questionary.Choice(title="Custom input", value="__custom__")]
-            picked = questionary.select(req.prompt, choices=hybrid_choices).unsafe_ask()
+            default_val = req.default_selection_ids[0] if req.default_selection_ids else None
+            picked = questionary.select(req.prompt, choices=hybrid_choices, default=default_val).unsafe_ask()
             if picked is None:
                 return cancelled_response(transport=TRANSPORT_TERMINAL)
             if picked == "__custom__":
-                custom = questionary.text("Enter value", default=req.placeholder or "").unsafe_ask()
+                placeholder_text = req.placeholder if req.placeholder_enabled and req.placeholder else ""
+                custom = questionary.text("Enter value", default=placeholder_text).unsafe_ask()
                 if custom is None:
                     return cancelled_response(transport=TRANSPORT_TERMINAL)
-                return normalize_response(req=req, selected_ids=[], custom_input=str(custom), transport=TRANSPORT_TERMINAL)
-            return normalize_response(req=req, selected_ids=[picked], custom_input=None, transport=TRANSPORT_TERMINAL)
+
+                if annotations_enabled:
+                    global_annotation = questionary.text("Global annotation (optional)", default="").unsafe_ask() or None
+
+                return normalize_response(
+                    req=req,
+                    selected_ids=[],
+                    custom_input=str(custom),
+                    transport=TRANSPORT_TERMINAL,
+                    global_annotation=global_annotation,
+                )
+
+            if annotations_enabled:
+                opt_note = questionary.text(f"Note for '{picked}' (optional)", default="").unsafe_ask()
+                if opt_note:
+                    option_annotations[picked] = opt_note
+                global_annotation = questionary.text("Global annotation (optional)", default="").unsafe_ask() or None
+
+            return normalize_response(
+                req=req,
+                selected_ids=[picked],
+                custom_input=None,
+                transport=TRANSPORT_TERMINAL,
+                option_annotations=option_annotations,
+                global_annotation=global_annotation,
+            )
     except KeyboardInterrupt:
         return cancelled_response(transport=TRANSPORT_TERMINAL)
 
@@ -110,13 +190,18 @@ async def _run_with_timeout(func: Callable[[], ProvideChoiceResponse], timeout_s
         return timeout_response(transport=TRANSPORT_TERMINAL)
 
 
-async def run_terminal_choice(req: ProvideChoiceRequest, *, timeout_seconds: int) -> ProvideChoiceResponse:
+async def run_terminal_choice(
+    req: ProvideChoiceRequest,
+    *,
+    timeout_seconds: int,
+    config: Optional[ProvideChoiceConfig] = None,
+) -> ProvideChoiceResponse:
     """
     Main entry point for terminal interaction.
     
     Wraps the synchronous prompt in a timeout handler and manages screen clearing.
     """
-    result = await _run_with_timeout(lambda: _run_prompt_sync(req), timeout_seconds)
+    result = await _run_with_timeout(lambda: _run_prompt_sync(req, config), timeout_seconds)
     _clear_terminal()
     print(_summary_line(result))
     return result
@@ -141,12 +226,7 @@ async def prompt_configuration(
             if chosen_transport is None:
                 return None
 
-            allow_cancel_choice = questionary.confirm(
-                "Allow cancel", default=bool(defaults.allow_cancel)
-            ).unsafe_ask()
-            if allow_cancel_choice is None:
-                return None
-
+            # Visible options selection
             choice_defaults = defaults.visible_option_ids or [opt.id for opt in req.options]
             visible = questionary.checkbox(
                 "Visible options", choices=_build_config_choices(req.options, choice_defaults)
@@ -155,6 +235,7 @@ async def prompt_configuration(
                 return None
             visible_ids = [str(v) for v in visible] or [opt.id for opt in req.options]
 
+            # Timeout
             timeout_input = questionary.text(
                 "Timeout (seconds)", default=str(defaults.timeout_seconds)
             ).unsafe_ask()
@@ -167,6 +248,7 @@ async def prompt_configuration(
             if timeout_val <= 0:
                 timeout_val = defaults.timeout_seconds
 
+            # Placeholder (for text-capable modes)
             placeholder_default = defaults.placeholder if defaults.placeholder is not None else (req.placeholder or "")
             placeholder_value = placeholder_default
             if req.type in {"text_input", "hybrid"}:
@@ -175,12 +257,75 @@ async def prompt_configuration(
                     return None
                 placeholder_value = placeholder_input
 
+            # Single submit mode toggle
+            single_submit_choice = questionary.confirm(
+                "Single submit mode (auto-submit on selection)", default=defaults.single_submit_mode
+            ).unsafe_ask()
+            if single_submit_choice is None:
+                return None
+
+            # Default selections
+            default_sel_defaults = defaults.default_selection_ids or []
+            default_sel = questionary.checkbox(
+                "Default selections", choices=_build_config_choices(req.options, default_sel_defaults)
+            ).unsafe_ask()
+            if default_sel is None:
+                return None
+            default_sel_ids = [str(d) for d in default_sel]
+
+            # Min/max selections
+            min_sel_input = questionary.text(
+                "Min selections", default=str(defaults.min_selections)
+            ).unsafe_ask()
+            if min_sel_input is None:
+                return None
+            try:
+                min_sel_val = int(min_sel_input)
+            except Exception:
+                min_sel_val = defaults.min_selections
+            if min_sel_val < 0:
+                min_sel_val = 0
+
+            max_sel_default = str(defaults.max_selections) if defaults.max_selections is not None else ""
+            max_sel_input = questionary.text(
+                "Max selections (empty = no limit)", default=max_sel_default
+            ).unsafe_ask()
+            if max_sel_input is None:
+                return None
+            max_sel_val: Optional[int] = None
+            if max_sel_input.strip():
+                try:
+                    max_sel_val = int(max_sel_input)
+                except Exception:
+                    max_sel_val = defaults.max_selections
+
+            # Placeholder enabled toggle (text modes)
+            placeholder_enabled_choice = defaults.placeholder_enabled
+            if req.type in {"text_input", "hybrid"}:
+                placeholder_enabled_choice = questionary.confirm(
+                    "Show placeholder", default=defaults.placeholder_enabled
+                ).unsafe_ask()
+                if placeholder_enabled_choice is None:
+                    return None
+
+            # Annotations enabled toggle
+            annotations_enabled_choice = questionary.confirm(
+                "Enable annotations", default=defaults.annotations_enabled
+            ).unsafe_ask()
+            if annotations_enabled_choice is None:
+                return None
+
             return ProvideChoiceConfig(
                 transport=chosen_transport,
                 visible_option_ids=visible_ids,
                 timeout_seconds=timeout_val,
-                allow_cancel=bool(allow_cancel_choice),
                 placeholder=str(placeholder_value) if placeholder_value != "" else None,
+                default_selection_ids=default_sel_ids,
+                min_selections=min_sel_val,
+                max_selections=max_sel_val,
+                single_submit_mode=bool(single_submit_choice),
+                placeholder_enabled=bool(placeholder_enabled_choice),
+                annotations_enabled=bool(annotations_enabled_choice),
             )
         except KeyboardInterrupt:
             return None
