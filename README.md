@@ -21,24 +21,21 @@
 
 ## 📦 安装
 
-本项目使用 `uv` 进行依赖管理。
+本项目由 FastMCP 构建，推荐使用 [uv](https://github.com/astral-sh/uv) 进行依赖管理。
 
-1. 克隆仓库：
+1. **克隆并同步环境**：
+   ```bash
+   git clone https://github.com/Sighthesia/interactive-choice-mcp.git
+   ```
 
-```bash
-git clone https://github.com/Sighthesia/interactive-choice-mcp.git
-```
-2. 进入项目目录：
+    ```bash
+   cd interactive-choice-mcp
+   ```
 
-```bash
-cd interactive-choice-mcp
-```
+   ```bash
+   uv sync
+   ```
 
-3. 安装依赖
-
-```bash
-uv sync
-```
 
 ## 🚀 使用方法
 
@@ -93,8 +90,14 @@ interactive-choice-mcp/
 │   └── web.py             # Web 交互实现 (FastAPI)
 └── openspec/              # 项目规范文档
 ```
+### 运行测试
+使用 pytest 运行测试套件，请先确保安装了 pytest ：
 
-### 运行开发服务器
+```bash
+uv run pytest
+```
+
+### 调试服务器
 
 运行此命令进入 MCP Instpector 进行调试：
 
