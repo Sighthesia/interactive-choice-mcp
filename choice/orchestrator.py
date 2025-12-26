@@ -79,7 +79,10 @@ class ChoiceOrchestrator:
         if config_defaults.transport == TRANSPORT_TERMINAL and is_terminal_available():
             config = await prompt_terminal_configuration(req, defaults=config_defaults, allow_web=True)
             if config is None:
-                return cancelled_response(transport=TRANSPORT_TERMINAL)
+                # User aborted terminal configuration — fall back to web portal when possible
+                response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=False)
+                self._persist_config(final_config)
+                return response
             if config.transport == TRANSPORT_WEB:
                 response, final_config = await run_web_choice(req, defaults=config, allow_terminal=False)
                 self._persist_config(final_config)

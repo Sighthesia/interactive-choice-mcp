@@ -83,10 +83,6 @@ def _render_html(
             )
         )
 
-    # Compute template substitution values
-    show_placeholder_row = False
-
-
     # Load and render external template
     template = _load_template()
     return template.substitute(
@@ -99,11 +95,6 @@ def _render_html(
         transport_options="\n".join(transport_options),
         timeout_value=defaults.timeout_seconds,
         single_submit_checked="checked" if defaults.single_submit_mode else "",
-        placeholder_row_display="display:none;",
-        placeholder_enabled_checked="",
-        placeholder_value="",
-        timeout_default_enabled_checked="checked" if defaults.timeout_default_enabled else "",
-        timeout_default_index=defaults.timeout_default_index if defaults.timeout_default_index is not None else 0,
         mcp_version="0.1.0",
         invocation_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     )

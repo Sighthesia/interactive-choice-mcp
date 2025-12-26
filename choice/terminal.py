@@ -75,13 +75,15 @@ def _run_prompt_sync(
                 return cancelled_response(transport=TRANSPORT_TERMINAL)
 
             # Capture optional annotation for the selected option
-            opt_note = questionary.text(f"Note for '{req.options[answer].label}' (optional)", default="").unsafe_ask()
-            if opt_note is None:
+            try:
+                opt_note = questionary.text(f"Note for '{req.options[answer].label}' (optional)", default="").unsafe_ask()
+            except (KeyboardInterrupt, EOFError, Exception):
                 return cancelled_response(transport=TRANSPORT_TERMINAL)
             if opt_note:
                 option_annotations[answer] = opt_note
-            global_annotation = questionary.text("Global annotation (optional)", default="").unsafe_ask()
-            if global_annotation is None:
+            try:
+                global_annotation = questionary.text("Global annotation (optional)", default="").unsafe_ask()
+            except (KeyboardInterrupt, EOFError, Exception):
                 return cancelled_response(
                     transport=TRANSPORT_TERMINAL,
                     option_annotations=option_annotations,
@@ -103,16 +105,18 @@ def _run_prompt_sync(
 
             # Capture annotations for selected options
             for idx in answer:
-                opt_note = questionary.text(f"Note for '{req.options[idx].label}' (optional)", default="").unsafe_ask()
-                if opt_note is None:
+                try:
+                    opt_note = questionary.text(f"Note for '{req.options[idx].label}' (optional)", default="").unsafe_ask()
+                except (KeyboardInterrupt, EOFError, Exception):
                     return cancelled_response(
                         transport=TRANSPORT_TERMINAL,
                         option_annotations=option_annotations,
                     )
                 if opt_note:
                     option_annotations[idx] = opt_note
-            global_annotation = questionary.text("Global annotation (optional)", default="").unsafe_ask()
-            if global_annotation is None:
+            try:
+                global_annotation = questionary.text("Global annotation (optional)", default="").unsafe_ask()
+            except (KeyboardInterrupt, EOFError, Exception):
                 return cancelled_response(
                     transport=TRANSPORT_TERMINAL,
                     option_annotations=option_annotations,
@@ -127,7 +131,8 @@ def _run_prompt_sync(
             )
 
         return cancelled_response(transport=TRANSPORT_TERMINAL)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError, Exception):
+        # Handle unexpected input/read errors robustly and return a cancelled result
         return cancelled_response(transport=TRANSPORT_TERMINAL)
 
     raise ValidationError(f"Unsupported type: {req.type}")
@@ -189,9 +194,9 @@ async def prompt_configuration(
             except Exception:
                 timeout_val = defaults.timeout_seconds
 
-            # Placeholder (for text-capable modes)
-            placeholder_value = defaults.placeholder
-            placeholder_enabled_choice = defaults.placeholder_enabled
+            # Placeholder is no longer supported in current schema; keep defaults for config UI
+            placeholder_value = ""
+            placeholder_enabled_choice = False
 
             # Single submit mode toggle
             single_submit_choice = questionary.confirm(

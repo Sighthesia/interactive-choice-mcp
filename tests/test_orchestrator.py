@@ -39,6 +39,40 @@ def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
     assert result.selection.transport == models.TRANSPORT_TERMINAL
     assert result.selection.selected_indices == [0]
 
+def test_orchestrator_terminal_config_abort_falls_back_to_web(monkeypatch, tmp_path):
+    orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
+
+    monkeypatch.setattr("choice.orchestrator.is_terminal_available", lambda: True)
+
+    async def fake_prompt_abort(req, defaults, allow_web):
+        return None
+
+    monkeypatch.setattr("choice.orchestrator.prompt_terminal_configuration", fake_prompt_abort)
+
+    async def fake_web(req, defaults, allow_terminal):
+        return (
+            models.normalize_response(
+                req=req,
+                selected_indices=[0],
+                transport=models.TRANSPORT_WEB,
+            ),
+            defaults,
+        )
+
+    monkeypatch.setattr("choice.orchestrator.run_web_choice", fake_web)
+
+    result = asyncio.run(
+        orch.handle(
+            title="Title",
+            prompt="Prompt",
+            type="single_select",
+            options=[{"label": "A", "description": "desc"}],
+        )
+    )
+
+    assert result.selection.transport == models.TRANSPORT_WEB
+    assert result.selection.selected_indices == [0]
+
 def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
     monkeypatch.setattr("choice.orchestrator.is_terminal_available", lambda: False)

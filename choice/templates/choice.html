@@ -616,17 +616,6 @@
                                 Auto Submit (Single Selection Mode)
                             </label>
                         </div>
-
-
-
-                        <div class="config-row" id="placeholderRow" style="display:none;">
-                            <label>
-                                <input id="placeholderEnabled" type="checkbox" ${placeholder_enabled_checked} />
-                                Placeholder
-                            </label>
-                            <input id="placeholderInput" type="text" value="${placeholder_value}" placeholder="Text"
-                                style="flex:1;min-width:80px;" />
-                        </div>
                     </div>
                 </div>
             </div>
@@ -854,13 +843,10 @@
             const timeout = Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : defaults.timeout_seconds;
             const transportSelect = document.getElementById('transportSelect');
             const transport = transportSelect ? transportSelect.value : 'web';
-            const placeholder = document.getElementById('placeholderInput')?.value ?? defaults.placeholder ?? '';
             return {
                 transport,
                 timeout_seconds: timeout,
-                placeholder,
                 single_submit_mode: isSingleSubmit(),
-                placeholder_enabled: document.getElementById('placeholderEnabled')?.checked ?? true,
             };
         }
 
@@ -993,7 +979,6 @@
         });
 
         // Section: Init
-        syncMinMaxInputs();
         renderOptions();
         updateCancelBtn();
 

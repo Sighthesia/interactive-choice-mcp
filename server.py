@@ -33,13 +33,12 @@ async def provide_choice(
 		type=type,
 		options=options,
 		allow_cancel=True,
-		placeholder=None,
 		transport=None,
 		timeout_seconds=None,
 	)
 	
 	selection = result.selection
-	out = {"action_status": result.action_status}
+	out: dict[str, object] = {"action_status": result.action_status}
 	if selection.selected_indices:
 		out["selected_indices"] = list(selection.selected_indices)
 	if selection.option_annotations:

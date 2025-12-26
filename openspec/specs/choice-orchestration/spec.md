@@ -4,7 +4,7 @@
 TBD - created by archiving change add-provide-choice-capability. Update Purpose after archive.
 ## Requirements
 ### Requirement: Provide Choice Tool Contract
-The MCP server SHALL expose a `provide_choice` tool with a schema-first request contract including `title`, `prompt`, `type (single_select|multi_select|text_input|hybrid)`, `options[id,label,description]`, `allow_cancel`, and `placeholder`, and SHALL validate payloads before prompting.
+The MCP server SHALL expose a `provide_choice` tool with a schema-first request contract including `title`, `prompt`, `type (single_select|multi_select)`, `options[label,description]`, and `allow_cancel`, and SHALL validate payloads before prompting.
 
 #### Scenario: Valid tool invocation
 - **WHEN** `provide_choice` is called with all required fields according to the schema
@@ -12,7 +12,7 @@ The MCP server SHALL expose a `provide_choice` tool with a schema-first request 
 
 #### Scenario: Deterministic response payload
 - **WHEN** a user completes the interaction across any transport
-- **THEN** the tool returns `action_status (selected|custom_input|cancelled|timeout)` with a normalized selection payload, ordering option ids for multi/hybrid modes and capturing freeform text when applicable.
+- **THEN** the tool returns `action_status (selected|cancelled|timeout)` with a normalized selection payload, capturing selected indices and optional annotations.
 
 ### Requirement: Terminal Choice Flow
 The system SHALL default to an interactive terminal transport using questionary when stdin is available, rendering an ANSI list, supporting arrow/space/enter, clearing the UI after submission, and printing only a concise summary.

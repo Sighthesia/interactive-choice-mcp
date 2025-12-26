@@ -12,8 +12,6 @@
 - **多种选择类型**：
     - `single_select`: 单选。
     - `multi_select`: 多选。
-    - `text_input`: 自由文本输入。
-    - `hybrid`: 预定义选项 + 自定义输入。
 - **健壮性设计**：
     - 支持超时（Timeout）处理。
     - 支持取消（Cancel）操作。
@@ -69,10 +67,9 @@ AI 代理可以调用此工具来请求用户输入。
 
 - `title` (string): 选择界面的标题。
 - `prompt` (string): 向用户展示的提示信息，应包含上下文。
-- `type` (string): 选择类型 (`single_select`, `multi_select`, `text_input`, `hybrid`)。
-- `options` (array): 选项列表，每个选项包含 `id`, `label`, `description`。
+- `type` (string): 选择类型 (`single_select`, `multi_select`)。
+- `options` (array): 选项列表，每个选项包含 `label`, `description`。
 - `allow_cancel` (boolean): 是否允许用户取消。
-- `placeholder` (string, optional): 输入框的占位符。
 - `transport` (string, optional): 强制指定传输方式 (`terminal` 或 `web`)。
 - `timeout_seconds` (integer, optional): 超时时间（秒）。
 
