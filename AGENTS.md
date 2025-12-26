@@ -27,7 +27,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 - Behavioral rules: invoke the tool whenever choices/branches >2, destructive actions, or config is missing. Never guess defaults; always explain why the choice is needed in the prompt. `cancel` halts the subtask; enforce a ~5 min timeout returning `timeout` status.
 - Code style: PEP 8 with type hints; keep modules small and single-purpose; prefer dataclasses/TypedDict for payloads; keep user-facing text concise and action-oriented.
 - Architecture: separate transport (terminal/web) from choice orchestration and MCP binding. Normalize selection ordering for multi-select; support hybrid/text input with placeholder guidance.
-- Testing: target pytest unit tests for choice normalization, timeout, and cancel handling; manual smoke for both terminal and web until e2e exists.
+- Testing: use `uv run pytest` target pytest unit tests for choice normalization, timeout, and cancel handling; manual smoke for both terminal and web until e2e exists.
 - Git/flow: default branch `main`; feature branches keyed to change-id when following OpenSpec; Conventional Commit style encouraged; run `openspec validate --strict` when specs are touched.
 - External touchpoints: local browser for the web flow (assume localhost only); fastmcp lifecycle expectations; questionary keybindings/render limits.
 - Current code: [server.py](../server.py) only initializes `FastMCP("Interactive Choice")`; [main.py](../main.py) is a stub. Expect to add FastAPI app, tool registration, and web portal handlers.
