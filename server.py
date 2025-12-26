@@ -20,10 +20,11 @@ async def provide_choice(
 	transport: str | None = None,
 	timeout_seconds: int | None = None,
 ):
-	"""Collect a structured user choice with terminal-first flow and web fallback.
+	"""
+	Present an interactive choice prompt to the user and return their selection.
 
-	This tool allows the AI to pause execution and request a decision from the user.
-	It supports multiple interaction modes and handles timeouts and cancellations.
+	Rule: 
+	On any procedure that requires uesr's opnion, you MUST use this tool to collect the input.
 	"""
 
 	# Delegate the execution to the orchestrator.
@@ -40,11 +41,13 @@ async def provide_choice(
 	)
 	
 	# Return a structured response that separates the status from the data.
-	return {
-		"action_status": result.action_status,
-		"selected_ids": result.selection.selected_ids,
-		"custom_input": result.selection.custom_input,
-	}
+	out = {}
+	selected = list(result.selection.selected_ids) if result.selection.selected_ids else []
+	if result.selection.custom_input:
+		selected.append(result.selection.custom_input)
+	if selected:
+		out["selected_ids"] = selected
+	return out
 
 
 if __name__ == "__main__":
