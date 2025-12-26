@@ -58,3 +58,37 @@ def test_timeout_response_helper():
     resp = models.timeout_response(transport=models.TRANSPORT_TERMINAL)
     assert resp.action_status == "timeout"
     assert resp.selection.transport == models.TRANSPORT_TERMINAL
+
+
+def test_apply_configuration_filters_and_timeout():
+    req = models.parse_request(
+        title="Title",
+        prompt="Prompt",
+        type="single_select",
+        options=[
+            {"id": "a", "label": "A", "description": "desc"},
+            {"id": "b", "label": "B", "description": "desc"},
+        ],
+        allow_cancel=True,
+    )
+    config = models.ProvideChoiceConfig(transport=models.TRANSPORT_WEB, visible_option_ids=["b"], timeout_seconds=42)
+    adjusted = models.apply_configuration(req, config)
+    assert [opt.id for opt in adjusted.options] == ["b"]
+    assert adjusted.timeout_seconds == 42
+    assert adjusted.transport == models.TRANSPORT_WEB
+
+
+def test_apply_configuration_empty_visibility_falls_back():
+    req = models.parse_request(
+        title="Title",
+        prompt="Prompt",
+        type="single_select",
+        options=[
+            {"id": "a", "label": "A", "description": "desc"},
+            {"id": "b", "label": "B", "description": "desc"},
+        ],
+        allow_cancel=True,
+    )
+    config = models.ProvideChoiceConfig(transport=models.TRANSPORT_TERMINAL, visible_option_ids=[], timeout_seconds=10)
+    adjusted = models.apply_configuration(req, config)
+    assert [opt.id for opt in adjusted.options] == ["a", "b"]

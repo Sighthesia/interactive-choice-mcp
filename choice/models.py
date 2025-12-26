@@ -36,6 +36,15 @@ class ProvideChoiceRequest:
 
 
 @dataclass
+class ProvideChoiceConfig:
+    """Represents user-configurable interaction settings."""
+
+    transport: str
+    visible_option_ids: List[str]
+    timeout_seconds: int
+
+
+@dataclass
 class ProvideChoiceSelection:
     """The actual data selected or entered by the user."""
     selected_ids: List[str] = field(default_factory=list)
@@ -143,6 +152,35 @@ def parse_request(
         placeholder=placeholder.strip() if placeholder else None,
         transport=validated_transport,
         timeout_seconds=normalized_timeout,
+    )
+
+
+def apply_configuration(
+    req: ProvideChoiceRequest,
+    config: ProvideChoiceConfig,
+) -> ProvideChoiceRequest:
+    """Apply user configuration to the request (transport, visible options, timeout)."""
+
+    if config.transport not in VALID_TRANSPORTS:
+        raise ValidationError(f"transport must be one of {sorted(VALID_TRANSPORTS)}")
+    if config.timeout_seconds <= 0:
+        raise ValidationError("timeout_seconds must be positive")
+
+    # Filter options by visibility; fall back to all if none remain.
+    visible_ids = set(config.visible_option_ids)
+    filtered_options = [opt for opt in req.options if opt.id in visible_ids]
+    if not filtered_options:
+        filtered_options = list(req.options)
+
+    return ProvideChoiceRequest(
+        title=req.title,
+        prompt=req.prompt,
+        type=req.type,
+        options=filtered_options,
+        allow_cancel=req.allow_cancel,
+        placeholder=req.placeholder,
+        transport=config.transport,
+        timeout_seconds=config.timeout_seconds,
     )
 
 

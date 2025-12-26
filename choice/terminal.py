@@ -7,6 +7,7 @@ from typing import Callable, Iterable, List, Optional
 import questionary
 
 from .models import (
+    ProvideChoiceConfig,
     ProvideChoiceOption,
     ProvideChoiceRequest,
     ProvideChoiceResponse,
@@ -15,6 +16,7 @@ from .models import (
     timeout_response,
     ValidationError,
     TRANSPORT_TERMINAL,
+    TRANSPORT_WEB,
 )
 
 
@@ -34,6 +36,11 @@ def _clear_terminal() -> None:
 def _build_choices(options: Iterable[ProvideChoiceOption]) -> List[questionary.Choice]:
     """Convert internal options to questionary Choice objects."""
     return [questionary.Choice(title=opt.label, value=opt.id) for opt in options]
+
+
+def _build_config_choices(options: Iterable[ProvideChoiceOption], defaults: List[str]) -> List[questionary.Choice]:
+    """Convert options to choices while marking defaults."""
+    return [questionary.Choice(title=opt.label, value=opt.id, checked=opt.id in defaults) for opt in options]
 
 
 def _summary_line(selection: ProvideChoiceResponse) -> str:
@@ -113,3 +120,54 @@ async def run_terminal_choice(req: ProvideChoiceRequest, *, timeout_seconds: int
     _clear_terminal()
     print(_summary_line(result))
     return result
+
+
+async def prompt_configuration(
+    req: ProvideChoiceRequest,
+    *,
+    defaults: ProvideChoiceConfig,
+    allow_web: bool,
+) -> Optional[ProvideChoiceConfig]:
+    """Collect configuration inputs before showing the main prompt."""
+
+    def _prompt_sync() -> Optional[ProvideChoiceConfig]:
+        transports = [questionary.Choice(title="Terminal", value=TRANSPORT_TERMINAL)]
+        if allow_web:
+            transports.append(questionary.Choice(title="Web", value=TRANSPORT_WEB))
+        try:
+            chosen_transport = questionary.select(
+                "Transport", choices=transports, default=defaults.transport if defaults.transport in {c.value for c in transports} else TRANSPORT_TERMINAL
+            ).unsafe_ask()
+            if chosen_transport is None:
+                return None
+
+            choice_defaults = defaults.visible_option_ids or [opt.id for opt in req.options]
+            visible = questionary.checkbox(
+                "Visible options", choices=_build_config_choices(req.options, choice_defaults)
+            ).unsafe_ask()
+            if visible is None:
+                return None
+            visible_ids = [str(v) for v in visible] or [opt.id for opt in req.options]
+
+            timeout_input = questionary.text(
+                "Timeout (seconds)", default=str(defaults.timeout_seconds)
+            ).unsafe_ask()
+            if timeout_input is None:
+                return None
+            try:
+                timeout_val = int(timeout_input)
+            except Exception:
+                timeout_val = defaults.timeout_seconds
+            if timeout_val <= 0:
+                timeout_val = defaults.timeout_seconds
+
+            return ProvideChoiceConfig(
+                transport=chosen_transport,
+                visible_option_ids=visible_ids,
+                timeout_seconds=timeout_val,
+            )
+        except KeyboardInterrupt:
+            return None
+
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _prompt_sync)
