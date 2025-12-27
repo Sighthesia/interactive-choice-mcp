@@ -36,7 +36,7 @@ def test_orchestrator_session_polling_returns_result(monkeypatch, tmp_path):
     """When session_id is provided and result is ready, returns the result."""
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
 
-    async def fake_poll(session_id):
+    async def fake_poll(session_id, wait_seconds=30):
         return r.normalize_response(
             req=models.ProvideChoiceRequest(
                 title="T", prompt="P", selection_mode="single",
@@ -64,10 +64,11 @@ def test_orchestrator_session_polling_returns_result(monkeypatch, tmp_path):
 
 
 def test_orchestrator_session_polling_pending(monkeypatch, tmp_path):
-    """When session_id is provided but result is not ready, returns pending status."""
+    """When session_id is provided but result is not ready (expired), returns cancelled status."""
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
 
-    async def fake_poll(session_id):
+    async def fake_poll(session_id, wait_seconds=30):
+        # Return None to simulate session not found or expired
         return None
 
     monkeypatch.setattr("choice.orchestrator.poll_terminal_session_result", fake_poll)
@@ -82,8 +83,9 @@ def test_orchestrator_session_polling_pending(monkeypatch, tmp_path):
         )
     )
 
-    assert result.action_status == "pending_terminal_launch"
-    assert "pending123" in result.selection.summary
+    # Now returns cancelled instead of pending when session not found
+    assert result.action_status == "cancelled"
+    assert "not found" in result.selection.summary.lower() or "expired" in result.selection.summary.lower()
 
 
 # Section: Web Transport Tests

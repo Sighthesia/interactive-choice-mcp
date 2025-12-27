@@ -62,19 +62,21 @@ class ChoiceOrchestrator:
         terminal hand-off session instead of creating a new interaction.
         """
         # Section: Session Polling
-        # If session_id is provided, poll for result of existing terminal session
+        # If session_id is provided, poll for result of existing terminal session.
+        # The poll function now blocks for up to 30s waiting for the result,
+        # reducing the need for frequent polling by the AI agent.
         if session_id is not None:
-            result = await poll_terminal_session_result(session_id)
+            result = await poll_terminal_session_result(session_id, wait_seconds=30)
             if result is not None:
                 return result
-            # Still pending - return a status indicating to poll again
+            # Session not found (expired or invalid)
             from .models import ProvideChoiceSelection
             return ProvideChoiceResponse(
-                action_status="pending_terminal_launch",
+                action_status="cancelled",
                 selection=ProvideChoiceSelection(
                     selected_indices=[],
                     transport=TRANSPORT_TERMINAL,
-                    summary=f"Session {session_id} is still pending. Poll again later.",
+                    summary=f"Session {session_id} not found or expired. Please create a new session.",
                 ),
             )
 

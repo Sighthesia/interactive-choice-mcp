@@ -20,47 +20,45 @@ async def provide_choice(
 ):
 	"""Present an interactive choice prompt to the user and return their selection.
 
-	RULE: Mandatory interface for human-in-the-loop decision making. Call this tool IMMEDIATELY when: 1. Ambiguous requirements occur. 2. Multiple technical paths are available. 3. Confirming destructive actions (delete/overwrite). 4. User input is needed to proceed.
+	RULE: Mandatory interface for human-in-the-loop decision making. Call this tool IMMEDIATELY when:
+	1. Ambiguous requirements occur
+	2. Multiple technical paths are available
+	3. Confirming destructive actions (delete/overwrite)
+	4. User input is needed to proceed
 
 	Strict Rules:
-
-		NO GUESSING: Never assume user preference for architecture, libraries, or logic flow.
-
+		NO GUESSING: Never assume user preference.
 		BLOCKING: Halt current task and wait for the tool output.
-
 		EXECUTION: Strictly follow the returned id for subsequent steps.
 
 	Parameter Guidance:
+		selection_mode: Must be "single" or "multi".
+		options: Each entry must include `id`, `description`; mark one with `recommended: true`.
+		session_id: Used for polling terminal session results (see below).
 
-		selection_mode: Must be "single" or "multi"; aliases such as "single_select" are rejected and will raise a validation error.
-
-		options: Each entry must include `id`, `description`, and at least one option marked with `recommended: true`; missing or malformed fields will return a validation error instead of launching the UI.
-
-		session_id: Optional. When provided, polls for the result of an existing terminal hand-off session instead of creating a new interaction.
-
-	Terminal Hand-off Mode:
-
-		When the tool returns `action_status: pending_terminal_launch` the call returns immediately with launch information instead of blocking.
-		- `summary`: a CLI command you should run in a terminal (e.g. `uv run python -m choice.terminal.client --session <id> --url <url>`)
-		- `url`: the HTTP endpoint backing the session (used by the client)
-		- `session_id`: the session identifier (last path component of `url`) — use this value to poll the same `provide_choice` tool to obtain the final result.
+	Terminal Mode Workflow:
+		When `action_status` is "pending_terminal_launch":
 		
-		Agent steps:
-		1. Call `provide_choice` (no `session_id`) and inspect the response. If `action_status` is `pending_terminal_launch`, extract `summary` / `session_id`.
-		2. Execute the CLI command from `summary` in a terminal to open the interactive UI for the user.
-		3. After the user completes the interaction, call `provide_choice(..., session_id=<id>)` to poll for the final `ProvideChoiceResponse` payload.
+		Step 1: Run the command in `terminal_command` field in a terminal
+		Step 2: Wait for user to complete the terminal interaction  
+		Step 3: Call provide_choice again with the same parameters + `session_id` to get result
+
+		Response fields for terminal mode:
+		- `terminal_command`: The exact command to run (copy-paste ready)
+		- `session_id`: Use this to poll for results
+		- `instructions`: Human-readable steps
 		
-		Notes:
-		- Sessions are single-use and will timeout according to `timeout_seconds`; if the session times out a timeout response will be returned on poll.
-		- The returned `summary` is intended to be executed by the agent in a terminal tool; it should not be parsed for semantics beyond running it.
-		
-		Example response (abbreviated):
+		Example:
 		{
 		  "action_status": "pending_terminal_launch",
-		  "summary": "uv run python -m choice.terminal.client --session abc123 --url http://127.0.0.1:17863",
+		  "terminal_command": "uv run python -m choice.terminal.client --session abc123 --url http://127.0.0.1:17863",
 		  "session_id": "abc123",
-		  "url": "http://127.0.0.1:17863/terminal/abc123"
+		  "instructions": "1. Run the terminal_command...\n2. Wait for user...\n3. Poll with session_id"
 		}
+
+	Polling Result:
+		When called with `session_id`, returns the final result if ready.
+		If user hasn't completed, waits up to 30 seconds before returning.
 	"""
 
 	# Delegate the execution to the orchestrator.
@@ -81,14 +79,23 @@ async def provide_choice(
 
 	# For terminal hand-off, include session info for the agent
 	if result.action_status == "pending_terminal_launch":
-		out["summary"] = selection.summary  # Contains launch command
-		if selection.url:
-			out["url"] = selection.url
-		# Extract session_id from URL for polling
+		# Extract session_id from URL
+		session_id_val = ""
 		if selection.url:
 			parts = selection.url.rstrip("/").split("/")
 			if parts:
-				out["session_id"] = parts[-1]
+				session_id_val = parts[-1]
+			out["url"] = selection.url
+		
+		out["session_id"] = session_id_val
+		# Provide a clean, copy-paste ready command for the agent
+		out["terminal_command"] = selection.summary
+		# Simple instructions for the agent
+		out["instructions"] = (
+			f"1. Run the terminal_command in a terminal\n"
+			f"2. Wait for user to complete the interaction\n"
+			f"3. Call provide_choice again with session_id='{session_id_val}' to get the result"
+		)
 		return out
 
 	if selection.summary:

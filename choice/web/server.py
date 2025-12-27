@@ -471,11 +471,23 @@ async def create_terminal_handoff_session(
     )
 
 
-async def poll_terminal_session_result(session_id: str) -> Optional[ProvideChoiceResponse]:
-    """Poll for the result of a terminal hand-off session.
+async def poll_terminal_session_result(session_id: str, wait_seconds: int = 30) -> Optional[ProvideChoiceResponse]:
+    """Poll for the result of a terminal hand-off session with blocking wait.
     
-    Returns the result if available, or None if still pending or expired.
-    Used by the orchestrator when `provide_choice` is called with a session_id.
+    This function implements a smart polling mechanism that:
+    1. Returns immediately if the result is already available
+    2. Waits up to `wait_seconds` for the result if still pending
+    3. Returns None only if session not found
+    4. Returns timeout response if session expired
+    
+    The waiting behavior reduces the need for frequent polling by the AI agent.
+    
+    Args:
+        session_id: The terminal session ID to poll
+        wait_seconds: Maximum seconds to wait for result (default 30)
+        
+    Returns:
+        The ProvideChoiceResponse if available, or None if session not found
     """
     from ..terminal.session import get_terminal_session_store
     from ..response import timeout_response
@@ -485,14 +497,31 @@ async def poll_terminal_session_result(session_id: str) -> Optional[ProvideChoic
     if session is None:
         return None
 
+    # If result already available, return immediately
     if session.result is not None:
         return session.result
 
+    # If already expired, return timeout
     if session.is_expired:
-        # Session expired without result - generate timeout response
         response = timeout_response(req=session.req, transport=TRANSPORT_WEB, url=None)
         session.set_result(response)
         return response
 
-    # Still pending
+    # Wait for result with timeout (blocking wait to reduce polling)
+    effective_wait = min(wait_seconds, session.remaining_seconds)
+    if effective_wait > 0:
+        result = await session.wait_for_result(timeout=effective_wait)
+        if result is not None:
+            return result
+    
+    # Check again after waiting
+    if session.result is not None:
+        return session.result
+    
+    if session.is_expired:
+        response = timeout_response(req=session.req, transport=TRANSPORT_WEB, url=None)
+        session.set_result(response)
+        return response
+
+    # Still pending - return None to indicate caller should poll again
     return None

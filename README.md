@@ -75,20 +75,41 @@ AI 代理可以调用此工具来请求用户输入。
 
 当工具返回 `action_status: pending_terminal_launch` 时：
 
-1. 响应中的 `summary` 字段包含一个 CLI 命令
-2. AI 代理应在终端中执行该命令以打开交互式 UI
+1. 从响应的 `terminal_command` 字段获取 CLI 命令
+2. AI 代理在终端中执行该命令以打开交互式 UI
 3. 用户在终端 UI 中完成选择
 4. AI 代理使用 `session_id` 再次调用 `provide_choice` 来获取最终结果
+   - **注意**：轮询会阻塞等待最多 30 秒，减少频繁轮询的需要
 
 示例响应：
 ```json
 {
   "action_status": "pending_terminal_launch",
-  "summary": "uv run python -m choice.terminal.client --session abc123 --url http://127.0.0.1:17863",
+  "terminal_command": "uv run python -m choice.terminal.client --session abc123 --url http://127.0.0.1:17863",
   "session_id": "abc123",
-  "url": "http://127.0.0.1:17863/terminal/abc123"
+  "url": "http://127.0.0.1:17863/terminal/abc123",
+  "instructions": "1. Run the terminal_command in a terminal\n2. Wait for user to complete the interaction\n3. Call provide_choice again with session_id='abc123' to get the result"
 }
 ```
+
+### 终端客户端选项
+
+```bash
+# 基本用法
+uv run python -m choice.terminal.client --session <id> --url <url>
+
+# 启用注释功能（允许用户为选择添加备注）
+uv run python -m choice.terminal.client --session <id> --url <url> --annotate
+
+# 静默模式（不显示选项描述预览）
+uv run python -m choice.terminal.client --session <id> --url <url> --quiet
+```
+
+终端 UI 特性：
+- 清晰的标题、提示和超时显示
+- 选项描述预览
+- 键盘导航提示（↑/↓ 导航，Enter 确认，Space 多选切换，Ctrl+C 取消）
+- 默认跳过注释步骤（使用 `--annotate` 启用）
 
 注意：终端会话为**单次使用**（完成后会清理），如果没有客户端在 `timeout_seconds` 时间内附着并提交结果，会话将自动过期并在轮询时返回 `timeout` 响应。
 ## 🛠️ 开发
