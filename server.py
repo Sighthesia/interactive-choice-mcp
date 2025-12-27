@@ -17,11 +17,23 @@ async def provide_choice(
 	type: str,
 	options: list[dict],
 ):
-	"""
-	Present an interactive choice prompt to the user and return their selection.
+	"""Present an interactive choice prompt to the user and return their selectiono.
 
-	Rule: 
-	On any procedure that requires uesr's opnion, you MUST use this tool to collect the input.
+	RULE: Mandatory interface for human-in-the-loop decision making. Call this tool IMMEDIATELY when: 1. Ambiguous requirements occur. 2. Multiple technical paths are available. 3. Confirming destructive actions (delete/overwrite). 4. User input is needed to proceed.
+
+	Strict Rules:
+
+		NO GUESSING: Never assume user preference for architecture, libraries, or logic flow.
+
+		BLOCKING: Halt current task and wait for the tool output.
+
+		EXECUTION: Strictly follow the returned id for subsequent steps.
+
+	Parameter Guidance:
+
+		type: Use "single_select" for binary/exclusive choices, "muti_select" for configuration/feature sets.
+
+		default: Set `true` for the most recommended/standard path to enable fast user confirmation.
 	"""
 
 	# Delegate the execution to the orchestrator.
