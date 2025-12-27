@@ -37,7 +37,9 @@ class TerminalSession:
     req: "ProvideChoiceRequest"
     config: "ProvideChoiceConfig"
     deadline: float
+    # created_at uses monotonic for deadline math; started_at is wall clock for display
     created_at: float = field(default_factory=time.monotonic)
+    started_at: float = field(default_factory=time.time)
     result: Optional["ProvideChoiceResponse"] = None
     result_event: asyncio.Event = field(default_factory=asyncio.Event)
     attached: bool = False

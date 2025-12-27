@@ -240,6 +240,7 @@ class WebChoiceServer:
             return JSONResponse({
                 "status": "pending",
                 "remaining_seconds": session.remaining_seconds,
+                "started_at": session.started_at,
                 "request": {
                     "title": session.req.title,
                     "prompt": session.req.prompt,
@@ -272,6 +273,57 @@ class WebChoiceServer:
             selected_indices = payload.get("selected_indices", [])
             option_annotations = payload.get("option_annotations", {})
             global_annotation = payload.get("global_annotation")
+            config_payload = payload.get("config") or {}
+            if not isinstance(config_payload, dict):
+                raise HTTPException(status_code=400, detail="config must be object")
+
+            if action == "update_settings":
+                # Persist updated configuration and apply to current session
+                parsed_config = _parse_config_payload(session.config, config_payload, session.req)
+                session.config = parsed_config
+                try:
+                    from ..storage import ConfigStore
+                    ConfigStore().save(parsed_config)
+                except Exception:
+                    pass
+                return JSONResponse({
+                    "status": "ok",
+                    "config": {
+                        "transport": parsed_config.transport,
+                        "timeout_seconds": parsed_config.timeout_seconds,
+                        "single_submit_mode": parsed_config.single_submit_mode,
+                        "timeout_default_enabled": parsed_config.timeout_default_enabled,
+                        "timeout_default_index": parsed_config.timeout_default_index,
+                        "use_default_option": parsed_config.use_default_option,
+                        "timeout_action": parsed_config.timeout_action,
+                    },
+                })
+
+            if action == "switch_to_web":
+                parsed_config = _parse_config_payload(session.config, config_payload, session.req)
+                session.config = parsed_config
+                try:
+                    from ..storage import ConfigStore
+                    ConfigStore().save(parsed_config)
+                except Exception:
+                    pass
+
+                server = await _get_server()
+                web_session = await server.create_session(session.req, parsed_config, allow_terminal=False)
+
+                async def bridge_web_result() -> None:
+                    try:
+                        result = await web_session.wait_for_result()
+                        session.set_result(result)
+                    except Exception:
+                        pass
+
+                asyncio.create_task(bridge_web_result())
+                return JSONResponse({
+                    "status": "ok",
+                    "web_url": web_session.url,
+                    "timeout_seconds": parsed_config.timeout_seconds,
+                })
 
             if action == "cancelled":
                 from ..response import cancelled_response
