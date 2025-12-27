@@ -1,4 +1,4 @@
-"""Validation helpers extracted from `models.py`.
+"""Validation helpers for parsing requests and applying configuration.
 
 Contains the request parsing logic and configuration application helpers.
 Kept intentionally side-effect free to avoid import cycles and simplify

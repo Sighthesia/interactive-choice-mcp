@@ -1,7 +1,13 @@
-"""Response normalization helpers extracted from `models.py`."""
+"""Response normalization helpers.
+
+Provides functions to normalize, cancel, and generate timeout responses for choices.
+"""
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Optional, Sequence, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .models import ProvideChoiceRequest, ProvideChoiceResponse
 
 __all__ = [
     "normalize_response",

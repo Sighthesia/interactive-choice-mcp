@@ -1,7 +1,7 @@
-"""Web server orchestration split from the legacy `choice/web.py` implementation.
+"""Web server orchestration for the `choice.web` package.
 
-This module is part of the `choice.web` package and contains the server
-routes and orchestration previously implemented in the single-file module.
+Contains server routes, session management, and lifecycle helpers for
+web-based choice interactions.
 """
 from __future__ import annotations
 
