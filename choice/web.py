@@ -249,7 +249,13 @@ async def run_web_choice(
         await _broadcast_sync()
         try:
             while not result_future.done():
-                message = await websocket.receive_text()
+                # Use wait_for to allow checking result_future.done() periodically
+                # or use asyncio.wait to wait for either message or future completion
+                try:
+                    message = await asyncio.wait_for(websocket.receive_text(), timeout=1.0)
+                except asyncio.TimeoutError:
+                    continue
+                
                 try:
                     data = json.loads(message)
                 except Exception:
@@ -397,9 +403,23 @@ async def run_web_choice(
     finally:
         server.should_exit = True
         monitor_task.cancel()
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(asyncio.CancelledError):
             await monitor_task
-        await server_task
+        
+        # Force close all websocket connections to unblock uvicorn shutdown
+        for ws in list(connections):
+            try:
+                # Schedule close without awaiting to avoid blocking the shutdown flow
+                asyncio.create_task(ws.close(code=1001, reason="Server shutting down"))
+            except Exception:
+                pass
+
+        # Use a timeout for server shutdown to prevent hanging indefinitely
+        try:
+            await asyncio.wait_for(server_task, timeout=2.0)
+        except asyncio.TimeoutError:
+            server_task.cancel()
+        
         ACTIVE_CHOICES.pop(choice_id, None)
 
     return result, final_config
