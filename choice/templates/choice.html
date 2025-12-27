@@ -813,6 +813,17 @@
         <script type="application/json" id="mcp-defaults">${defaults_json}</script>
         <script type="application/json" id="mcp-options">${options_json}</script>
         <script>
+            const choiceId = '${choice_id}';
+            const defaults = JSON.parse(document.getElementById('mcp-defaults').textContent);
+            const options = JSON.parse(document.getElementById('mcp-options').textContent);
+            const promptType = '${prompt_type}';
+            let placeholderVisible = defaults.placeholder_visibility !== false;
+            let annotationEnabled = defaults.annotation_enabled !== false;
+            let submitting = false;
+            let selectedIndices = new Set();
+            let optionAnnotations = {};
+            let focusedIndex = -1;
+
             // Section: Theme Management
             const themeSelect = document.getElementById('themeSelect');
             const htmlElement = document.documentElement;
@@ -847,17 +858,6 @@
                     applyTheme('system');
                 }
             });
-
-            const choiceId = '${choice_id}';
-            const defaults = JSON.parse(document.getElementById('mcp-defaults').textContent);
-            const options = JSON.parse(document.getElementById('mcp-options').textContent);
-            const promptType = '${prompt_type}';
-            let placeholderVisible = true;
-            let annotationEnabled = true;
-            let submitting = false;
-            let selectedIndices = new Set();
-            let optionAnnotations = {};
-            let focusedIndex = -1;
 
             function getVisibleOptions() {
                 return options;
@@ -904,7 +904,7 @@
 
             function connectWebSocket() {
                 const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-                const wsUrl = protocol + '//' + window.location.host + '/ws/' + choiceId;
+                const wsUrl = protocol + '://' + window.location.host + '/ws/' + choiceId;
 
                 if (ws) {
                     ws.close();
