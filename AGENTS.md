@@ -19,15 +19,38 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 # Instructions
 
-- Scope: This repo builds an MCP server whose only tool is `provide_choice`, gathering structured user decisions instead of AI guesses. Two fronts: terminal (ANSI via questionary) and a transient web bridge (FastAPI+Uvicorn) that returns a local URL.
-- Key references: read [openspec/project.md](../openspec/project.md) for stack/conventions and [openspec/AGENTS.md](../openspec/AGENTS.md) when work involves proposals/spec changes. Root [AGENTS.md](../AGENTS.md) points to OpenSpec flow. README is currently empty.
-- Stack: Python 3.12+, fastmcp for MCP glue, FastAPI+Uvicorn for the web portal, questionary for CLI prompts.
-- Tool contract: schema-first `provide_choice` with `title`, `prompt`, `selection_mode (single|multi|text_input|hybrid)`, `options[id,description,recommended]` (at least one recommended), `placeholder`. Output must include `action_status (selected|custom_input|cancelled|timeout)` and normalized selections.
-- Interaction design: CLI is default—render list, arrow/space/enter, then clear UI and print a concise summary. Web bridge is fallback—spawn short-lived server, open `http://localhost:<port>/choice/<id>`, collect via WebSocket/long-poll, then shut down.
-- Behavioral rules: invoke the tool whenever choices/branches >2, destructive actions, or config is missing. Never guess defaults; always explain why the choice is needed in the prompt. `cancel` halts the subtask; enforce a ~5 min timeout returning `timeout` status.
-- Code style: PEP 8 with type hints; keep modules small and single-purpose; prefer dataclasses/TypedDict for payloads; keep user-facing text concise and action-oriented.
-- Architecture: separate transport (terminal/web) from choice orchestration and MCP binding. Normalize selection ordering for multi-select; support hybrid/text input with placeholder guidance.
-- Testing: use `uv run pytest` target pytest unit tests for choice normalization, timeout, and cancel handling; manual smoke for both terminal and web until e2e exists.
-- Git/flow: default branch `main`; feature branches keyed to change-id when following OpenSpec; Conventional Commit style encouraged; run `openspec validate --strict` when specs are touched.
-- External touchpoints: local browser for the web flow (assume localhost only); fastmcp lifecycle expectations; questionary keybindings/render limits.
-- Current code: [server.py](../server.py) only initializes `FastMCP("Interactive Choice")`; [main.py](../main.py) is a stub. Expect to add FastAPI app, tool registration, and web portal handlers.
+## 🏗️ 架构概览 (Big Picture)
+本项目是一个 MCP 服务器，核心功能是通过 `provide_choice` 工具收集用户决策。
+
+- **核心调度 (Orchestration)**: [choice/orchestrator.py](../choice/orchestrator.py) 中的 `ChoiceOrchestrator` 是大脑，负责验证请求、选择传输方式（终端或 Web）以及持久化用户配置。
+- **传输层 (Transports)**:
+  - **Terminal**: [choice/terminal.py](../choice/terminal.py) 使用 `questionary` 实现 ANSI 交互。
+  - **Web**: [choice/web.py](../choice/web.py) 使用 `FastAPI` 启动临时服务器。
+- **数据模型**: [choice/models.py](../choice/models.py) 定义了所有核心数据结构（使用 `@dataclass`）。
+- **持久化**: [choice/storage.py](../choice/storage.py) 将用户偏好保存至 `~/.interactive_choice_config.json`。
+
+## 🛠️ 关键工作流 (Workflows)
+- **环境同步**: `uv sync`
+- **运行服务器**: `uv run server.py`
+- **运行测试**: `uv run pytest`
+- **规范管理**: 使用 `openspec` 工具管理项目提案和任务（见 [openspec/](../openspec/)）。
+
+## 📏 编码约定 (Conventions)
+- **逻辑分段**: 使用 `// Section: Section Name` 注释来分隔文件中的逻辑块。
+- **模型定义**: 必须在 [choice/models.py](../choice/models.py) 中使用 `@dataclass` 定义新模型。
+- **类型提示**: 强制使用严格的类型提示（Type Hints）。
+- **错误处理**: 
+  - 工具入口应使用 `safe_handle` 包装，确保始终返回有效的 MCP 响应。
+  - 优先返回 `cancelled_response` 或 `timeout_response` 而非抛出未捕获异常。
+- **ID 语义**: `ProvideChoiceOption.id` 既是唯一标识也是显示标签。`selected_indices` 存储的是这些 ID 字符串，而非数字索引。
+
+## 🔗 集成要点 (Integration)
+- **FastMCP**: 使用 `@mcp.tool()` 注册工具。
+- **Web Bridge**: Web 模式是短寿命的，任务完成后应确保服务器关闭。
+- **OpenSpec**: 修改架构或引入重大变更前，必须参考或更新 [openspec/](../openspec/) 中的提案。
+
+## 📂 关键文件参考
+- [server.py](../server.py): MCP 入口与工具定义。
+- [choice/orchestrator.py](../choice/orchestrator.py): 核心调度逻辑。
+- [choice/models.py](../choice/models.py): 协议数据模型。
+- [choice/storage.py](../choice/storage.py): 配置持久化实现。
