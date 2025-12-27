@@ -361,7 +361,7 @@ class WebChoiceServer:
 			if not session:
 				raise HTTPException(status_code=404)
 			if session.result_future.done():
-				return JSONResponse({"status": "already-set"})
+				return JSONResponse({"status": "already-set", "state": session.to_template_state()})
 
 			try:
 				action = str(payload.get("action_status", ""))

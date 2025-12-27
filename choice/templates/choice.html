@@ -817,7 +817,8 @@
             const choiceId = '${choice_id}';
             const defaults = JSON.parse(document.getElementById('mcp-defaults').textContent);
             const options = JSON.parse(document.getElementById('mcp-options').textContent);
-            const sessionState = JSON.parse(document.getElementById('mcp-session-state').textContent || '{}');
+            const parsedSessionState = JSON.parse(document.getElementById('mcp-session-state').textContent || '{}');
+            let sessionState = parsedSessionState && typeof parsedSessionState === 'object' ? parsedSessionState : {};
             const promptType = '${prompt_type}';
             let placeholderVisible = defaults.placeholder_visibility !== false;
             let annotationEnabled = defaults.annotation_enabled !== false;
@@ -996,6 +997,7 @@
             }
 
             function applyFinalizedState(state) {
+                sessionState = Object.assign({}, sessionState || {}, state || {});
                 hasFinalResult = true;
                 submitting = false;
                 stopTimeout();
@@ -1304,6 +1306,10 @@
 
             // Section: Submission
             async function postSelection(payload, statusType = 'manual') {
+                if (hasFinalResult) {
+                    applyFinalizedState(sessionState.status ? sessionState : payload);
+                    return;
+                }
                 if (submitting) return;
                 submitting = true;
                 const statusEl = document.getElementById('status');
@@ -1319,12 +1325,17 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
+                    let data = null;
+                    try {
+                        data = await res.json();
+                    } catch (e) {
+                        data = null;
+                    }
                     if (!res.ok) {
                         let errorDetail = 'Submission failed';
-                        try {
-                            const data = await res.json();
-                            errorDetail = data.detail || errorDetail;
-                        } catch (e) {
+                        if (data && data.detail) {
+                            errorDetail = data.detail;
+                        } else {
                             const text = await res.text().catch(() => '');
                             if (text) errorDetail = text.substring(0, 200);
                         }
@@ -1335,15 +1346,25 @@
                         headerStatusText.innerText = 'Error';
                         headerStatusDot.className = 'status-dot offline';
                         submitting = false;
-                    } else {
-                        const actionKey = payload.action_status || statusType || 'manual';
-                        applyFinalizedState({
-                            action_status: actionKey,
-                            selected_indices: payload.selected_indices || Array.from(selectedIndices),
-                            option_annotations: payload.option_annotations || optionAnnotations,
-                            global_annotation: payload.global_annotation || document.getElementById('globalAnnotation').value || null
-                        });
+                        return;
                     }
+
+                    const actionKey = payload.action_status || statusType || 'manual';
+                    if (data && data.status === 'already-set') {
+                        if (data.state) {
+                            applyFinalizedState(data.state);
+                            return;
+                        }
+                        applyFinalizedState({ action_status: actionKey });
+                        return;
+                    }
+
+                    applyFinalizedState({
+                        action_status: actionKey,
+                        selected_indices: payload.selected_indices || Array.from(selectedIndices),
+                        option_annotations: payload.option_annotations || optionAnnotations,
+                        global_annotation: payload.global_annotation || document.getElementById('globalAnnotation').value || null
+                    });
                 } catch (e) {
                     statusEl.className = 'status error';
                     statusEl.innerText = 'Network error. Please try again.';
@@ -1404,6 +1425,10 @@
             }
 
             function submitPayload(base, statusType = 'manual') {
+                if (hasFinalResult) {
+                    applyFinalizedState(sessionState.status ? sessionState : base);
+                    return;
+                }
                 const config = collectConfig();
                 base.config = config;
                 postSelection(base, statusType);
@@ -1469,6 +1494,7 @@
             // Section: Init
             if (hasFinalResult) {
                 renderOptions();
+                applyFinalizedState(sessionState);
             } else if (defaults.use_default_option) {
                 applyDefaultSelections();
             } else {
@@ -1479,10 +1505,6 @@
 
             requestNotificationPermission();
             connectWebSocket();
-
-            if (hasFinalResult) {
-                applyFinalizedState(sessionState);
-            }
 
             // Section: Timeout Countdown + Sync + Notifications
             let _timeoutTimerId = null;
