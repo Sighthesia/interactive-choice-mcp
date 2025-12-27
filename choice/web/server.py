@@ -34,6 +34,8 @@ from .templates import _render_dashboard, _render_html
 __all__ = [
     "WebChoiceServer",
     "run_web_choice",
+    "create_terminal_handoff_session",
+    "poll_terminal_session_result",
 ]
 
 _DEFAULT_WEB_HOST = "127.0.0.1"
@@ -217,6 +219,95 @@ class WebChoiceServer:
                 traceback.print_exc()
                 raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(exc)}") from exc
 
+        # Section: Terminal Hand-off Endpoints
+        @app.get("/terminal/{session_id}")
+        async def get_terminal_session(session_id: str):  # noqa: ANN201
+            """Get terminal session info for the CLI client."""
+            from ..terminal.session import get_terminal_session_store
+            store = get_terminal_session_store()
+            session = store.get_session(session_id)
+            if not session:
+                raise HTTPException(status_code=404, detail="session not found or expired")
+            if session.result is not None:
+                return JSONResponse({
+                    "status": "completed",
+                    "result": {
+                        "action_status": session.result.action_status,
+                        "selected_indices": session.result.selection.selected_indices,
+                        "summary": session.result.selection.summary,
+                    },
+                })
+            return JSONResponse({
+                "status": "pending",
+                "remaining_seconds": session.remaining_seconds,
+                "request": {
+                    "title": session.req.title,
+                    "prompt": session.req.prompt,
+                    "selection_mode": session.req.selection_mode,
+                    "options": [
+                        {"id": o.id, "description": o.description, "recommended": o.recommended}
+                        for o in session.req.options
+                    ],
+                },
+                "config": {
+                    "timeout_seconds": session.config.timeout_seconds,
+                    "single_submit_mode": session.config.single_submit_mode,
+                    "use_default_option": session.config.use_default_option,
+                    "timeout_action": session.config.timeout_action,
+                },
+            })
+
+        @app.post("/terminal/{session_id}/submit")
+        async def submit_terminal_result(session_id: str, payload: Dict[str, object]):  # noqa: ANN201
+            """Submit the result from the terminal CLI client."""
+            from ..terminal.session import get_terminal_session_store
+            store = get_terminal_session_store()
+            session = store.get_session(session_id)
+            if not session:
+                raise HTTPException(status_code=404, detail="session not found or expired")
+            if session.result is not None:
+                return JSONResponse({"status": "already-set"})
+
+            action = str(payload.get("action_status", ""))
+            selected_indices = payload.get("selected_indices", [])
+            option_annotations = payload.get("option_annotations", {})
+            global_annotation = payload.get("global_annotation")
+
+            if action == "cancelled":
+                from ..response import cancelled_response
+                response = cancelled_response(
+                    transport=TRANSPORT_WEB,
+                    url=f"http://{self.host}:{self.port}/terminal/{session_id}",
+                    option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
+                    global_annotation=str(global_annotation) if global_annotation else None,
+                )
+            elif action == "selected":
+                if not isinstance(selected_indices, list):
+                    raise HTTPException(status_code=400, detail="selected_indices must be list")
+                ids = [str(x) for x in selected_indices]
+                valid_ids = {o.id for o in session.req.options}
+                if any(i not in valid_ids for i in ids):
+                    raise HTTPException(status_code=400, detail="selected_indices contains unknown id")
+                response = normalize_response(
+                    req=session.req,
+                    selected_indices=ids,
+                    transport=TRANSPORT_WEB,
+                    url=f"http://{self.host}:{self.port}/terminal/{session_id}",
+                    option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
+                    global_annotation=str(global_annotation) if global_annotation else None,
+                )
+            elif action.startswith("timeout"):
+                response = timeout_response(
+                    req=session.req,
+                    transport=TRANSPORT_WEB,
+                    url=f"http://{self.host}:{self.port}/terminal/{session_id}",
+                )
+            else:
+                raise HTTPException(status_code=400, detail="invalid action_status")
+
+            session.set_result(response)
+            return JSONResponse({"status": "ok"})
+
     async def ensure_running(self) -> None:
         if self._server_task and not self._server_task.done():
             return
@@ -347,3 +438,61 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
         use_default_option=use_default_option,
         timeout_action=timeout_action,
     )
+
+
+# Section: Terminal Hand-off Functions
+async def create_terminal_handoff_session(
+    req: ProvideChoiceRequest,
+    config: ProvideChoiceConfig,
+) -> ProvideChoiceResponse:
+    """Create a terminal hand-off session and return immediately with launch info.
+    
+    This function:
+    1. Ensures the web server is running (for the terminal client to connect to)
+    2. Creates a terminal session in the session store
+    3. Returns a `pending_terminal_launch` response with the launch command
+    
+    The agent should then run the returned command to open the terminal UI.
+    """
+    from ..response import pending_terminal_launch_response
+    from ..terminal.session import get_terminal_session_store
+
+    server = await _get_server()
+    store = get_terminal_session_store()
+    session = store.create_session(req, config, config.timeout_seconds)
+
+    url = f"http://{server.host}:{server.port}/terminal/{session.session_id}"
+    launch_command = f"uv run python -m choice.terminal.client --session {session.session_id} --url http://{server.host}:{server.port}"
+
+    return pending_terminal_launch_response(
+        session_id=session.session_id,
+        url=url,
+        launch_command=launch_command,
+    )
+
+
+async def poll_terminal_session_result(session_id: str) -> Optional[ProvideChoiceResponse]:
+    """Poll for the result of a terminal hand-off session.
+    
+    Returns the result if available, or None if still pending or expired.
+    Used by the orchestrator when `provide_choice` is called with a session_id.
+    """
+    from ..terminal.session import get_terminal_session_store
+    from ..response import timeout_response
+
+    store = get_terminal_session_store()
+    session = store.get_session(session_id)
+    if session is None:
+        return None
+
+    if session.result is not None:
+        return session.result
+
+    if session.is_expired:
+        # Session expired without result - generate timeout response
+        response = timeout_response(req=session.req, transport=TRANSPORT_WEB, url=None)
+        session.set_result(response)
+        return response
+
+    # Still pending
+    return None

@@ -4,29 +4,20 @@ from choice.orchestrator import ChoiceOrchestrator, safe_handle
 from choice import models
 from choice import response as r
 
-def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
+
+# Section: Terminal Hand-off Tests
+def test_orchestrator_terminal_handoff_returns_pending(monkeypatch, tmp_path):
+    """When terminal transport is requested, orchestrator returns pending_terminal_launch."""
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
 
-    monkeypatch.setattr("choice.orchestrator.is_terminal_available", lambda: True)
-
-    async def fake_prompt(req, defaults, allow_web):
-        return models.ProvideChoiceConfig(
-            transport=models.TRANSPORT_TERMINAL,
-            timeout_seconds=defaults.timeout_seconds,
-            timeout_default_enabled=False,
-            timeout_default_index=0,
+    async def fake_handoff(req, config):
+        return r.pending_terminal_launch_response(
+            session_id="test123",
+            url="http://127.0.0.1:17863/terminal/test123",
+            launch_command="uv run python -m choice.terminal.client --session test123 --url http://127.0.0.1:17863",
         )
 
-    monkeypatch.setattr("choice.orchestrator.prompt_terminal_configuration", fake_prompt)
-
-    async def fake_run(req, timeout_seconds, config=None):
-        return r.normalize_response(
-            req=req,
-            selected_indices=["A"],
-            transport=models.TRANSPORT_TERMINAL,
-        )
-
-    monkeypatch.setattr("choice.orchestrator.run_terminal_choice", fake_run)
+    monkeypatch.setattr("choice.orchestrator.create_terminal_handoff_session", fake_handoff)
 
     result = asyncio.run(
         orch.handle(
@@ -37,30 +28,49 @@ def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
         )
     )
 
-    assert result.selection.transport == models.TRANSPORT_TERMINAL
-    assert result.selection.selected_indices == ["A"]
+    assert result.action_status == "pending_terminal_launch"
+    assert "test123" in result.selection.url
 
-def test_orchestrator_terminal_config_abort_falls_back_to_web(monkeypatch, tmp_path):
+
+def test_orchestrator_session_polling_returns_result(monkeypatch, tmp_path):
+    """When session_id is provided and result is ready, returns the result."""
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
 
-    monkeypatch.setattr("choice.orchestrator.is_terminal_available", lambda: True)
+    async def fake_poll(session_id):
+        return r.normalize_response(
+            req=models.ProvideChoiceRequest(
+                title="T", prompt="P", selection_mode="single",
+                options=[models.ProvideChoiceOption(id="A", description="d", recommended=True)],
+                timeout_seconds=300,
+            ),
+            selected_indices=["A"],
+            transport=models.TRANSPORT_WEB,
+        )
 
-    async def fake_prompt_abort(req, defaults, allow_web):
+    monkeypatch.setattr("choice.orchestrator.poll_terminal_session_result", fake_poll)
+
+    result = asyncio.run(
+        orch.handle(
+            title="Title",
+            prompt="Prompt",
+            selection_mode="single",
+            options=[{"id": "A", "description": "desc", "recommended": True}],
+            session_id="existing123",
+        )
+    )
+
+    assert result.action_status == "selected"
+    assert result.selection.selected_indices == ["A"]
+
+
+def test_orchestrator_session_polling_pending(monkeypatch, tmp_path):
+    """When session_id is provided but result is not ready, returns pending status."""
+    orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
+
+    async def fake_poll(session_id):
         return None
 
-    monkeypatch.setattr("choice.orchestrator.prompt_terminal_configuration", fake_prompt_abort)
-
-    async def fake_web(req, defaults, allow_terminal):
-        return (
-            r.normalize_response(
-                req=req,
-                selected_indices=["A"],
-                transport=models.TRANSPORT_WEB,
-            ),
-            defaults,
-        )
-
-    monkeypatch.setattr("choice.orchestrator.run_web_choice", fake_web)
+    monkeypatch.setattr("choice.orchestrator.poll_terminal_session_result", fake_poll)
 
     result = asyncio.run(
         orch.handle(
@@ -68,15 +78,27 @@ def test_orchestrator_terminal_config_abort_falls_back_to_web(monkeypatch, tmp_p
             prompt="Prompt",
             selection_mode="single",
             options=[{"id": "A", "description": "desc", "recommended": True}],
+            session_id="pending123",
         )
     )
 
-    assert result.selection.transport == models.TRANSPORT_WEB
-    assert result.selection.selected_indices == ["A"]
+    assert result.action_status == "pending_terminal_launch"
+    assert "pending123" in result.selection.summary
 
+
+# Section: Web Transport Tests
 def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
+    """When web transport is configured, uses web portal."""
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
-    monkeypatch.setattr("choice.orchestrator.is_terminal_available", lambda: False)
+    
+    # Pre-set config to web transport
+    from choice.storage import ConfigStore
+    store = ConfigStore(path=tmp_path / "cfg.json")
+    store.save(models.ProvideChoiceConfig(
+        transport=models.TRANSPORT_WEB,
+        timeout_seconds=300,
+    ))
+    orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
 
     async def fake_web(req, defaults, allow_terminal):
         return (
@@ -103,6 +125,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
     assert result.selection.selected_indices == ["B"]
 
 
+# Section: Error Handling Tests
 def test_safe_handle_reports_validation_error(monkeypatch, tmp_path):
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
     monkeypatch.setattr("choice.orchestrator.is_terminal_available", lambda: False)

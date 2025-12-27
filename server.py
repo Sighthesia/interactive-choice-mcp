@@ -16,6 +16,7 @@ async def provide_choice(
 	prompt: str,
 	selection_mode: str,
 	options: list[dict],
+	session_id: str | None = None,
 ):
 	"""Present an interactive choice prompt to the user and return their selection.
 
@@ -34,6 +35,12 @@ async def provide_choice(
 		selection_mode: Must be "single" or "multi"; aliases such as "single_select" are rejected and will raise a validation error.
 
 		options: Each entry must include `id`, `description`, and at least one option marked with `recommended: true`; missing or malformed fields will return a validation error instead of launching the UI.
+
+		session_id: Optional. When provided, polls for the result of an existing terminal hand-off session instead of creating a new interaction.
+
+	Terminal Hand-off Mode:
+
+		When the tool returns `action_status: pending_terminal_launch`, the `summary` field contains a CLI command to run in a terminal. Execute this command to open the interactive UI for the user. Then poll again with the same `session_id` to retrieve the final result.
 	"""
 
 	# Delegate the execution to the orchestrator.
@@ -46,10 +53,24 @@ async def provide_choice(
 		options=options,
 		transport=None,
 		timeout_seconds=None,
+		session_id=session_id,
 	)
 	
 	selection = result.selection
 	out: dict[str, object] = {"action_status": result.action_status}
+
+	# For terminal hand-off, include session info for the agent
+	if result.action_status == "pending_terminal_launch":
+		out["summary"] = selection.summary  # Contains launch command
+		if selection.url:
+			out["url"] = selection.url
+		# Extract session_id from URL for polling
+		if selection.url:
+			parts = selection.url.rstrip("/").split("/")
+			if parts:
+				out["session_id"] = parts[-1]
+		return out
+
 	if selection.summary:
 		out["summary"] = selection.summary
 		if selection.summary.startswith("validation_error"):

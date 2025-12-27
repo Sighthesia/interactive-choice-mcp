@@ -13,6 +13,7 @@ __all__ = [
     "normalize_response",
     "cancelled_response",
     "timeout_response",
+    "pending_terminal_launch_response",
 ]
 
 
@@ -126,3 +127,28 @@ def timeout_response(
         url=url,
         action_status=action_status,
     )
+
+
+def pending_terminal_launch_response(
+    *,
+    session_id: str,
+    url: str,
+    launch_command: str,
+) -> "ProvideChoiceResponse":
+    """Generate a response indicating that the terminal UI should be launched externally.
+    
+    This response is returned immediately when terminal hand-off mode is used,
+    providing the agent with:
+    - `session_id`: The session identifier for polling the result
+    - `url`: The HTTP endpoint for the session (used by the terminal client)
+    - `launch_command`: The CLI command to run to open the terminal UI
+    """
+    from .models import ProvideChoiceResponse, ProvideChoiceSelection, TRANSPORT_TERMINAL
+
+    selection = ProvideChoiceSelection(
+        selected_indices=[],
+        transport=TRANSPORT_TERMINAL,
+        summary=launch_command,
+        url=url,
+    )
+    return ProvideChoiceResponse(action_status="pending_terminal_launch", selection=selection)

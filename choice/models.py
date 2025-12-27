@@ -89,5 +89,7 @@ VALID_ACTIONS = {
     "timeout_auto_submitted",
     "timeout_cancelled",
     "timeout_reinvoke_requested",
+    # Terminal hand-off: returned immediately when launching external terminal UI
+    "pending_terminal_launch",
 }
 VALID_TRANSPORTS = {TRANSPORT_TERMINAL, TRANSPORT_WEB}
