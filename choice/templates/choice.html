@@ -479,12 +479,6 @@
             border: 1px solid #bbf7d0;
         }
 
-        .status.auto {
-            color: #854d0e;
-            background: #fef9c3;
-            border: 1px solid #fef08a;
-        }
-
         .status.timeout {
             color: #991b1b;
             background: #fee2e2;
@@ -584,7 +578,8 @@
 
 <body>
     <header class="header-bar">
-        <div class="brand">Interactive Choice MCP Web Console</div>
+        <div class="brand">Interactive Choice MCP Web Portal</Portal>
+        </div>
 
         <div class="status-item">
             Version: <span>${mcp_version}</span>
@@ -637,7 +632,7 @@
                 <span><kbd>Enter</kbd> Toggle selection</span>
                 <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Submit</span>
                 <span><kbd>Shift</kbd>+<kbd>A</kbd> Focus annotation</span>
-                <span><kbd>Esc</kbd> Cancel</span>
+                <span><kbd>Esc</kbd> Unfocus Textarea</span>
             </div>
 
             <!-- Actions -->
@@ -745,7 +740,7 @@
                             action_status: 'selected',
                             selected_indices: [opt.id],
                             option_annotations: optionAnnotations
-                        }, 'auto');
+                        }, 'manual');
                     } else {
                         toggleOptionSelection(opt.id, block);
                     }
@@ -773,7 +768,7 @@
 
                 const noteInput = document.createElement('input');
                 noteInput.type = 'text';
-                noteInput.placeholder = singleSubmit && promptType !== 'multi_select' ? 'Add note (will be submitted on selection)' : 'Add note...';
+                noteInput.placeholder = 'Add note...';
                 noteInput.className = 'option-note';
                 noteInput.value = optionAnnotations[opt.id] || '';
                 noteInput.addEventListener('input', () => { optionAnnotations[opt.id] = noteInput.value; updateCancelBtn(); });
@@ -850,7 +845,7 @@
                                 action_status: 'selected',
                                 selected_indices: [options[focusedIndex].id],
                                 option_annotations: optionAnnotations
-                            }, 'auto');
+                            }, 'manual');
                         } else {
                             submitBatch('manual');
                         }
@@ -863,17 +858,12 @@
                                     action_status: 'selected',
                                     selected_indices: [options[focusedIndex].id],
                                     option_annotations: optionAnnotations
-                                }, 'auto');
+                                }, 'manual');
                             } else if (block) {
                                 toggleOptionSelection(options[focusedIndex].id, block);
                             }
                         }
                     }
-                    break;
-
-                case 'Escape':
-                    e.preventDefault();
-                    submitCancel();
                     break;
 
                 case 'Home':
@@ -939,8 +929,8 @@
 
             const statusMap = {
                 'manual': { text: '✅ Submitted successfully. You can close this tab.', class: 'manual' },
-                'auto': { text: '⚡ Auto-submitted successfully.', class: 'auto' },
                 'timeout': { text: '⏰ Timeout: Auto-submitted.', class: 'timeout' },
+                'timeout_cancelled': { text: '⏰ Timeout: Cancelled (no default selection).', class: 'timeout' },
                 'cancelled': { text: '🚫 Cancelled.', class: 'timeout' }
             };
 
@@ -1140,7 +1130,12 @@
                     const headerStatusDot = document.getElementById('connectionDot');
                     headerStatusText.innerText = 'Timeout';
                     headerStatusDot.className = 'status-dot offline';
-                    submitPayload({ action_status: 'timeout' }, 'timeout');
+                    const hasDefault = defaults.timeout_default_enabled && defaults.timeout_default_index !== null;
+                    if (hasDefault) {
+                        submitPayload({ action_status: 'timeout' }, 'timeout');
+                    } else {
+                        submitPayload({ action_status: 'cancelled' }, 'timeout_cancelled');
+                    }
                 }
             }, 1000);
         }
