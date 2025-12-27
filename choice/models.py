@@ -239,9 +239,6 @@ def apply_configuration(
     if config.timeout_seconds <= 0:
         raise ValidationError("timeout_seconds must be positive")
 
-    # Note: option visibility / placeholder visibility / annotation toggles
-    # were removed as configurable options. We keep the original request options
-    # intact and only apply standard config values.
     timeout_default_index = config.timeout_default_index
     if timeout_default_index is not None:
         if timeout_default_index < 0 or timeout_default_index >= len(req.options):

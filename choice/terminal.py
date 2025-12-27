@@ -81,12 +81,10 @@ def _run_prompt_sync(
     It handles the different prompt types (select, checkbox, text, hybrid),
     respects single_submit_mode, and annotations (always enabled).
     """
-    # Option visibility setting removed — all options are shown
     visible_options = list(req.options)
     choices = _build_choices(visible_options)
     option_annotations: dict[str, str] = {}
     global_annotation: Optional[str] = None
-    # Annotation inputs are always enabled and placeholders are shown by default
     annotation_enabled = True
     placeholder_visible = True
 

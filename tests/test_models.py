@@ -189,5 +189,4 @@ def test_apply_configuration():
     adjusted = models.apply_configuration(req, config)
     assert adjusted.timeout_seconds == 42
     assert adjusted.transport == models.TRANSPORT_WEB
-    # option_visibility setting removed; options are unchanged
     assert [opt.id for opt in adjusted.options] == ["A", "B"]
