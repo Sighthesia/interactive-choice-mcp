@@ -22,22 +22,26 @@ The system SHALL default to an interactive terminal transport using questionary 
 - **THEN** the prompt renders in the terminal, the UI is cleared after confirmation, and the summarized selection is returned following the result contract.
 
 ### Requirement: Web Bridge Flow
-The system SHALL provide a transient FastAPI-based web portal as a fallback or when explicitly requested, exposing a local URL (e.g., `http://localhost:<port>/choice/<id>`), opening the browser when possible, collecting the choice via WebSocket or long-poll, and shutting down after completion.
+The system SHALL provide a transient FastAPI-based web portal as a fallback or when explicitly requested, exposing a local URL (e.g., `http://localhost:<port>/choice/<id>`), opening the browser when possible, collecting the choice via WebSocket or long-poll, and shutting down after completion. **The system SHALL use WebSocket to synchronize the remaining timeout duration between the server and the client in real-time, SHALL support browser notifications for timeout alerts, and SHALL provide a dashboard to list and re-enter active interactions.**
 
-#### Scenario: Web portal completes
-- **WHEN** terminal mode is unavailable or the caller opts into the web portal
-- **THEN** the server starts the temporary FastAPI endpoint, returns the local URL, relays user selections through the portal, and tears down the server after returning the result payload.
+#### Scenario: WebSocket synchronization succeeds
+- **WHEN** the web portal is loaded and a WebSocket connection is established
+- **THEN** the server periodically pushes the remaining timeout seconds to the client, and the client updates its countdown UI to match the server's state.
+
+#### Scenario: Browser notification triggered
+- **WHEN** the timeout is approaching (e.g., < 10s) or has occurred, and the browser tab is not in focus
+- **THEN** the system triggers a browser notification to alert the user.
+
+#### Scenario: Re-entering an active interaction
+- **WHEN** a user accidentally closes a web portal tab but the interaction is still active
+- **THEN** the user can navigate to the root URL of the web portal to see a list of active interactions and select the one they wish to re-enter.
 
 ### Requirement: Timeout and Cancel Handling
-The system SHALL enforce a bounded wait with a configurable timeout (default 5 minutes) for user input across transports, SHALL honor cancellations with cancel always visible/enabled (no toggle to hide it), and SHALL return `timeout` or `cancelled` action statuses without executing further actions.
+The system SHALL enforce a bounded wait with a configurable timeout (default 5 minutes) for user input across transports, SHALL honor cancellations with cancel always visible/enabled (no toggle to hide it), and SHALL return `timeout` or `cancelled` action statuses without executing further actions. **In the web transport, the timeout deadline SHALL be dynamically adjustable, and the server SHALL maintain the authoritative expiration time.**
 
-#### Scenario: User cancels interaction
-- **WHEN** the user cancels during the prompt
-- **THEN** the tool returns `action_status: cancelled` immediately and halts the current subtask, regardless of prior configuration.
-
-#### Scenario: No response within timeout
-- **WHEN** no user response is received within the configured timeout window (default or user override)
-- **THEN** the tool returns `action_status: timeout`, shuts down any transient servers, and signals the caller to re-invoke if needed while keeping cancel available on re-entry.
+#### Scenario: Dynamic timeout update in web portal
+- **WHEN** a user adjusts the timeout value in the web portal configuration panel
+- **THEN** the client notifies the server of the new timeout duration, the server updates its internal deadline, and the updated remaining time is synchronized back to the client via WebSocket.
 
 ### Requirement: Decision Policy and Prompt Context
 The orchestration layer SHALL require callers to include current task context and the reason a choice is needed in the `prompt`, and SHALL invoke `provide_choice` whenever branching options exceed two, an action is destructive, or required configuration is missing, avoiding speculative defaults.
@@ -47,32 +51,16 @@ The orchestration layer SHALL require callers to include current task context an
 - **THEN** it triggers `provide_choice` with contextual prompting instead of selecting a default, ensuring the subsequent action follows the returned selection.
 
 ### Requirement: Interaction Configuration Surfaces
-The system SHALL present a lightweight configuration surface before prompting, allowing users to choose transport (terminal or web), toggle visibility for any options (arbitrary selection), set a timeout override while preserving sensible defaults, and persist the last-used configuration for subsequent prompts.
+The system SHALL present a lightweight configuration surface before prompting, allowing users to choose transport (terminal or web), toggle visibility for any options (arbitrary selection), set a timeout override while preserving sensible defaults, and persist the last-used configuration for subsequent prompts. **The configuration SHALL include toggles for placeholder visibility and annotation capture.**
 
-#### Scenario: Terminal configuration applied
-- **WHEN** terminal transport is selected and the configuration surface is shown
-- **THEN** the user can accept defaults or adjust transport, option visibility (arbitrary toggles), and timeout, and the subsequent terminal prompt uses those selections while keeping the UI clear-and-summary behavior.
-
-#### Scenario: Web configuration applied
-- **WHEN** web transport is selected or required and the configuration panel is shown in the portal
-- **THEN** the panel exposes transport choice (when applicable), option visibility, and timeout controls, and the ensuing web prompt honors the selections and tears down after returning the result payload.
-
-#### Scenario: Persisted configuration reused
-- **WHEN** a subsequent invocation starts and a saved configuration exists
-- **THEN** the configuration surface pre-populates transport, option visibility, and timeout from the saved values while still allowing overrides, and updates the stored profile after completion.
+#### Scenario: Expanded configuration persisted
+- **WHEN** a user modifies any interaction setting (transport, timeout, option visibility, placeholder visibility, or annotation toggle) in either the Terminal or Web configuration surface
+- **THEN** the system SHALL serialize the entire configuration state to a local JSON file and reload it as the default for the next invocation.
 
 ### Requirement: Choice Interaction Settings
-The system SHALL present interaction settings before prompting that let users switch between single-submit (auto-submit on selection) and batch submission (multi-select with explicit submit), preselect default options provided by the caller, toggle placeholder visibility for text-capable modes, and capture optional annotations (per-option notes and a global note). The settings SHALL enforce `min_selections`/`max_selections` bounds consistently across terminal and web flows and persist last-used defaults.
+The system SHALL present interaction settings before prompting that let users switch between single-submit (auto-submit on selection) and batch submission (multi-select with explicit submit), preselect default options provided by the caller, toggle placeholder visibility for text-capable modes, and capture optional annotations (per-option notes and a global note). The settings SHALL enforce `min_selections`/`max_selections` bounds consistently across terminal and web flows and **SHALL persist the state of these settings (including annotation and placeholder toggles) across sessions.**
 
-#### Scenario: Single submit vs batch submission
-- **WHEN** the settings panel is shown and `single_submit_mode` is enabled
-- **THEN** selecting an option auto-submits using the current defaults and enforces bounds; when disabled, users can select multiple options up to `max_selections` and must submit explicitly, with the UI blocking submission if counts fall outside `[min_selections, max_selections]`.
-
-#### Scenario: Option and global annotations captured
-- **WHEN** a user appends a note to an option or enters a global annotation because provided options are insufficient
-- **THEN** the submitted payload returns those annotations alongside selections (or custom input) and the settings persist the annotation toggle state for subsequent invocations.
-
-#### Scenario: Placeholder visibility control
-- **WHEN** a text or hybrid prompt exposes the placeholder toggle
-- **THEN** enabling it shows the AI-provided placeholder, disabling hides it, and the captured response notes whether a placeholder was used while keeping selection/annotation data intact.
+#### Scenario: Annotation toggle state persisted
+- **WHEN** the user disables annotation capture in the configuration surface
+- **THEN** subsequent prompts SHALL NOT show annotation input fields until the setting is re-enabled, and this preference SHALL survive server restarts.
 
