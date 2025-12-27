@@ -5,6 +5,7 @@ import asyncio
 import contextlib
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Iterable, Optional, Set, TYPE_CHECKING
 
 from ..models import (
@@ -55,6 +56,8 @@ class ChoiceSession:
     result_future: asyncio.Future[ProvideChoiceResponse]
     connections: Set["WebSocket"]
     config_used: ProvideChoiceConfig
+    created_at: float  # monotonic time when session was created
+    invocation_time: str  # formatted datetime string when session was created
     status: str = "pending"
     final_result: Optional[ProvideChoiceResponse] = None
     completed_at: Optional[float] = None
@@ -147,6 +150,9 @@ class ChoiceSession:
         self.connections.clear()
 
     async def monitor_deadline(self) -> None:
+        from ..logging import get_session_logger
+
+        logger = get_session_logger(__name__, self.choice_id)
         try:
             while not self.result_future.done():
                 remaining = _remaining_seconds(self.deadline)
@@ -154,13 +160,16 @@ class ChoiceSession:
                 if remaining <= 0:
                     from ..validation import apply_configuration
 
+                    logger.info("Timeout reached, applying timeout action")
                     adjusted_req = apply_configuration(self.req, self.config_used)
                     response = timeout_response(req=adjusted_req, transport=TRANSPORT_WEB, url=self.url)
                     self.set_result(response)
                     await self.broadcast_status("timeout", action_status=response.action_status)
+                    logger.info(f"Timeout action completed: {response.action_status}")
                     break
                 await asyncio.sleep(1)
         except asyncio.CancelledError:
+            logger.debug("Deadline monitor cancelled")
             raise
         finally:
             await self.broadcast_sync()

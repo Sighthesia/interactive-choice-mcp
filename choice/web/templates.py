@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import datetime
 from pathlib import Path
 from string import Template
 from typing import Iterable, TYPE_CHECKING
@@ -68,6 +67,7 @@ def _render_html(
     defaults: "ProvideChoiceConfig",
     allow_terminal: bool,
     session_state: dict[str, object],
+    invocation_time: str,
 ) -> str:
     option_payload = [
         {"id": o.id, "description": o.description, "recommended": o.recommended}
@@ -109,5 +109,5 @@ def _render_html(
         timeout_value=defaults.timeout_seconds,
         single_submit_checked="checked" if defaults.single_submit_mode else "",
         mcp_version="0.1.0",
-        invocation_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        invocation_time=invocation_time,
     )

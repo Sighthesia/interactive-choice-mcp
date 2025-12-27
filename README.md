@@ -43,6 +43,7 @@
 
 - 其中 `/path/to/interactive-choice-mcp` 应改为克隆仓库的实际位置（如 `~/interactive-choice-mcp`）。
 
+**基础配置：**
 ```json
 {
   "mcpServers": {
@@ -54,6 +55,27 @@
         "run",
         "server.py"
       ]
+    }
+  }
+}
+```
+
+**启用调试日志的配置：**
+```json
+{
+  "mcpServers": {
+    "interactive-choice": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/path/to/interactive-choice-mcp",
+        "run",
+        "server.py"
+      ],
+      "env": {
+        "CHOICE_LOG_LEVEL": "DEBUG",
+        "CHOICE_LOG_FILE": "~/.local/share/interactive-choice-mcp/server.log"
+      }
     }
   }
 }
@@ -95,11 +117,52 @@ uv run pytest
 
 ### 调试服务器
 
-运行此命令进入 MCP Instpector 进行调试：
+运行此命令进入 MCP Inspector 进行调试：
 
 ```bash
 uv run mcp dev server.py
 ```
+
+### 日志配置
+
+服务器支持通过环境变量配置日志输出，便于调试和问题排查。
+
+**环境变量：**
+
+| 变量名              | 说明                                           | 默认值 |
+| ------------------- | ---------------------------------------------- | ------ |
+| `CHOICE_LOG_LEVEL`  | 日志级别 (`DEBUG`, `INFO`, `WARNING`, `ERROR`) | `INFO` |
+| `CHOICE_LOG_FILE`   | 日志文件路径（不设置则只输出到 stderr）        | 无     |
+| `CHOICE_LOG_FORMAT` | 自定义日志格式                                 | 见下方 |
+
+**默认日志格式：**
+```
+%(asctime)s | %(levelname)-8s | %(name)-20s | %(message)s
+```
+
+**示例配置：**
+
+```bash
+# 启用详细调试日志并保存到文件
+export CHOICE_LOG_LEVEL=DEBUG
+export CHOICE_LOG_FILE=~/.local/share/interactive-choice-mcp/server.log
+```
+
+**日志输出示例：**
+```
+2024-12-27 22:00:00 | INFO     | choice.orchestrator  | Handling choice request: title='选择框架', mode=single, options=3
+2024-12-27 22:00:00 | INFO     | choice.server        | Starting web server on http://127.0.0.1:17863
+2024-12-27 22:00:00 | INFO     | choice.server        | Created session abc12345: title='选择框架', timeout=600s
+2024-12-27 22:00:30 | INFO     | choice.server        | Session abc12345 submitted: selected=['react']
+2024-12-27 22:00:30 | INFO     | choice.orchestrator  | Choice completed via web: action=selected
+```
+
+**调试技巧：**
+
+1. **查看请求处理流程**：设置 `CHOICE_LOG_LEVEL=DEBUG` 可以看到详细的请求解析、配置应用等信息。
+2. **排查超时问题**：日志会记录 session 创建时间、超时设置和超时触发事件。
+3. **追踪 WebSocket 连接**：DEBUG 级别会记录 WebSocket 连接和断开事件。
+4. **持久化日志**：设置 `CHOICE_LOG_FILE` 可以保存日志到文件，支持自动轮转（最大 10MB，保留 5 个备份）。
 
 ## 📄 许可证
 

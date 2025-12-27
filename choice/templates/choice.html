@@ -828,6 +828,11 @@
             let focusedIndex = -1;
             let hasFinalResult = sessionState.status && sessionState.status !== 'pending';
 
+            // Timeout state variables (declared early for use in applyFinalizedState)
+            let _timeoutTimerId = null;
+            let _timeoutTotal = 0;
+            let _timeoutRemaining = 0;
+
             if (hasFinalResult && Array.isArray(sessionState.selected_indices)) {
                 selectedIndices = new Set(sessionState.selected_indices);
             }
@@ -971,12 +976,32 @@
                         updateTimeoutFromServer(data.remaining_seconds, data.timeout_seconds);
                     }
                     if (data.type === 'status') {
+                        // Use server-provided state if available, fallback to local state
+                        const serverIndices = Array.isArray(data.selected_indices) ? data.selected_indices : null;
+                        const serverAnnotations = data.option_annotations || null;
+                        const serverGlobalAnnotation = typeof data.global_annotation === 'string' ? data.global_annotation : null;
+
                         if (data.status === 'timeout') {
-                            applyFinalizedState({ action_status: data.action_status || 'timeout' });
+                            applyFinalizedState({
+                                action_status: data.action_status || 'timeout',
+                                selected_indices: serverIndices || Array.from(selectedIndices),
+                                option_annotations: serverAnnotations || optionAnnotations,
+                                global_annotation: serverGlobalAnnotation ?? (document.getElementById('globalAnnotation').value || null)
+                            });
                         } else if (data.status === 'submitted') {
-                            applyFinalizedState({ action_status: data.action_status || 'selected', selected_indices: Array.from(selectedIndices), option_annotations: optionAnnotations, global_annotation: document.getElementById('globalAnnotation').value || null });
+                            applyFinalizedState({
+                                action_status: data.action_status || 'selected',
+                                selected_indices: serverIndices || Array.from(selectedIndices),
+                                option_annotations: serverAnnotations || optionAnnotations,
+                                global_annotation: serverGlobalAnnotation ?? (document.getElementById('globalAnnotation').value || null)
+                            });
                         } else if (data.status === 'cancelled') {
-                            applyFinalizedState({ action_status: 'cancelled' });
+                            applyFinalizedState({
+                                action_status: 'cancelled',
+                                selected_indices: serverIndices || [],
+                                option_annotations: serverAnnotations || optionAnnotations,
+                                global_annotation: serverGlobalAnnotation ?? (document.getElementById('globalAnnotation').value || null)
+                            });
                         } else if (data.status === 'connected') {
                             updateConnectionStatus('Connected', '');
                         }
@@ -1507,10 +1532,6 @@
             connectWebSocket();
 
             // Section: Timeout Countdown + Sync + Notifications
-            let _timeoutTimerId = null;
-            let _timeoutTotal = 0;
-            let _timeoutRemaining = 0;
-
             function stopTimeout() {
                 if (_timeoutTimerId !== null) {
                     clearInterval(_timeoutTimerId);
