@@ -47,6 +47,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 ## 🔗 集成要点 (Integration)
 - **FastMCP**: 使用 `@mcp.tool()` 注册工具。
 - **Web Bridge**: Web 模式是短寿命的，任务完成后应确保服务器关闭。
+- **Terminal Hand-off**: 当 `provide_choice` 以终端传输方式使用 hand-off 时，工具会立即返回 `action_status: pending_terminal_launch`，并在 `selection.summary` 中提供一个可执行的 CLI 命令（示例：`uv run python -m choice.terminal.client --session <id> --url <url>`）。代理应在终端执行该命令以打开交互式 UI，随后使用返回的 `session_id`（`selection.url` 的最后一部分）再次调用 `provide_choice` 以轮询最终结果。注意：会话为单次使用并受 `timeout_seconds` 控制。
 - **OpenSpec**: 修改架构或引入重大变更前，必须参考或更新 [openspec/](../openspec/) 中的提案。
 
 ## 📂 关键文件参考

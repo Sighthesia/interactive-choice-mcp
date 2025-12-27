@@ -40,7 +40,27 @@ async def provide_choice(
 
 	Terminal Hand-off Mode:
 
-		When the tool returns `action_status: pending_terminal_launch`, the `summary` field contains a CLI command to run in a terminal. Execute this command to open the interactive UI for the user. Then poll again with the same `session_id` to retrieve the final result.
+		When the tool returns `action_status: pending_terminal_launch` the call returns immediately with launch information instead of blocking.
+		- `summary`: a CLI command you should run in a terminal (e.g. `uv run python -m choice.terminal.client --session <id> --url <url>`)
+		- `url`: the HTTP endpoint backing the session (used by the client)
+		- `session_id`: the session identifier (last path component of `url`) — use this value to poll the same `provide_choice` tool to obtain the final result.
+		
+		Agent steps:
+		1. Call `provide_choice` (no `session_id`) and inspect the response. If `action_status` is `pending_terminal_launch`, extract `summary` / `session_id`.
+		2. Execute the CLI command from `summary` in a terminal to open the interactive UI for the user.
+		3. After the user completes the interaction, call `provide_choice(..., session_id=<id>)` to poll for the final `ProvideChoiceResponse` payload.
+		
+		Notes:
+		- Sessions are single-use and will timeout according to `timeout_seconds`; if the session times out a timeout response will be returned on poll.
+		- The returned `summary` is intended to be executed by the agent in a terminal tool; it should not be parsed for semantics beyond running it.
+		
+		Example response (abbreviated):
+		{
+		  "action_status": "pending_terminal_launch",
+		  "summary": "uv run python -m choice.terminal.client --session abc123 --url http://127.0.0.1:17863",
+		  "session_id": "abc123",
+		  "url": "http://127.0.0.1:17863/terminal/abc123"
+		}
 	"""
 
 	# Delegate the execution to the orchestrator.
