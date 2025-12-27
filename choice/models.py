@@ -22,6 +22,7 @@ class ProvideChoiceOption:
     """
     id: str
     description: str
+    default: bool = False
 
     @property
     def label(self) -> str:
@@ -42,6 +43,7 @@ class ProvideChoiceRequest:
     single_submit_mode: bool = True
     timeout_default_index: Optional[int] = None
     timeout_default_enabled: bool = False
+    use_default_option: bool = False
 
 
 @dataclass
@@ -54,6 +56,7 @@ class ProvideChoiceConfig:
     single_submit_mode: bool = True
     timeout_default_index: Optional[int] = None
     timeout_default_enabled: bool = False
+    use_default_option: bool = False
 
 
 @dataclass
@@ -108,6 +111,7 @@ def _validate_options(options: Sequence[dict | ProvideChoiceOption]) -> List[Pro
                 opt = ProvideChoiceOption(
                     id=str(raw_id),
                     description=str(raw.get("description", "")),
+                    default=bool(raw.get("default", False)),
                 )
             except ValidationError:
                 raise
@@ -141,6 +145,7 @@ def parse_request(
     single_submit_mode: Optional[bool] = None,
     timeout_default_index: Optional[int] = None,
     timeout_default_enabled: Optional[bool] = None,
+    use_default_option: Optional[bool] = None,
 ) -> ProvideChoiceRequest:
     """Validate and normalize tool inputs into a request model."""
 
@@ -179,6 +184,7 @@ def parse_request(
         single_submit_mode=single_submit_mode if single_submit_mode is not None else True,
         timeout_default_index=timeout_default_index,
         timeout_default_enabled=bool(timeout_default_enabled),
+        use_default_option=bool(use_default_option),
     )
 
 
@@ -203,6 +209,7 @@ def apply_configuration(
         single_submit_mode=config.single_submit_mode,
         timeout_default_index=config.timeout_default_index,
         timeout_default_enabled=config.timeout_default_enabled,
+        use_default_option=config.use_default_option,
     )
 
 

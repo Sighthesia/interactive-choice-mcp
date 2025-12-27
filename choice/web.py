@@ -57,7 +57,7 @@ def _render_html(
     """Generate HTML that includes a configuration panel and the choice UI."""
 
     option_payload = [
-        {"id": o.id, "description": o.description}
+        {"id": o.id, "description": o.description, "default": o.default}
         for o in req.options
     ]
 
@@ -68,6 +68,7 @@ def _render_html(
         "single_submit_mode": defaults.single_submit_mode,
         "timeout_default_enabled": defaults.timeout_default_enabled,
         "timeout_default_index": defaults.timeout_default_index,
+        "use_default_option": defaults.use_default_option,
     }
 
     # Build transport options HTML

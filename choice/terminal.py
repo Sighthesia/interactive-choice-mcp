@@ -35,7 +35,13 @@ def _clear_terminal() -> None:
 # Section: UI Construction
 def _build_choices(options: Iterable[ProvideChoiceOption]) -> List[questionary.Choice]:
     """Convert internal options to questionary Choice objects using option IDs as values."""
-    return [questionary.Choice(title=opt.id, value=opt.id) for opt in options]
+    return [
+        questionary.Choice(
+            title=f"{opt.id} (默认选项)" if opt.default else opt.id,
+            value=opt.id
+        )
+        for opt in options
+    ]
 
 
 def _build_config_choices(options: Iterable[ProvideChoiceOption], defaults: List[int]) -> List[questionary.Choice]:
@@ -44,7 +50,14 @@ def _build_config_choices(options: Iterable[ProvideChoiceOption], defaults: List
     Note: config choices use numeric indices as values so the config UI remains
     index-based (keeps backward-compatibility for timeout_default_index).
     """
-    return [questionary.Choice(title=opt.id, value=idx, checked=idx in defaults) for idx, opt in enumerate(options)]
+    return [
+        questionary.Choice(
+            title=f"{opt.id} (默认选项)" if opt.default else opt.id,
+            value=idx,
+            checked=idx in defaults
+        )
+        for idx, opt in enumerate(options)
+    ]
 
 
 def _summary_line(selection: ProvideChoiceResponse) -> str:
@@ -58,7 +71,7 @@ def _summary_line(selection: ProvideChoiceResponse) -> str:
 # Section: Interaction Logic
 def _run_prompt_sync(
     req: ProvideChoiceRequest,
-    config: Optional[ProvideChoiceConfig] = None,  # noqa: ARG001
+    config: Optional[ProvideChoiceConfig] = None,
 ) -> ProvideChoiceResponse:
     """
     Execute the synchronous questionary prompt.
@@ -71,10 +84,20 @@ def _run_prompt_sync(
     option_annotations: dict[str, str] = {}
     global_annotation: Optional[str] = None
 
+    # Determine default selection if use_default_option is enabled
+    default_selection: List[str] = []
+    if config and config.use_default_option:
+        default_selection = [opt.id for opt in req.options if opt.default]
+
     try:
         # Single select: auto-submit or select from list
         if req.type == "single_select":
-            answer = questionary.select(req.prompt, choices=choices).unsafe_ask()
+            default_val = default_selection[0] if default_selection else None
+            answer = questionary.select(
+                req.prompt,
+                choices=choices,
+                default=default_val
+            ).unsafe_ask()
             if answer is None:
                 return cancelled_response(transport=TRANSPORT_TERMINAL)
 
@@ -103,6 +126,16 @@ def _run_prompt_sync(
 
         # Multi select or batch submission mode
         if req.type == "multi_select" or (req.type == "single_select" and not req.single_submit_mode):
+            # For checkbox, we need to rebuild choices with 'checked' state if use_default_option is on
+            if config and config.use_default_option:
+                choices = [
+                    questionary.Choice(
+                        title=f"{opt.id} (默认选项)" if opt.default else opt.id,
+                        value=opt.id,
+                        checked=opt.default
+                    )
+                    for opt in req.options
+                ]
             answer = questionary.checkbox(req.prompt, choices=choices).unsafe_ask()
             if answer is None:
                 return cancelled_response(transport=TRANSPORT_TERMINAL)
@@ -205,6 +238,13 @@ async def prompt_configuration(
             if single_submit_choice is None:
                 return None
 
+            # Use default option toggle
+            use_default_option = questionary.confirm(
+                "采用默认选项 (自动勾选标记为默认的选项)", default=defaults.use_default_option
+            ).unsafe_ask()
+            if use_default_option is None:
+                return None
+
             # Timeout default selection
             timeout_default_enabled = questionary.confirm("Enable default selection on timeout?", default=defaults.timeout_default_enabled).unsafe_ask()
             timeout_default_idx = defaults.timeout_default_index
@@ -226,6 +266,7 @@ async def prompt_configuration(
                 single_submit_mode=bool(single_submit_choice),
                 timeout_default_enabled=timeout_default_enabled,
                 timeout_default_index=timeout_default_idx if timeout_default_idx is not None else 0,
+                use_default_option=bool(use_default_option),
             )
         except (KeyboardInterrupt, ValueError):
             return None

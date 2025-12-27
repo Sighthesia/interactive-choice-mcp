@@ -674,6 +674,13 @@
                                 Auto Submit on Single Selection Mode
                             </label>
                         </div>
+
+                        <div class="config-row">
+                            <label>
+                                <input id="useDefaultOption" type="checkbox" />
+                                采用默认选项 (自动勾选标记为默认的选项)
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -705,6 +712,10 @@
             return document.getElementById('singleSubmitMode').checked;
         }
 
+        function isUseDefaultOption() {
+            return document.getElementById('useDefaultOption').checked;
+        }
+
         function validateSelection() {
             // Min/Max constraints removed — always accept selection (no limits)
             return null;
@@ -716,6 +727,7 @@
             const container = document.getElementById('options');
             container.innerHTML = '';
             const singleSubmit = isSingleSubmit();
+            const useDefault = isUseDefaultOption();
             const visibleOpts = options;
 
             visibleOpts.forEach((opt, idx) => {
@@ -763,7 +775,8 @@
 
                 const content = document.createElement('div');
                 content.className = 'option-content';
-                content.innerHTML = '<div class="option-label">' + opt.id + '</div><div class="option-desc">' + opt.description + '</div>';
+                const labelText = opt.default ? opt.id + ' (默认选项)' : opt.id;
+                content.innerHTML = '<div class="option-label">' + labelText + '</div><div class="option-desc">' + opt.description + '</div>';
                 block.appendChild(content);
 
                 const noteInput = document.createElement('input');
@@ -793,6 +806,16 @@
             const cb = block.querySelector('input[type="checkbox"]');
             if (cb) cb.checked = selectedIndices.has(optionId);
             updateSubmitBtn();
+        }
+
+        function applyDefaultSelections() {
+            if (!isUseDefaultOption()) return;
+            options.forEach(opt => {
+                if (opt.default) {
+                    selectedIndices.add(opt.id);
+                }
+            });
+            renderOptions();
         }
 
         function updateFocusVisual() {
@@ -916,6 +939,7 @@
                 transport,
                 timeout_seconds: timeout,
                 single_submit_mode: isSingleSubmit(),
+                use_default_option: isUseDefaultOption(),
             };
         }
 
@@ -1046,6 +1070,13 @@
 
         // Section: Event Listeners
         document.getElementById('singleSubmitMode').onchange = renderOptions;
+        document.getElementById('useDefaultOption').onchange = () => {
+            if (isUseDefaultOption()) {
+                applyDefaultSelections();
+            } else {
+                renderOptions();
+            }
+        };
 
         // Keyboard navigation
         document.addEventListener('keydown', (e) => {
@@ -1066,7 +1097,12 @@
         });
 
         // Section: Init
-        renderOptions();
+        if (defaults.use_default_option) {
+            document.getElementById('useDefaultOption').checked = true;
+            applyDefaultSelections();
+        } else {
+            renderOptions();
+        }
         updateCancelBtn();
 
         // Section: Timeout Countdown
