@@ -1,4 +1,8 @@
-"""Web server orchestration split from legacy `choice/web.py`."""
+"""Web server orchestration split from the legacy `choice/web.py` implementation.
+
+This module is part of the `choice.web` package and contains the server
+routes and orchestration previously implemented in the single-file module.
+"""
 from __future__ import annotations
 
 import asyncio

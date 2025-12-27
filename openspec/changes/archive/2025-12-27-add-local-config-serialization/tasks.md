@@ -11,8 +11,8 @@
     - [ ] Remove legacy `_load_config` and `_persist_config` methods.
     - [ ] Update `_build_default_config` to handle new fields.
 - [ ] **UI Integration**
-    - [ ] **Terminal**: Update `prompt_configuration` in `choice/terminal.py` to include toggles for the new fields.
-    - [ ] **Web**: Update `_render_html` and `_parse_config_payload` in `choice/web.py` to handle the new fields.
+    - [ ] **Terminal**: Update `prompt_configuration` in `choice/terminal/runner.py` to include toggles for the new fields.
+    - [ ] **Web**: Update `_render_html` and `_parse_config_payload` in `choice/web/server.py` (or `choice/web/templates.py`) to handle the new fields.
     - [ ] **Web**: Update `choice/templates/choice.html` to include UI elements for the new configuration options.
 - [ ] **Validation**
     - [ ] Run `uv run pytest` to ensure all tests pass.

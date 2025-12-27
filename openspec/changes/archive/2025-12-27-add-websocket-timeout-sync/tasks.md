@@ -4,7 +4,7 @@
     - [x] Verify FastAPI WebSocket dependencies (FastAPI/Uvicorn already include WebSocket support).
     - [x] Plan the WebSocket message schema.
 
-- [x] **Server-side Implementation (`choice/web.py`)**
+- [x] **Server-side Implementation (`choice/web/server.py`)**
     - [x] Refactor `run_web_choice` to use a `deadline` timestamp instead of a fixed `asyncio.wait_for`.
     - [x] Implement a background task to monitor the deadline and trigger timeout.
     - [x] Add a WebSocket endpoint `/ws/{choice_id}`.
@@ -25,4 +25,4 @@
     - [x] Manual test: Open web portal, verify countdown starts. *(Not run in this environment; pending manual verification.)*
     - [x] Manual test: Change timeout in UI, verify server deadline updates and client syncs. *(Not run in this environment; pending manual verification.)*
     - [x] Manual test: Disconnect/Reconnect WebSocket (if possible) and check recovery. *(Not run in this environment; pending manual verification.)*
-    - [x] Unit test: Verify `deadline` calculation and update logic in `web.py`.
+    - [x] Unit test: Verify `deadline` calculation and update logic in `web/server.py`.

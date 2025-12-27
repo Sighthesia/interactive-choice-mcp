@@ -23,7 +23,7 @@ Keeping the server-side deadline authoritative prevents mismatches that can lead
 - **Session Recovery**: Maintain a registry of active choices to display on the dashboard.
 
 ## What Changes
-- Add server WebSocket endpoint and deadline monitor in `choice/web.py`.
+- Add server WebSocket endpoint and deadline monitor in `choice/web/server.py`.
 - Add dashboard template `choice/templates/dashboard.html` and integrate an active registry.
 - Enhance client template `choice/templates/choice.html` with WebSocket client, sync logic and notifications.
 - Add accompanying OpenSpec docs under `openspec/changes/add-websocket-timeout-sync/` (proposal, design, spec delta, tasks).

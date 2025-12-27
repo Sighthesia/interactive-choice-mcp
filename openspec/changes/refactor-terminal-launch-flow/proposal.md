@@ -12,4 +12,4 @@
 
 ## Impact
 - Affected specs: choice-orchestration
-- Affected code: choice/orchestrator.py, choice/terminal.py, choice/web.py, choice/storage.py, CLI entrypoint for terminal hand-off, server/main tool registration
+- Affected code: choice/orchestrator.py, choice/terminal/runner.py (and `choice/terminal/ui.py`), choice/web/server.py (and `choice/web/session.py`/`choice/web/templates.py`), choice/storage.py, CLI entrypoint for terminal hand-off, server/main tool registration
