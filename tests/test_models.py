@@ -61,6 +61,16 @@ def test_options_require_recommended_present():
         )
 
 
+def test_selection_mode_alias_rejected():
+    with pytest.raises(models.ValidationError):
+        models.parse_request(
+            title="Title",
+            prompt="Prompt",
+            selection_mode="single_select",
+            options=[{"id": "A", "description": "desc", "recommended": True}],
+        )
+
+
 def test_single_select_multiple_recommended_rejected():
     with pytest.raises(models.ValidationError):
         models.parse_request(

@@ -153,6 +153,13 @@ def _validate_options(options: Sequence[dict | ProvideChoiceOption]) -> List[Pro
     return parsed
 
 
+def _normalize_selection_mode(value: str) -> str:
+    normalized = value.strip().lower().replace("-", "_")
+    if normalized not in VALID_SELECTION_MODES:
+        raise ValidationError(f"selection_mode must be one of {sorted(VALID_SELECTION_MODES)}")
+    return normalized
+
+
 def _validate_transport(value: Optional[str]) -> Optional[str]:
     if value is None:
         return None
@@ -180,8 +187,7 @@ def parse_request(
 
     _ensure_non_empty(title, "title")
     _ensure_non_empty(prompt, "prompt")
-    if selection_mode not in VALID_SELECTION_MODES:
-        raise ValidationError(f"selection_mode must be one of {sorted(VALID_SELECTION_MODES)}")
+    normalized_selection_mode = _normalize_selection_mode(selection_mode)
     parsed_options = _validate_options(options)
     validated_transport = _validate_transport(transport)
 
@@ -205,7 +211,7 @@ def parse_request(
 
     # Enforce single-select cannot declare multiple recommended options.
     recommended_count = sum(1 for opt in parsed_options if opt.recommended)
-    if selection_mode == "single" and recommended_count > 1:
+    if normalized_selection_mode == "single" and recommended_count > 1:
         raise ValidationError("single requests may only mark one recommended option")
 
     option_visibility = {opt.id: True for opt in parsed_options}
@@ -213,7 +219,7 @@ def parse_request(
     return ProvideChoiceRequest(
         title=title.strip(),
         prompt=prompt.strip(),
-        selection_mode=selection_mode,
+        selection_mode=normalized_selection_mode,
         options=parsed_options,
         transport=validated_transport,
         timeout_seconds=normalized_timeout,
@@ -327,11 +333,12 @@ def cancelled_response(
     url: Optional[str] = None,
     option_annotations: Optional[dict[str, str]] = None,
     global_annotation: Optional[str] = None,
+    summary: str = "cancelled",
 ) -> ProvideChoiceResponse:
     selection = ProvideChoiceSelection(
         selected_indices=[],
         transport=transport,
-        summary="cancelled",
+        summary=summary,
         url=url,
         option_annotations=option_annotations or {},
         global_annotation=global_annotation,

@@ -143,8 +143,12 @@ async def safe_handle(orchestrator: ChoiceOrchestrator, **kwargs) -> ProvideChoi
     try:
         return await orchestrator.handle(**kwargs)
     except ValidationError as exc:
-        # Return a cancelled response if validation fails, rather than crashing.
-        return cancelled_response(transport=kwargs.get("transport") or TRANSPORT_TERMINAL, url=None)
+        # Return a cancelled response if validation fails, including the validation detail.
+        return cancelled_response(
+            transport=kwargs.get("transport") or TRANSPORT_TERMINAL,
+            url=None,
+            summary=f"validation_error: {exc}",
+        )
     except asyncio.CancelledError:
         raise
     except Exception:

@@ -31,9 +31,9 @@ async def provide_choice(
 
 	Parameter Guidance:
 
-		selection_mode: Use "single" for binary/exclusive choices, "multi" for configuration/feature sets.
+		selection_mode: Must be "single" or "multi"; aliases such as "single_select" are rejected and will raise a validation error.
 
-		recommended: Mark at least one option with `recommended: true` to surface the suggested path (required).
+		options: Each entry must include `id`, `description`, and at least one option marked with `recommended: true`; missing or malformed fields will return a validation error instead of launching the UI.
 	"""
 
 	# Delegate the execution to the orchestrator.
@@ -50,6 +50,10 @@ async def provide_choice(
 	
 	selection = result.selection
 	out: dict[str, object] = {"action_status": result.action_status}
+	if selection.summary:
+		out["summary"] = selection.summary
+		if selection.summary.startswith("validation_error"):
+			out["validation_error"] = selection.summary
 	if selection.selected_indices:
 		out["selected_indices"] = list(selection.selected_indices)
 	if selection.option_annotations:

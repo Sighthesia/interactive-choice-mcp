@@ -1,6 +1,6 @@
 import asyncio
 import pytest
-from choice.orchestrator import ChoiceOrchestrator
+from choice.orchestrator import ChoiceOrchestrator, safe_handle
 from choice import models
 
 def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
@@ -100,3 +100,21 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
 
     assert result.selection.transport == models.TRANSPORT_WEB
     assert result.selection.selected_indices == ["B"]
+
+
+def test_safe_handle_reports_validation_error(monkeypatch, tmp_path):
+    orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
+    monkeypatch.setattr("choice.orchestrator.is_terminal_available", lambda: False)
+
+    result = asyncio.run(
+        safe_handle(
+            orch,
+            title="Title",
+            prompt="Prompt",
+            selection_mode="invalid",
+            options=[{"id": "A", "description": "desc", "recommended": True}],
+        )
+    )
+
+    assert result.action_status == "cancelled"
+    assert "validation_error" in result.selection.summary
