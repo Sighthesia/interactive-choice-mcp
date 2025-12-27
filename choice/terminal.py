@@ -246,6 +246,19 @@ async def prompt_configuration(
             if use_default_option is None:
                 return None
 
+            # Timeout Action
+            timeout_action = questionary.select(
+                "Timeout Action",
+                choices=[
+                    questionary.Choice(title="Auto-submit selected", value="submit"),
+                    questionary.Choice(title="Auto-cancel", value="cancel"),
+                    questionary.Choice(title="Request re-invocation", value="reinvoke"),
+                ],
+                default=defaults.timeout_action
+            ).unsafe_ask()
+            if timeout_action is None:
+                return None
+
             # Timeout default selection
             timeout_default_enabled = questionary.confirm("Enable default selection on timeout?", default=defaults.timeout_default_enabled).unsafe_ask()
             timeout_default_idx = defaults.timeout_default_index
@@ -268,6 +281,7 @@ async def prompt_configuration(
                 timeout_default_enabled=timeout_default_enabled,
                 timeout_default_index=timeout_default_idx if timeout_default_idx is not None else 0,
                 use_default_option=bool(use_default_option),
+                timeout_action=timeout_action,
             )
         except (KeyboardInterrupt, ValueError):
             return None

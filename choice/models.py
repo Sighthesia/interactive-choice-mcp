@@ -44,6 +44,7 @@ class ProvideChoiceRequest:
     timeout_default_index: Optional[int] = None
     timeout_default_enabled: bool = False
     use_default_option: bool = False
+    timeout_action: str = "submit"
 
 
 @dataclass
@@ -57,6 +58,7 @@ class ProvideChoiceConfig:
     timeout_default_index: Optional[int] = None
     timeout_default_enabled: bool = False
     use_default_option: bool = False
+    timeout_action: str = "submit"
 
 
 @dataclass
@@ -87,6 +89,7 @@ VALID_ACTIONS = {
     "timeout",
     "timeout_auto_submitted",
     "timeout_cancelled",
+    "timeout_reinvoke_requested",
 }
 VALID_TRANSPORTS = {TRANSPORT_TERMINAL, TRANSPORT_WEB}
 
@@ -164,6 +167,7 @@ def parse_request(
     timeout_default_index: Optional[int] = None,
     timeout_default_enabled: Optional[bool] = None,
     use_default_option: Optional[bool] = None,
+    timeout_action: Optional[str] = None,
 ) -> ProvideChoiceRequest:
     """Validate and normalize tool inputs into a request model."""
 
@@ -208,6 +212,7 @@ def parse_request(
         timeout_default_index=timeout_default_index,
         timeout_default_enabled=bool(timeout_default_enabled),
         use_default_option=bool(use_default_option),
+        timeout_action=timeout_action or "submit",
     )
 
 
@@ -233,6 +238,7 @@ def apply_configuration(
         timeout_default_index=config.timeout_default_index,
         timeout_default_enabled=config.timeout_default_enabled,
         use_default_option=config.use_default_option,
+        timeout_action=config.timeout_action,
     )
 
 
@@ -308,13 +314,21 @@ def timeout_response(*, req: ProvideChoiceRequest, transport: str, url: Optional
     """Generate a timeout response, potentially with a default selection."""
     ids: list[str] = []
     action_status = "timeout_cancelled"
-    if req.timeout_default_enabled and req.timeout_default_index is not None:
-        # Map index to id
-        idx = req.timeout_default_index
-        if idx < 0 or idx >= len(req.options):
-            raise ValidationError("timeout_default_index out of range")
-        ids = [req.options[idx].id]
-        action_status = "timeout_auto_submitted"
+
+    if req.timeout_action == "reinvoke":
+        action_status = "timeout_reinvoke_requested"
+    elif req.timeout_action == "cancel":
+        action_status = "timeout_cancelled"
+    else:  # submit
+        if req.timeout_default_enabled and req.timeout_default_index is not None:
+            # Map index to id
+            idx = req.timeout_default_index
+            if idx < 0 or idx >= len(req.options):
+                raise ValidationError("timeout_default_index out of range")
+            ids = [req.options[idx].id]
+            action_status = "timeout_auto_submitted"
+        else:
+            action_status = "timeout_cancelled"
 
     return normalize_response(
         req=req,

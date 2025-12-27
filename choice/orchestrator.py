@@ -51,6 +51,7 @@ class ChoiceOrchestrator:
         timeout_default_index: Optional[int] = None,
         timeout_default_enabled: Optional[bool] = None,
         use_default_option: Optional[bool] = None,
+        timeout_action: Optional[str] = None,
     ) -> ProvideChoiceResponse:
         """
         Process a choice request from start to finish.
@@ -69,6 +70,7 @@ class ChoiceOrchestrator:
             timeout_default_index=timeout_default_index,
             timeout_default_enabled=timeout_default_enabled,
             use_default_option=use_default_option,
+            timeout_action=timeout_action,
         )
         config_defaults = self._build_default_config(req)
         # If terminal is unavailable, force web transport.
@@ -106,6 +108,7 @@ class ChoiceOrchestrator:
         timeout_default_index_pref = saved.timeout_default_index if saved else req.timeout_default_index
         timeout_default_enabled_pref = saved.timeout_default_enabled if saved else req.timeout_default_enabled
         use_default_option_pref = saved.use_default_option if saved else req.use_default_option
+        timeout_action_pref = saved.timeout_action if saved else req.timeout_action
 
         return ProvideChoiceConfig(
             transport=transport_pref,
@@ -114,6 +117,7 @@ class ChoiceOrchestrator:
             timeout_default_index=timeout_default_index_pref,
             timeout_default_enabled=timeout_default_enabled_pref,
             use_default_option=use_default_option_pref,
+            timeout_action=timeout_action_pref,
         )
 
     def _load_config(self) -> Optional[ProvideChoiceConfig]:
@@ -129,6 +133,7 @@ class ChoiceOrchestrator:
             timeout_default_index = int(timeout_default_index_raw) if timeout_default_index_raw is not None else None
             timeout_default_enabled = bool(payload.get("timeout_default_enabled", False))
             use_default_option = bool(payload.get("use_default_option", False))
+            timeout_action = payload.get("timeout_action", "submit")
 
             config = ProvideChoiceConfig(
                 transport=transport or TRANSPORT_TERMINAL,
@@ -137,6 +142,7 @@ class ChoiceOrchestrator:
                 timeout_default_index=timeout_default_index,
                 timeout_default_enabled=timeout_default_enabled,
                 use_default_option=use_default_option,
+                timeout_action=timeout_action,
             )
             return config
         except Exception:
@@ -151,6 +157,7 @@ class ChoiceOrchestrator:
                 "timeout_default_index": config.timeout_default_index,
                 "timeout_default_enabled": config.timeout_default_enabled,
                 "use_default_option": config.use_default_option,
+                "timeout_action": config.timeout_action,
             }
             self._config_path.write_text(json.dumps(data))
             self._last_config = config

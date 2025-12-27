@@ -772,25 +772,36 @@
                             <div class="config-desc">
                                 自动勾选 AI 建议的选项
                             </div>
+                        </div>
 
-                            <div class="config-section-title">Global Settings</div>
+                        <div class="config-section-title">Global Settings</div>
 
-                            <div class="config-item">
-                                <label class="config-label">Transport
-                                    <select id="transportSelect" style="margin-left: auto;">
-                                        ${transport_options}
-                                    </select>
-                                </label>
-                                <div class="config-desc">The communication protocol used by the MCP server.</div>
-                            </div>
+                        <div class="config-item">
+                            <label class="config-label">Transport
+                                <select id="transportSelect" style="margin-left: auto;">
+                                    ${transport_options}
+                                </select>
+                            </label>
+                            <div class="config-desc">The communication protocol used by the MCP server.</div>
+                        </div>
 
-                            <div class="config-item">
-                                <label class="config-label">Timeout (s)
-                                    <input id="timeoutInput" type="number" min="1" value="${timeout_value}"
-                                        style="width:70px; margin-left: auto;" />
-                                </label>
-                                <div class="config-desc">Time limit for making a choice before auto-action.</div>
-                            </div>
+                        <div class="config-item">
+                            <label class="config-label">Timeout (s)
+                                <input id="timeoutInput" type="number" min="1" value="${timeout_value}"
+                                    style="width:70px; margin-left: auto;" />
+                            </label>
+                            <div class="config-desc">Time limit for making a choice before auto-action.</div>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">Timeout Action
+                                <select id="timeoutActionSelect" style="margin-left: auto;">
+                                    <option value="submit">Auto-submit selected</option>
+                                    <option value="cancel">Auto-cancel</option>
+                                    <option value="reinvoke">Request re-invocation</option>
+                                </select>
+                            </label>
+                            <div class="config-desc">Action to take when the timeout is reached.</div>
                         </div>
                     </div>
                 </div>
@@ -818,6 +829,12 @@
             // Initialize theme
             const savedTheme = localStorage.getItem('mcp-theme') || 'system';
             applyTheme(savedTheme);
+
+            // Initialize timeout action
+            const timeoutActionSelect = document.getElementById('timeoutActionSelect');
+            if (timeoutActionSelect) {
+                timeoutActionSelect.value = defaults.timeout_action || 'submit';
+            }
 
             // Listen for manual changes
             themeSelect.addEventListener('change', (e) => applyTheme(e.target.value));
@@ -1087,11 +1104,14 @@
                 const timeout = Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : defaults.timeout_seconds;
                 const transportSelect = document.getElementById('transportSelect');
                 const transport = transportSelect ? transportSelect.value : 'web';
+                const timeoutActionSelect = document.getElementById('timeoutActionSelect');
+                const timeoutAction = timeoutActionSelect ? timeoutActionSelect.value : 'submit';
                 return {
                     transport,
                     timeout_seconds: timeout,
                     single_submit_mode: isSingleSubmit(),
                     use_default_option: isUseDefaultOption(),
+                    timeout_action: timeoutAction,
                 };
             }
 
@@ -1107,7 +1127,7 @@
                     'manual': { text: '✅ Submitted successfully. You can close this tab.', class: 'manual' },
                     'timeout_auto_submitted': { text: '⏰ Timeout: Auto-submitted.', class: 'timeout' },
                     'timeout_cancelled': { text: '⏰ Timeout: Cancelled (no default selection).', class: 'timeout' },
-                    'timeout': { text: '⏰ Timeout.', class: 'timeout' },
+                    'timeout_reinvoke_requested': { text: '⏰ Timeout: Re-invocation requested.', class: 'timeout' },
                     'cancelled': { text: '🚫 Cancelled.', class: 'timeout' }
                 };
 
@@ -1327,11 +1347,23 @@
                         const headerStatusDot = document.getElementById('connectionDot');
                         headerStatusText.innerText = 'Timeout';
                         headerStatusDot.className = 'status-dot offline';
-                        const hasDefault = defaults.timeout_default_enabled && defaults.timeout_default_index !== null;
-                        if (hasDefault) {
-                            submitPayload({ action_status: 'timeout_auto_submitted' }, 'timeout_auto_submitted');
-                        } else {
-                            submitPayload({ action_status: 'timeout_cancelled' }, 'timeout_cancelled');
+
+                        const config = collectConfig();
+                        if (config.timeout_action === 'reinvoke') {
+                            submitPayload({ action_status: 'timeout_reinvoke_requested' }, 'timeout');
+                        } else if (config.timeout_action === 'cancel') {
+                            submitPayload({ action_status: 'timeout_cancelled' }, 'timeout');
+                        } else { // submit
+                            if (selectedIndices.size > 0) {
+                                submitBatch('timeout_auto_submitted');
+                            } else {
+                                const hasDefault = defaults.timeout_default_enabled && defaults.timeout_default_index !== null;
+                                if (hasDefault) {
+                                    submitPayload({ action_status: 'timeout_auto_submitted' }, 'timeout_auto_submitted');
+                                } else {
+                                    submitPayload({ action_status: 'timeout_cancelled' }, 'timeout_cancelled');
+                                }
+                            }
                         }
                     }
                 }, 1000);
