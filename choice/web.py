@@ -182,6 +182,17 @@ async def run_web_choice(
                     )
                 )
                 return {"status": "ok"}
+
+            if action == "timeout" or action in {"timeout_auto_submitted", "timeout_cancelled"}:
+                # Allow timeout submissions and normalize to the proper status via timeout_response
+                result_future.set_result(
+                    timeout_response(
+                        req=adjusted_req,
+                        transport=TRANSPORT_WEB,
+                        url=session_url,
+                    )
+                )
+                return {"status": "ok"}
                 
             raise HTTPException(status_code=400, detail="invalid action_status")
             
@@ -260,6 +271,14 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
             timeout_default_idx = int(timeout_default_idx_raw)
         except Exception:
             timeout_default_idx = defaults.timeout_default_index
+    # Clamp to valid range; fallback to defaults if out of range
+    if timeout_default_idx is not None and (timeout_default_idx < 0 or timeout_default_idx >= len(req.options)):
+        timeout_default_idx = defaults.timeout_default_index
+
+    use_default_option_raw = payload.get("use_default_option")
+    use_default_option = defaults.use_default_option
+    if isinstance(use_default_option_raw, bool):
+        use_default_option = use_default_option_raw
 
     return ProvideChoiceConfig(
         transport=transport,
@@ -267,4 +286,5 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
         single_submit_mode=single_submit_val,
         timeout_default_enabled=timeout_default_enabled,
         timeout_default_index=timeout_default_idx,
+        use_default_option=use_default_option,
     )

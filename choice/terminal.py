@@ -63,9 +63,10 @@ def _build_config_choices(options: Iterable[ProvideChoiceOption], defaults: List
 def _summary_line(selection: ProvideChoiceResponse) -> str:
     """Generate a concise summary string for the final output."""
     sel = selection.selection
+    status = selection.action_status
     if sel.selected_indices:
-        return f"Selected: {sel.selected_indices}"
-    return "No selection"
+        return f"{status}: {sel.selected_indices}"
+    return status or "No selection"
 
 
 # Section: Interaction Logic

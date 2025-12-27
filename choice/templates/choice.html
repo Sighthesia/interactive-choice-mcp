@@ -890,12 +890,14 @@
         }
 
         function applyDefaultSelections() {
-            if (!isUseDefaultOption()) return;
-            options.forEach(opt => {
-                if (opt.default) {
-                    selectedIndices.add(opt.id);
-                }
-            });
+            selectedIndices.clear();
+            if (isUseDefaultOption()) {
+                options.forEach(opt => {
+                    if (opt.default) {
+                        selectedIndices.add(opt.id);
+                    }
+                });
+            }
             renderOptions();
         }
 
@@ -1034,8 +1036,9 @@
 
             const statusMap = {
                 'manual': { text: '✅ Submitted successfully. You can close this tab.', class: 'manual' },
-                'timeout': { text: '⏰ Timeout: Auto-submitted.', class: 'timeout' },
+                'timeout_auto_submitted': { text: '⏰ Timeout: Auto-submitted.', class: 'timeout' },
                 'timeout_cancelled': { text: '⏰ Timeout: Cancelled (no default selection).', class: 'timeout' },
+                'timeout': { text: '⏰ Timeout.', class: 'timeout' },
                 'cancelled': { text: '🚫 Cancelled.', class: 'timeout' }
             };
 
@@ -1151,13 +1154,17 @@
 
         // Section: Event Listeners
         document.getElementById('singleSubmitMode').onchange = renderOptions;
-        document.getElementById('useDefaultOption').onchange = () => {
-            if (isUseDefaultOption()) {
-                applyDefaultSelections();
-            } else {
-                renderOptions();
-            }
-        };
+        const useDefaultToggle = document.getElementById('useDefaultOption');
+        if (useDefaultToggle) {
+            useDefaultToggle.checked = !!defaults.use_default_option;
+            useDefaultToggle.onchange = () => {
+                if (isUseDefaultOption()) {
+                    applyDefaultSelections();
+                } else {
+                    renderOptions();
+                }
+            };
+        }
 
         // Keyboard navigation
         document.addEventListener('keydown', (e) => {
@@ -1179,7 +1186,6 @@
 
         // Section: Init
         if (defaults.use_default_option) {
-            document.getElementById('useDefaultOption').checked = true;
             applyDefaultSelections();
         } else {
             renderOptions();
@@ -1249,9 +1255,9 @@
                     headerStatusDot.className = 'status-dot offline';
                     const hasDefault = defaults.timeout_default_enabled && defaults.timeout_default_index !== null;
                     if (hasDefault) {
-                        submitPayload({ action_status: 'timeout' }, 'timeout');
+                        submitPayload({ action_status: 'timeout_auto_submitted' }, 'timeout_auto_submitted');
                     } else {
-                        submitPayload({ action_status: 'cancelled' }, 'timeout_cancelled');
+                        submitPayload({ action_status: 'timeout_cancelled' }, 'timeout_cancelled');
                     }
                 }
             }, 1000);

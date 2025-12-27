@@ -80,7 +80,14 @@ class ProvideChoiceResponse:
 
 
 VALID_TYPES = {"single_select", "multi_select"}
-VALID_ACTIONS = {"selected", "cancelled", "timeout"}
+VALID_ACTIONS = {
+    "selected",
+    "cancelled",
+    # Timeout variants differentiate auto submission vs. cancelled with no default
+    "timeout",
+    "timeout_auto_submitted",
+    "timeout_cancelled",
+}
 VALID_TRANSPORTS = {TRANSPORT_TERMINAL, TRANSPORT_WEB}
 
 
@@ -108,16 +115,23 @@ def _validate_options(options: Sequence[dict | ProvideChoiceOption]) -> List[Pro
                 raw_id = raw.get("id") if isinstance(raw, dict) else None
                 if raw_id is None:
                     raise ValidationError("options entries must include an 'id' and description")
+                opt_default_raw = raw.get("default", False)
+                if isinstance(opt_default_raw, bool):
+                    opt_default = opt_default_raw
+                else:
+                    raise ValidationError("option.default must be a boolean when provided")
                 opt = ProvideChoiceOption(
                     id=str(raw_id),
                     description=str(raw.get("description", "")),
-                    default=bool(raw.get("default", False)),
+                    default=opt_default,
                 )
             except ValidationError:
                 raise
             except Exception as exc:  # noqa: BLE001
                 raise ValidationError("options entries must include an 'id' and description") from exc
         _ensure_non_empty(opt.id, "option.id")
+        if not isinstance(opt.default, bool):
+            raise ValidationError("option.default must be a boolean when provided")
         if opt.id in seen_ids:
             raise ValidationError(f"duplicate option id: {opt.id}")
         seen_ids.add(opt.id)
@@ -173,6 +187,11 @@ def parse_request(
     if timeout_default_index is not None:
         if timeout_default_index < 0 or timeout_default_index >= len(parsed_options):
             raise ValidationError(f"timeout_default_index {timeout_default_index} out of range")
+
+    # Enforce single-select cannot declare multiple default options.
+    default_count = sum(1 for opt in parsed_options if opt.default)
+    if type == "single_select" and default_count > 1:
+        raise ValidationError("single_select requests may only mark one default option")
 
     return ProvideChoiceRequest(
         title=title.strip(),
@@ -230,6 +249,9 @@ def normalize_response(
     if transport not in VALID_TRANSPORTS:
         raise ValidationError("invalid transport for response")
 
+    if action_status not in VALID_ACTIONS:
+        raise ValidationError("invalid action_status for response")
+
     if selected_indices is None:
         selected_indices = []
     ordered_ids = list(selected_indices)
@@ -281,17 +303,19 @@ def cancelled_response(
 def timeout_response(*, req: ProvideChoiceRequest, transport: str, url: Optional[str] = None) -> ProvideChoiceResponse:
     """Generate a timeout response, potentially with a default selection."""
     ids: list[str] = []
+    action_status = "timeout_cancelled"
     if req.timeout_default_enabled and req.timeout_default_index is not None:
         # Map index to id
         idx = req.timeout_default_index
         if idx < 0 or idx >= len(req.options):
             raise ValidationError("timeout_default_index out of range")
         ids = [req.options[idx].id]
+        action_status = "timeout_auto_submitted"
 
     return normalize_response(
         req=req,
         selected_indices=ids,
         transport=transport,
         url=url,
-        action_status="timeout"
+        action_status=action_status,
     )

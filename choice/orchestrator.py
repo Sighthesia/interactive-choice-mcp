@@ -126,12 +126,6 @@ class ChoiceOrchestrator:
             payload = json.loads(self._config_path.read_text())
             transport = payload.get("transport")
             timeout_seconds = int(payload.get("timeout_seconds", 0))
-            placeholder = payload.get("placeholder")
-            # Extended fields with safe defaults for migration
-            min_selections = int(payload.get("min_selections", 0))
-            min_selections_enabled = bool(payload.get("min_selections_enabled", False))
-            max_selections_raw = payload.get("max_selections")
-            max_selections = int(max_selections_raw) if max_selections_raw is not None else None
             single_submit_mode = bool(payload.get("single_submit_mode", True))
             timeout_default_index_raw = payload.get("timeout_default_index")
             timeout_default_index = int(timeout_default_index_raw) if timeout_default_index_raw is not None else None
