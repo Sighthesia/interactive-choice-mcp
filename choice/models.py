@@ -35,7 +35,7 @@ class ProvideChoiceRequest:
     """Internal representation of a validated choice request."""
     title: str
     prompt: str
-    type: str
+    selection_mode: str
     options: List[ProvideChoiceOption]
     timeout_seconds: int
     transport: Optional[str] = None
@@ -79,7 +79,7 @@ class ProvideChoiceResponse:
     selection: ProvideChoiceSelection
 
 
-VALID_TYPES = {"single_select", "multi_select"}
+VALID_SELECTION_MODES = {"single", "multi"}
 VALID_ACTIONS = {
     "selected",
     "cancelled",
@@ -151,7 +151,7 @@ def parse_request(
     *,
     title: str,
     prompt: str,
-    type: str,
+    selection_mode: str,
     options: Sequence[dict | ProvideChoiceOption],
     transport: Optional[str] = None,
     timeout_seconds: Optional[int] = None,
@@ -165,8 +165,8 @@ def parse_request(
 
     _ensure_non_empty(title, "title")
     _ensure_non_empty(prompt, "prompt")
-    if type not in VALID_TYPES:
-        raise ValidationError(f"type must be one of {sorted(VALID_TYPES)}")
+    if selection_mode not in VALID_SELECTION_MODES:
+        raise ValidationError(f"selection_mode must be one of {sorted(VALID_SELECTION_MODES)}")
     parsed_options = _validate_options(options)
     validated_transport = _validate_transport(transport)
 
@@ -190,13 +190,13 @@ def parse_request(
 
     # Enforce single-select cannot declare multiple default options.
     default_count = sum(1 for opt in parsed_options if opt.default)
-    if type == "single_select" and default_count > 1:
-        raise ValidationError("single_select requests may only mark one default option")
+    if selection_mode == "single" and default_count > 1:
+        raise ValidationError("single requests may only mark one default option")
 
     return ProvideChoiceRequest(
         title=title.strip(),
         prompt=prompt.strip(),
-        type=type,
+        selection_mode=selection_mode,
         options=parsed_options,
         transport=validated_transport,
         timeout_seconds=normalized_timeout,
@@ -221,7 +221,7 @@ def apply_configuration(
     return ProvideChoiceRequest(
         title=req.title,
         prompt=req.prompt,
-        type=req.type,
+        selection_mode=req.selection_mode,
         options=req.options,
         transport=config.transport,
         timeout_seconds=config.timeout_seconds,

@@ -1,6 +1,6 @@
 ## ADDED Requirements
 ### Requirement: Provide Choice Tool Contract
-The MCP server SHALL expose a `provide_choice` tool with a schema-first request contract including `title`, `prompt`, `type (single_select|multi_select|text_input|hybrid)`, `options[id,label,description]`, `allow_cancel`, and `placeholder`, and SHALL validate payloads before prompting.
+The MCP server SHALL expose a `provide_choice` tool with a schema-first request contract including `title`, `prompt`, `selection_mode (single|multi|text_input|hybrid)`, `options[id,label,description]`, and `placeholder`, and SHALL validate payloads before prompting.
 
 #### Scenario: Valid tool invocation
 - **WHEN** `provide_choice` is called with all required fields according to the schema

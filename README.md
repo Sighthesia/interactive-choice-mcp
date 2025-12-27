@@ -7,15 +7,15 @@
 ## ✨ 特性
 
 - **双模式交互**：
-    - **终端模式 (Terminal)**：使用 ANSI 交互式菜单（基于 `questionary`），支持键盘导航。
-    - **Web 模式 (Web Bridge)**：自动启动临时本地 Web 服务器，允许用户在浏览器中进行选择（适用于不支持终端交互的环境）。
+  - **终端模式 (Terminal)**：使用 ANSI 交互式菜单（基于 `questionary`），支持键盘导航。
+  - **Web 模式 (Web Bridge)**：自动启动临时本地 Web 服务器，允许用户在浏览器中进行选择（适用于不支持终端交互的环境）。
 - **多种选择类型**：
-    - `single_select`: 单选。
-    - `multi_select`: 多选。
-- **健壮性设计**：
-    - 支持超时（Timeout）处理。
-    - 支持取消（Cancel）操作。
-    - 严格的输入验证。
+  - `single`: 单选。
+  - `multi`: 多选。
+- **健壮性设计**:
+  - 支持超时（Timeout）处理。
+  - 取消（Cancel）始终可用。
+  - 严格的输入验证。
 
 ## 📦 安装
 
@@ -67,9 +67,8 @@ AI 代理可以调用此工具来请求用户输入。
 
 - `title` (string): 选择界面的标题。
 - `prompt` (string): 向用户展示的提示信息，应包含上下文。
-- `type` (string): 选择类型 (`single_select`, `multi_select`)。
+- `selection_mode` (string): 选择模式 (`single`, `multi`)。
 - `options` (array): 选项列表，每个选项包含 `id` 和 `description`。
-- `allow_cancel` (boolean): 是否允许用户取消。
 - `transport` (string, optional): 强制指定传输方式 (`terminal` 或 `web`)。
 - `timeout_seconds` (integer, optional): 超时时间（秒）。
 

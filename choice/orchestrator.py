@@ -42,7 +42,7 @@ class ChoiceOrchestrator:
         *,
         title: str,
         prompt: str,
-        type: str,
+        selection_mode: str,
         options: List[Dict[str, object]],
         transport: Optional[str] = None,
         timeout_seconds: Optional[int] = None,
@@ -51,8 +51,6 @@ class ChoiceOrchestrator:
         timeout_default_index: Optional[int] = None,
         timeout_default_enabled: Optional[bool] = None,
         use_default_option: Optional[bool] = None,
-        # Legacy: allow_cancel ignored, cancel always enabled
-        allow_cancel: bool = True,  # noqa: ARG002
     ) -> ProvideChoiceResponse:
         """
         Process a choice request from start to finish.
@@ -63,7 +61,7 @@ class ChoiceOrchestrator:
         req: ProvideChoiceRequest = parse_request(
             title=title,
             prompt=prompt,
-            type=type,
+            selection_mode=selection_mode,
             options=options,
             transport=transport,
             timeout_seconds=timeout_seconds,

@@ -14,10 +14,10 @@ orchestrator = ChoiceOrchestrator()
 async def provide_choice(
 	title: str,
 	prompt: str,
-	type: str,
+	selection_mode: str,
 	options: list[dict],
 ):
-	"""Present an interactive choice prompt to the user and return their selectiono.
+	"""Present an interactive choice prompt to the user and return their selection.
 
 	RULE: Mandatory interface for human-in-the-loop decision making. Call this tool IMMEDIATELY when: 1. Ambiguous requirements occur. 2. Multiple technical paths are available. 3. Confirming destructive actions (delete/overwrite). 4. User input is needed to proceed.
 
@@ -31,7 +31,7 @@ async def provide_choice(
 
 	Parameter Guidance:
 
-		type: Use "single_select" for binary/exclusive choices, "muti_select" for configuration/feature sets.
+		selection_mode: Use "single" for binary/exclusive choices, "multi" for configuration/feature sets.
 
 		default: Set `true` for the most recommended/standard path to enable fast user confirmation.
 	"""
@@ -42,9 +42,8 @@ async def provide_choice(
 		orchestrator,
 		title=title,
 		prompt=prompt,
-		type=type,
+		selection_mode=selection_mode,
 		options=options,
-		allow_cancel=True,
 		transport=None,
 		timeout_seconds=None,
 	)

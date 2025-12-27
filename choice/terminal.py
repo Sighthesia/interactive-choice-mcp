@@ -92,7 +92,7 @@ def _run_prompt_sync(
 
     try:
         # Single select: auto-submit or select from list
-        if req.type == "single_select":
+        if req.selection_mode == "single":
             default_val = default_selection[0] if default_selection else None
             answer = questionary.select(
                 req.prompt,
@@ -126,7 +126,7 @@ def _run_prompt_sync(
             )
 
         # Multi select or batch submission mode
-        if req.type == "multi_select" or (req.type == "single_select" and not req.single_submit_mode):
+        if req.selection_mode == "multi" or (req.selection_mode == "single" and not req.single_submit_mode):
             # For checkbox, we need to rebuild choices with 'checked' state if use_default_option is on
             if config and config.use_default_option:
                 choices = [
@@ -173,7 +173,7 @@ def _run_prompt_sync(
         # Handle unexpected input/read errors robustly and return a cancelled result
         return cancelled_response(transport=TRANSPORT_TERMINAL)
 
-    raise ValidationError(f"Unsupported type: {req.type}")
+    raise ValidationError(f"Unsupported selection_mode: {req.selection_mode}")
 
 
 async def _run_with_timeout(req: ProvideChoiceRequest, func: Callable[[], ProvideChoiceResponse], timeout_seconds: int) -> ProvideChoiceResponse:

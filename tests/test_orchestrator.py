@@ -31,7 +31,7 @@ def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
         orch.handle(
             title="Title",
             prompt="Prompt",
-            type="single_select",
+            selection_mode="single",
             options=[{"id": "A", "description": "desc"}],
         )
     )
@@ -65,7 +65,7 @@ def test_orchestrator_terminal_config_abort_falls_back_to_web(monkeypatch, tmp_p
         orch.handle(
             title="Title",
             prompt="Prompt",
-            type="single_select",
+            selection_mode="single",
             options=[{"id": "A", "description": "desc"}],
         )
     )
@@ -93,7 +93,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
         orch.handle(
             title="Title",
             prompt="Prompt",
-            type="single_select",
+            selection_mode="single",
             options=[{"id": "B", "description": "desc"}],
         )
     )

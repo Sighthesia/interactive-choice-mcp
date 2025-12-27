@@ -89,7 +89,7 @@ def _render_html(
     return template.substitute(
         title=req.title,
         prompt=req.prompt,
-        prompt_type=req.type,
+        prompt_type=req.selection_mode,
         choice_id=choice_id,
         defaults_json=json.dumps(defaults_payload),
         options_json=json.dumps(option_payload),

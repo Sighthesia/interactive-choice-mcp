@@ -9,7 +9,7 @@ def test_parse_request_defaults():
     req = models.parse_request(
         title="Title",
         prompt="Prompt",
-        type="single_select",
+        selection_mode="single",
         options=[{"id": "A", "description": "desc"}],
     )
     assert req.timeout_seconds == models.DEFAULT_TIMEOUT_SECONDS
@@ -22,7 +22,7 @@ def test_parse_request_env_timeout(monkeypatch):
     req = models.parse_request(
         title="Title",
         prompt="Prompt",
-        type="single_select",
+        selection_mode="single",
         options=[{"id": "A", "description": "desc"}],
     )
     assert req.timeout_seconds == 120
@@ -33,7 +33,7 @@ def test_parse_request_invalid_type():
         models.parse_request(
             title="Title",
             prompt="Prompt",
-            type="bad",
+            selection_mode="bad",
             options=[{"id": "A", "description": "desc"}],
         )
 
@@ -43,7 +43,7 @@ def test_option_default_must_be_boolean():
         models.parse_request(
             title="Title",
             prompt="Prompt",
-            type="single_select",
+            selection_mode="single",
             options=[{"id": "A", "description": "desc", "default": "yes"}],
         )
 
@@ -53,7 +53,7 @@ def test_single_select_multiple_defaults_rejected():
         models.parse_request(
             title="Title",
             prompt="Prompt",
-            type="single_select",
+            selection_mode="single",
             options=[
                 {"id": "A", "description": "desc", "default": True},
                 {"id": "B", "description": "desc", "default": True},
@@ -65,7 +65,7 @@ def test_parse_request_extended_fields():
     req = models.parse_request(
         title="Title",
         prompt="Prompt",
-        type="multi_select",
+        selection_mode="multi",
         options=[
             {"id": "A", "description": "desc"},
             {"id": "B", "description": "desc"},
@@ -79,7 +79,7 @@ def test_normalize_response_selection():
     req = models.parse_request(
         title="Title",
         prompt="Prompt",
-        type="single_select",
+        selection_mode="single",
         options=[{"id": "A", "description": "desc"}],
     )
     resp = models.normalize_response(
@@ -99,7 +99,7 @@ def test_normalize_response_rejects_invalid_action_status():
     req = models.parse_request(
         title="Title",
         prompt="Prompt",
-        type="single_select",
+        selection_mode="single",
         options=[{"id": "A", "description": "desc"}],
     )
     with pytest.raises(models.ValidationError):
@@ -115,7 +115,7 @@ def test_timeout_response_auto_select():
     req = models.parse_request(
         title="Title",
         prompt="Prompt",
-        type="single_select",
+        selection_mode="single",
         options=[{"id": "A", "description": "desc"}, {"id": "B", "description": "desc"}],
         timeout_default_enabled=True,
         timeout_default_index=1,
@@ -129,7 +129,7 @@ def test_timeout_response_cancelled_when_no_default():
     req = models.parse_request(
         title="Title",
         prompt="Prompt",
-        type="single_select",
+        selection_mode="single",
         options=[{"id": "A", "description": "desc"}],
         timeout_default_enabled=False,
     )
@@ -143,7 +143,7 @@ def test_timeout_default_index_out_of_range():
         models.parse_request(
             title="Title",
             prompt="Prompt",
-            type="multi_select",
+            selection_mode="multi",
             options=[{"id": "A", "description": "desc"}],
             timeout_default_index=2,
         )
@@ -153,7 +153,7 @@ def test_apply_configuration():
     req = models.parse_request(
         title="Title",
         prompt="Prompt",
-        type="single_select",
+        selection_mode="single",
         options=[
             {"id": "A", "description": "desc"},
             {"id": "B", "description": "desc"},

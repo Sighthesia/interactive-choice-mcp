@@ -18,7 +18,7 @@ Build an MCP server that exposes a single `provide_choice` tool to collect struc
 
 ### Architecture Patterns
 - CLI-first interaction with optional web bridge fallback; both share a common `provide_choice` schema
-- Tool contract is schema-first: `title`, `prompt`, `type (single_select|multi_select|text_input|hybrid)`, `options[id,description]`, `allow_cancel`, `placeholder`
+- Tool contract is schema-first: `title`, `prompt`, `selection_mode (single|multi|text_input|hybrid)`, `options[id,description]`, `placeholder`
 - Result contract is deterministic: `action_status (selected|custom_input|cancelled|timeout)` plus normalized selection payload
 - Separation of concerns: input transport (terminal/web) separated from choice orchestration and MCP binding
 
