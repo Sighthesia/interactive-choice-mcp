@@ -33,6 +33,7 @@ from .models import (
 
 # Section: Constants
 _TEMPLATE_DIR = Path(__file__).parent / "templates"
+_LINGER_AFTER_RESULT_SECONDS = 60
 
 
 @dataclass
@@ -397,30 +398,35 @@ async def run_web_choice(
     except Exception:
         pass
 
-    try:
-        result = await result_future
-        final_config = config_used
-    finally:
-        server.should_exit = True
-        monitor_task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await monitor_task
-        
-        # Force close all websocket connections to unblock uvicorn shutdown
-        for ws in list(connections):
+    async def _graceful_shutdown(delay_seconds: float) -> None:
+        if delay_seconds > 0:
             try:
-                # Schedule close without awaiting to avoid blocking the shutdown flow
-                asyncio.create_task(ws.close(code=1001, reason="Server shutting down"))
-            except Exception:
+                await asyncio.sleep(delay_seconds)
+            except asyncio.CancelledError:
                 pass
-
-        # Use a timeout for server shutdown to prevent hanging indefinitely
+        server.should_exit = True
+        if not monitor_task.done():
+            monitor_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await monitor_task
         try:
             await asyncio.wait_for(server_task, timeout=2.0)
         except asyncio.TimeoutError:
             server_task.cancel()
-        
-        ACTIVE_CHOICES.pop(choice_id, None)
+            with contextlib.suppress(asyncio.CancelledError):
+                await server_task
+        finally:
+            ACTIVE_CHOICES.pop(choice_id, None)
+
+    try:
+        result = await result_future
+        final_config = config_used
+    finally:
+        shutdown_delay = _LINGER_AFTER_RESULT_SECONDS if result_future.done() else 0
+        shutdown_task = asyncio.create_task(_graceful_shutdown(shutdown_delay))
+        if shutdown_delay == 0:
+            with contextlib.suppress(asyncio.CancelledError):
+                await shutdown_task
 
     return result, final_config
 
