@@ -196,22 +196,7 @@
 
         .config-grid {
             display: grid;
-            gap: 12px;
-        }
-
-        .config-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .config-row label {
-            font-size: 0.875rem;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            gap: 4px;
         }
 
         input[type="text"],
@@ -557,6 +542,66 @@
             margin-top: 12px;
         }
 
+        /* Section: Config Items */
+        .config-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 16px;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .config-section-title:first-child {
+            margin-top: 0;
+        }
+
+        .config-item {
+            padding: 10px;
+            border-radius: var(--radius);
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            margin-bottom: 4px;
+        }
+
+        .config-item.highlighted {
+            background-color: rgba(79, 70, 229, 0.08);
+            border-color: var(--primary);
+        }
+
+        .dark .config-item.highlighted {
+            background-color: rgba(99, 102, 241, 0.15);
+            border-color: var(--primary);
+        }
+
+        .config-label {
+            font-size: 0.875rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .config-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            margin-left: 24px;
+            line-height: 1.4;
+        }
+
+        .config-tip {
+            display: block;
+            margin-top: 2px;
+            color: var(--primary);
+            font-weight: 600;
+            font-style: italic;
+        }
+
         /* Section: Responsive */
         @media (max-width: 900px) {
             .layout {
@@ -638,16 +683,6 @@
         </div>
 
         <div class="status-item">
-            Theme:
-            <select id="themeSelect"
-                style="margin-left: 4px; padding: 1px 4px; height: 22px; font-size: 0.75rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; cursor: pointer; outline: none;">
-                <option value="light" style="color: black;">Light</option>
-                <option value="dark" style="color: black;">Dark</option>
-                <option value="system" style="color: black;">System</option>
-            </select>
-        </div>
-
-        <div class="status-item">
             <div id="connectionDot" class="status-dot"></div>
             Status: <span id="statusText">Connected</span>
         </div>
@@ -682,7 +717,7 @@
             <div class="keyboard-hint">
                 <span><kbd>↑</kbd><kbd>↓</kbd>/<kbd>k</kbd><kbd>j</kbd> Navigate</span>
                 <span><kbd>Enter</kbd> Toggle selection</span>
-                <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Submit</span>
+                <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Submit/Cancel with annotation</span>
                 <span><kbd>Shift</kbd>+<kbd>A</kbd> Focus annotation</span>
                 <span><kbd>Esc</kbd> Unfocus Textarea</span>
             </div>
@@ -705,582 +740,621 @@
                 <div class="card-header config-toggle" onclick="toggleConfig()" id="configToggle">Configuration</div>
                 <div class="config-content" id="configContent">
                     <div class="config-grid">
-                        <div class="config-row">
-                            <label>Transport
-                                <select id="transportSelect">
-                                    ${transport_options}
+                        <div class="config-section-title">Web Portal Settings</div>
+
+                        <div class="config-item">
+                            <label class="config-label">Web Theme
+                                <select id="themeSelect" style="margin-left: auto;">
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                    <option value="system">System</option>
                                 </select>
                             </label>
+                            <div class="config-desc">Switch between light, dark, or system theme.</div>
                         </div>
 
-                        <div class="config-row">
-                            <label>Timeout (s)
-                                <input id="timeoutInput" type="number" min="1" value="${timeout_value}"
-                                    style="width:70px;" />
-                            </label>
-                        </div>
-
-                        <div class="config-row">
-                            <label>
+                        <div class="config-item" id="item-singleSubmitMode">
+                            <label class="config-label">
                                 <input id="singleSubmitMode" type="checkbox" ${single_submit_checked} />
                                 Auto Submit on Single Selection Mode
                             </label>
+                            <div class="config-desc">
+                                Automatically submit the selection as soon as an option is clicked
+                                <span class="config-tip">提示：开启时，请确认后再勾选选项</span>
+                            </div>
                         </div>
 
-                        <div class="config-row">
-                            <label>
+                        <div class="config-item" id="item-useDefaultOption">
+                            <label class="config-label">
                                 <input id="useDefaultOption" type="checkbox" />
-                                采用默认选项 (自动勾选标记为默认的选项)
+                                采用建议选项
                             </label>
+                            <div class="config-desc">
+                                自动勾选 AI 建议的选项
+                            </div>
+
+                            <div class="config-section-title">Global Settings</div>
+
+                            <div class="config-item">
+                                <label class="config-label">Transport
+                                    <select id="transportSelect" style="margin-left: auto;">
+                                        ${transport_options}
+                                    </select>
+                                </label>
+                                <div class="config-desc">The communication protocol used by the MCP server.</div>
+                            </div>
+
+                            <div class="config-item">
+                                <label class="config-label">Timeout (s)
+                                    <input id="timeoutInput" type="number" min="1" value="${timeout_value}"
+                                        style="width:70px; margin-left: auto;" />
+                                </label>
+                                <div class="config-desc">Time limit for making a choice before auto-action.</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script type="application/json" id="mcp-defaults">${defaults_json}</script>
-    <script type="application/json" id="mcp-options">${options_json}</script>
-    <script>
-        // Section: Theme Management
-        const themeSelect = document.getElementById('themeSelect');
-        const htmlElement = document.documentElement;
+        <script type="application/json" id="mcp-defaults">${defaults_json}</script>
+        <script type="application/json" id="mcp-options">${options_json}</script>
+        <script>
+            // Section: Theme Management
+            const themeSelect = document.getElementById('themeSelect');
+            const htmlElement = document.documentElement;
 
-        function applyTheme(theme) {
-            if (theme === 'system') {
-                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                htmlElement.classList.toggle('dark', isDark);
-            } else {
-                htmlElement.classList.toggle('dark', theme === 'dark');
-            }
-            localStorage.setItem('mcp-theme', theme);
-            themeSelect.value = theme;
-        }
-
-        // Initialize theme
-        const savedTheme = localStorage.getItem('mcp-theme') || 'system';
-        applyTheme(savedTheme);
-
-        // Listen for manual changes
-        themeSelect.addEventListener('change', (e) => applyTheme(e.target.value));
-
-        // Listen for system theme changes
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            if (themeSelect.value === 'system') {
-                applyTheme('system');
-            }
-        });
-
-        const choiceId = '${choice_id}';
-        const defaults = JSON.parse(document.getElementById('mcp-defaults').textContent);
-        const options = JSON.parse(document.getElementById('mcp-options').textContent);
-        const promptType = '${prompt_type}';
-        let submitting = false;
-        let selectedIndices = new Set();
-        let optionAnnotations = {};
-        let focusedIndex = -1;
-
-        // Section: Config Toggle
-        function toggleConfig() {
-            const toggle = document.getElementById('configToggle');
-            const content = document.getElementById('configContent');
-            toggle.classList.toggle('expanded');
-            content.classList.toggle('show');
-        }
-
-        // Section: Helpers
-        function isSingleSubmit() {
-            return document.getElementById('singleSubmitMode').checked;
-        }
-
-        function isUseDefaultOption() {
-            return document.getElementById('useDefaultOption').checked;
-        }
-
-        function validateSelection() {
-            // Min/Max constraints removed — always accept selection (no limits)
-            return null;
-        }
-
-        // Section: Render Functions
-
-        function renderOptions() {
-            const container = document.getElementById('options');
-            container.innerHTML = '';
-            const singleSubmit = isSingleSubmit();
-            const useDefault = isUseDefaultOption();
-            const visibleOpts = options;
-
-            visibleOpts.forEach((opt, idx) => {
-                const block = document.createElement('div');
-                block.className = 'option' + (selectedIndices.has(opt.id) ? ' selected' : '');
-                block.dataset.id = opt.id;
-                block.tabIndex = 0;
-
-                if (idx === focusedIndex) {
-                    block.classList.add('focused');
+            function applyTheme(theme) {
+                if (theme === 'system') {
+                    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    htmlElement.classList.toggle('dark', isDark);
+                } else {
+                    htmlElement.classList.toggle('dark', theme === 'dark');
                 }
+                localStorage.setItem('mcp-theme', theme);
+                themeSelect.value = theme;
+            }
 
-                // Click handler for the whole option block
-                block.onclick = (e) => {
-                    // Don't trigger if clicking on checkbox or note input
-                    if (e.target.tagName === 'INPUT') return;
-                    focusedIndex = idx;
-                    updateFocusVisual();
+            // Initialize theme
+            const savedTheme = localStorage.getItem('mcp-theme') || 'system';
+            applyTheme(savedTheme);
 
-                    if (singleSubmit && promptType !== 'multi_select') {
-                        submitPayload({
-                            action_status: 'selected',
-                            selected_indices: [opt.id],
-                            option_annotations: optionAnnotations
-                        }, 'manual');
-                    } else {
-                        toggleOptionSelection(opt.id, block);
-                    }
-                };
+            // Listen for manual changes
+            themeSelect.addEventListener('change', (e) => applyTheme(e.target.value));
 
-                if (!singleSubmit || promptType === 'multi_select') {
-                    const cb = document.createElement('input');
-                    cb.type = 'checkbox';
-                    cb.value = opt.id;
-                    cb.checked = selectedIndices.has(opt.id);
-                    cb.onchange = (e) => {
-                        e.stopPropagation();
-                        if (cb.checked) selectedIndices.add(opt.id);
-                        else { selectedIndices.delete(opt.id); block.classList.remove('selected'); }
-                        block.classList.toggle('selected', cb.checked);
-                        updateSubmitBtn();
-                    };
-                    block.appendChild(cb);
+            // Listen for system theme changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (themeSelect.value === 'system') {
+                    applyTheme('system');
                 }
-
-                const content = document.createElement('div');
-                content.className = 'option-content';
-                const labelText = opt.default ? opt.id + ' (默认选项)' : opt.id;
-                content.innerHTML = '<div class="option-label">' + labelText + '</div><div class="option-desc">' + opt.description + '</div>';
-                block.appendChild(content);
-
-                const noteInput = document.createElement('input');
-                noteInput.type = 'text';
-                noteInput.placeholder = 'Add note...';
-                noteInput.className = 'option-note';
-                noteInput.value = optionAnnotations[opt.id] || '';
-                noteInput.addEventListener('input', () => { optionAnnotations[opt.id] = noteInput.value; updateCancelBtn(); });
-                noteInput.onclick = (e) => e.stopPropagation();
-                block.appendChild(noteInput);
-
-                container.appendChild(block);
             });
 
-            updateSubmitBtn();
-        }
+            const choiceId = '${choice_id}';
+            const defaults = JSON.parse(document.getElementById('mcp-defaults').textContent);
+            const options = JSON.parse(document.getElementById('mcp-options').textContent);
+            const promptType = '${prompt_type}';
+            let submitting = false;
+            let selectedIndices = new Set();
+            let optionAnnotations = {};
+            let focusedIndex = -1;
 
-        function toggleOptionSelection(optionId, block) {
-            if (selectedIndices.has(optionId)) {
-                selectedIndices.delete(optionId);
-                block.classList.remove('selected');
-            } else {
-                selectedIndices.add(optionId);
-                block.classList.add('selected');
+            // Section: Config Toggle
+            function toggleConfig() {
+                const toggle = document.getElementById('configToggle');
+                const content = document.getElementById('configContent');
+                toggle.classList.toggle('expanded');
+                content.classList.toggle('show');
             }
-            // Update checkbox if present
-            const cb = block.querySelector('input[type="checkbox"]');
-            if (cb) cb.checked = selectedIndices.has(optionId);
-            updateSubmitBtn();
-        }
 
-        function applyDefaultSelections() {
-            selectedIndices.clear();
-            if (isUseDefaultOption()) {
-                options.forEach(opt => {
-                    if (opt.default) {
-                        selectedIndices.add(opt.id);
+            // Section: Helpers
+            function isSingleSubmit() {
+                return document.getElementById('singleSubmitMode').checked;
+            }
+
+            function isUseDefaultOption() {
+                return document.getElementById('useDefaultOption').checked;
+            }
+
+            function validateSelection() {
+                // Min/Max constraints removed — always accept selection (no limits)
+                return null;
+            }
+
+            // Section: Render Functions
+
+            function renderOptions() {
+                const container = document.getElementById('options');
+                container.innerHTML = '';
+                const singleSubmit = isSingleSubmit();
+                const useDefault = isUseDefaultOption();
+                const visibleOpts = options;
+
+                visibleOpts.forEach((opt, idx) => {
+                    const block = document.createElement('div');
+                    block.className = 'option' + (selectedIndices.has(opt.id) ? ' selected' : '');
+                    block.dataset.id = opt.id;
+                    block.tabIndex = 0;
+
+                    if (idx === focusedIndex) {
+                        block.classList.add('focused');
                     }
-                });
-            }
-            renderOptions();
-        }
 
-        function updateFocusVisual() {
-            document.querySelectorAll('.option').forEach((el, idx) => {
-                el.classList.toggle('focused', idx === focusedIndex);
-            });
-        }
+                    // Click handler for the whole option block
+                    block.onclick = (e) => {
+                        // Don't trigger if clicking on checkbox or note input
+                        if (e.target.tagName === 'INPUT') return;
+                        focusedIndex = idx;
+                        updateFocusVisual();
 
-        function updateSubmitBtn() {
-            const singleSubmit = isSingleSubmit();
-            const err = validateSelection();
-            document.getElementById('error').innerText = err || '';
-            const btn = document.getElementById('submitBatchBtn');
-
-            // Disable if validation fails OR if in single-submit mode (where clicking options submits immediately)
-            const isAutoSubmitActive = singleSubmit && promptType !== 'multi_select';
-            btn.disabled = !!err || isAutoSubmitActive;
-        }
-
-        // Section: Keyboard Navigation
-        function handleKeyNavigation(e) {
-            const optionCount = options.length;
-            if (optionCount === 0) return;
-
-            const singleSubmit = isSingleSubmit();
-
-            switch (e.key) {
-                case 'ArrowDown':
-                case 'j':
-                    e.preventDefault();
-                    focusedIndex = (focusedIndex + 1) % optionCount;
-                    updateFocusVisual();
-                    scrollOptionIntoView();
-                    break;
-
-                case 'ArrowUp':
-                case 'k':
-                    e.preventDefault();
-                    focusedIndex = focusedIndex <= 0 ? optionCount - 1 : focusedIndex - 1;
-                    updateFocusVisual();
-                    scrollOptionIntoView();
-                    break;
-
-                case 'Enter':
-                    e.preventDefault();
-                    if (e.ctrlKey) {
-                        // Ctrl+Enter: Submit
-                        if (singleSubmit && promptType !== 'multi_select' && focusedIndex >= 0) {
+                        if (singleSubmit && promptType !== 'multi') {
                             submitPayload({
                                 action_status: 'selected',
-                                selected_indices: [options[focusedIndex].id],
+                                selected_indices: [opt.id],
                                 option_annotations: optionAnnotations
                             }, 'manual');
                         } else {
-                            submitBatch('manual');
+                            toggleOptionSelection(opt.id, block);
                         }
-                    } else {
-                        // Enter: Toggle selection
-                        if (focusedIndex >= 0 && focusedIndex < optionCount) {
-                            const block = document.querySelector('.option[data-id="' + options[focusedIndex].id + '"]');
-                            if (singleSubmit && promptType !== 'multi_select') {
+                    };
+
+                    if (!singleSubmit || promptType === 'multi') {
+                        const cb = document.createElement('input');
+                        cb.type = 'checkbox';
+                        cb.value = opt.id;
+                        cb.checked = selectedIndices.has(opt.id);
+                        cb.onchange = (e) => {
+                            e.stopPropagation();
+                            if (cb.checked) selectedIndices.add(opt.id);
+                            else { selectedIndices.delete(opt.id); block.classList.remove('selected'); }
+                            block.classList.toggle('selected', cb.checked);
+                            updateSubmitBtn();
+                        };
+                        block.appendChild(cb);
+                    }
+
+                    const content = document.createElement('div');
+                    content.className = 'option-content';
+                    const labelText = opt.default ? opt.id + ' (默认选项)' : opt.id;
+                    content.innerHTML = '<div class="option-label">' + labelText + '</div><div class="option-desc">' + opt.description + '</div>';
+                    block.appendChild(content);
+
+                    const noteInput = document.createElement('input');
+                    noteInput.type = 'text';
+                    noteInput.placeholder = 'Add note...';
+                    noteInput.className = 'option-note';
+                    noteInput.value = optionAnnotations[opt.id] || '';
+                    noteInput.addEventListener('input', () => { optionAnnotations[opt.id] = noteInput.value; updateCancelBtn(); });
+                    noteInput.onclick = (e) => e.stopPropagation();
+                    block.appendChild(noteInput);
+
+                    container.appendChild(block);
+                });
+
+                updateSubmitBtn();
+            }
+
+            function toggleOptionSelection(optionId, block) {
+                if (selectedIndices.has(optionId)) {
+                    selectedIndices.delete(optionId);
+                    block.classList.remove('selected');
+                } else {
+                    selectedIndices.add(optionId);
+                    block.classList.add('selected');
+                }
+                // Update checkbox if present
+                const cb = block.querySelector('input[type="checkbox"]');
+                if (cb) cb.checked = selectedIndices.has(optionId);
+                updateSubmitBtn();
+            }
+
+            function applyDefaultSelections() {
+                selectedIndices.clear();
+                if (isUseDefaultOption()) {
+                    options.forEach(opt => {
+                        if (opt.default) {
+                            selectedIndices.add(opt.id);
+                        }
+                    });
+                }
+                renderOptions();
+            }
+
+            function updateFocusVisual() {
+                document.querySelectorAll('.option').forEach((el, idx) => {
+                    el.classList.toggle('focused', idx === focusedIndex);
+                });
+            }
+
+            function updateSubmitBtn() {
+                const singleSubmit = isSingleSubmit();
+                const err = validateSelection();
+                document.getElementById('error').innerText = err || '';
+                const btn = document.getElementById('submitBatchBtn');
+
+                // Disable if validation fails OR if in single-submit mode (where clicking options submits immediately)
+                const isAutoSubmitActive = singleSubmit && promptType !== 'multi';
+                btn.disabled = !!err || isAutoSubmitActive;
+            }
+
+            // Section: Keyboard Navigation
+            function handleKeyNavigation(e) {
+                const optionCount = options.length;
+                if (optionCount === 0) return;
+
+                const singleSubmit = isSingleSubmit();
+
+                switch (e.key) {
+                    case 'ArrowDown':
+                    case 'j':
+                        e.preventDefault();
+                        focusedIndex = (focusedIndex + 1) % optionCount;
+                        updateFocusVisual();
+                        scrollOptionIntoView();
+                        break;
+
+                    case 'ArrowUp':
+                    case 'k':
+                        e.preventDefault();
+                        focusedIndex = focusedIndex <= 0 ? optionCount - 1 : focusedIndex - 1;
+                        updateFocusVisual();
+                        scrollOptionIntoView();
+                        break;
+
+                    case 'Enter':
+                        e.preventDefault();
+                        if (e.ctrlKey) {
+                            // Ctrl+Enter: Submit
+                            if (singleSubmit && promptType !== 'multi' && focusedIndex >= 0) {
                                 submitPayload({
                                     action_status: 'selected',
                                     selected_indices: [options[focusedIndex].id],
                                     option_annotations: optionAnnotations
                                 }, 'manual');
-                            } else if (block) {
-                                toggleOptionSelection(options[focusedIndex].id, block);
+                            } else {
+                                submitBatch('manual');
                             }
-                        }
-                    }
-                    break;
-
-                case 'Home':
-                    e.preventDefault();
-                    focusedIndex = 0;
-                    updateFocusVisual();
-                    scrollOptionIntoView();
-                    break;
-
-                case 'End':
-                    e.preventDefault();
-                    focusedIndex = optionCount - 1;
-                    updateFocusVisual();
-                    scrollOptionIntoView();
-                    break;
-
-                case 'A':
-                case 'a':
-                    if (e.shiftKey) {
-                        e.preventDefault();
-                        // Shift+A: Focus annotation for the current option
-                        if (focusedIndex >= 0 && focusedIndex < optionCount) {
-                            const block = document.querySelector('.option[data-id="' + options[focusedIndex].id + '"]');
-                            if (block) {
-                                const noteInput = block.querySelector('.option-note');
-                                if (noteInput) {
-                                    noteInput.focus();
+                        } else {
+                            // Enter: Toggle selection
+                            if (focusedIndex >= 0 && focusedIndex < optionCount) {
+                                const block = document.querySelector('.option[data-id="' + options[focusedIndex].id + '"]');
+                                if (singleSubmit && promptType !== 'multi') {
+                                    submitPayload({
+                                        action_status: 'selected',
+                                        selected_indices: [options[focusedIndex].id],
+                                        option_annotations: optionAnnotations
+                                    }, 'manual');
+                                } else if (block) {
+                                    toggleOptionSelection(options[focusedIndex].id, block);
                                 }
                             }
                         }
-                    }
-                    break;
+                        break;
+
+                    case 'Home':
+                        e.preventDefault();
+                        focusedIndex = 0;
+                        updateFocusVisual();
+                        scrollOptionIntoView();
+                        break;
+
+                    case 'End':
+                        e.preventDefault();
+                        focusedIndex = optionCount - 1;
+                        updateFocusVisual();
+                        scrollOptionIntoView();
+                        break;
+
+                    case 'A':
+                    case 'a':
+                        if (e.shiftKey) {
+                            e.preventDefault();
+                            // Shift+A: Focus annotation for the current option
+                            if (focusedIndex >= 0 && focusedIndex < optionCount) {
+                                const block = document.querySelector('.option[data-id="' + options[focusedIndex].id + '"]');
+                                if (block) {
+                                    const noteInput = block.querySelector('.option-note');
+                                    if (noteInput) {
+                                        noteInput.focus();
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                }
             }
-        }
 
-        function scrollOptionIntoView() {
-            const focused = document.querySelector('.option.focused');
-            if (focused) {
-                focused.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            function scrollOptionIntoView() {
+                const focused = document.querySelector('.option.focused');
+                if (focused) {
+                    focused.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }
             }
-        }
 
-        // Section: Config Collection
-        function collectConfig() {
-            const rawTimeout = parseInt(document.getElementById('timeoutInput').value || defaults.timeout_seconds, 10);
-            const timeout = Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : defaults.timeout_seconds;
-            const transportSelect = document.getElementById('transportSelect');
-            const transport = transportSelect ? transportSelect.value : 'web';
-            return {
-                transport,
-                timeout_seconds: timeout,
-                single_submit_mode: isSingleSubmit(),
-                use_default_option: isUseDefaultOption(),
-            };
-        }
+            // Section: Config Collection
+            function updateConfigHighlights() {
+                const singleSubmit = document.getElementById('singleSubmitMode');
+                const useDefault = document.getElementById('useDefaultOption');
 
-        // Section: Submission
-        async function postSelection(payload, statusType = 'manual') {
-            if (submitting) return;
-            submitting = true;
-            const statusEl = document.getElementById('status');
-            const headerStatusText = document.getElementById('statusText');
-            const headerStatusDot = document.getElementById('connectionDot');
+                const itemSingle = document.getElementById('item-singleSubmitMode');
+                const itemDefault = document.getElementById('item-useDefaultOption');
 
-            const statusMap = {
-                'manual': { text: '✅ Submitted successfully. You can close this tab.', class: 'manual' },
-                'timeout_auto_submitted': { text: '⏰ Timeout: Auto-submitted.', class: 'timeout' },
-                'timeout_cancelled': { text: '⏰ Timeout: Cancelled (no default selection).', class: 'timeout' },
-                'timeout': { text: '⏰ Timeout.', class: 'timeout' },
-                'cancelled': { text: '🚫 Cancelled.', class: 'timeout' }
-            };
+                if (itemSingle) itemSingle.classList.toggle('highlighted', singleSubmit.checked);
+                if (itemDefault) itemDefault.classList.toggle('highlighted', useDefault.checked);
+            }
 
-            const config = statusMap[statusType] || statusMap['manual'];
+            function collectConfig() {
+                const rawTimeout = parseInt(document.getElementById('timeoutInput').value || defaults.timeout_seconds, 10);
+                const timeout = Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : defaults.timeout_seconds;
+                const transportSelect = document.getElementById('transportSelect');
+                const transport = transportSelect ? transportSelect.value : 'web';
+                return {
+                    transport,
+                    timeout_seconds: timeout,
+                    single_submit_mode: isSingleSubmit(),
+                    use_default_option: isUseDefaultOption(),
+                };
+            }
 
-            headerStatusText.innerText = 'Submitting...';
-            headerStatusDot.className = 'status-dot busy';
+            // Section: Submission
+            async function postSelection(payload, statusType = 'manual') {
+                if (submitting) return;
+                submitting = true;
+                const statusEl = document.getElementById('status');
+                const headerStatusText = document.getElementById('statusText');
+                const headerStatusDot = document.getElementById('connectionDot');
 
-            try {
-                const res = await fetch('/choice/' + choiceId + '/submit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!res.ok) {
-                    let errorDetail = 'Submission failed';
-                    try {
-                        const data = await res.json();
-                        errorDetail = data.detail || errorDetail;
-                    } catch (e) {
-                        // If not JSON, try text
-                        const text = await res.text().catch(() => '');
-                        if (text) errorDetail = text.substring(0, 200);
+                const statusMap = {
+                    'manual': { text: '✅ Submitted successfully. You can close this tab.', class: 'manual' },
+                    'timeout_auto_submitted': { text: '⏰ Timeout: Auto-submitted.', class: 'timeout' },
+                    'timeout_cancelled': { text: '⏰ Timeout: Cancelled (no default selection).', class: 'timeout' },
+                    'timeout': { text: '⏰ Timeout.', class: 'timeout' },
+                    'cancelled': { text: '🚫 Cancelled.', class: 'timeout' }
+                };
+
+                const config = statusMap[statusType] || statusMap['manual'];
+
+                headerStatusText.innerText = 'Submitting...';
+                headerStatusDot.className = 'status-dot busy';
+
+                try {
+                    const res = await fetch('/choice/' + choiceId + '/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) {
+                        let errorDetail = 'Submission failed';
+                        try {
+                            const data = await res.json();
+                            errorDetail = data.detail || errorDetail;
+                        } catch (e) {
+                            // If not JSON, try text
+                            const text = await res.text().catch(() => '');
+                            if (text) errorDetail = text.substring(0, 200);
+                        }
+                        statusEl.className = 'status error';
+                        statusEl.innerText = 'Error (' + res.status + '): ' + errorDetail;
+                        statusEl.style.display = 'block';
+
+                        headerStatusText.innerText = 'Error';
+                        headerStatusDot.className = 'status-dot offline';
+                        submitting = false;
+                    } else {
+                        statusEl.className = 'status ' + config.class;
+                        statusEl.innerText = config.text;
+                        statusEl.style.display = 'block';
+                        document.body.classList.add('submitted');
+
+                        headerStatusText.innerText = 'Submitted';
+                        headerStatusDot.className = 'status-dot';
                     }
+                } catch (e) {
                     statusEl.className = 'status error';
-                    statusEl.innerText = 'Error (' + res.status + '): ' + errorDetail;
+                    statusEl.innerText = 'Network error. Please try again.';
                     statusEl.style.display = 'block';
 
-                    headerStatusText.innerText = 'Error';
+                    headerStatusText.innerText = 'Offline';
                     headerStatusDot.className = 'status-dot offline';
                     submitting = false;
-                } else {
-                    statusEl.className = 'status ' + config.class;
-                    statusEl.innerText = config.text;
-                    statusEl.style.display = 'block';
-                    document.body.classList.add('submitted');
-
-                    headerStatusText.innerText = 'Submitted';
-                    headerStatusDot.className = 'status-dot';
                 }
-            } catch (e) {
-                statusEl.className = 'status error';
-                statusEl.innerText = 'Network error. Please try again.';
-                statusEl.style.display = 'block';
-
-                headerStatusText.innerText = 'Offline';
-                headerStatusDot.className = 'status-dot offline';
-                submitting = false;
             }
-        }
 
-        function submitBatch(statusType = 'manual') {
-            const err = validateSelection();
-            if (err) { document.getElementById('error').innerText = err; return; }
-            const globalAnnotation = document.getElementById('globalAnnotation').value || null;
-            submitPayload({
-                action_status: 'selected',
-                selected_indices: Array.from(selectedIndices),
-                option_annotations: optionAnnotations,
-                global_annotation: globalAnnotation,
-            }, statusType);
-        }
-
-
-        function hasAnnotations() {
-            const g = document.getElementById('globalAnnotation')?.value || '';
-            if (g && String(g).trim()) return true;
-            for (const k in optionAnnotations) {
-                if (optionAnnotations[k] && String(optionAnnotations[k]).trim()) return true;
+            function submitBatch(statusType = 'manual') {
+                const err = validateSelection();
+                if (err) { document.getElementById('error').innerText = err; return; }
+                const globalAnnotation = document.getElementById('globalAnnotation').value || null;
+                submitPayload({
+                    action_status: 'selected',
+                    selected_indices: Array.from(selectedIndices),
+                    option_annotations: optionAnnotations,
+                    global_annotation: globalAnnotation,
+                }, statusType);
             }
-            return false;
-        }
 
-        function updateCancelBtn() {
-            const btn = document.getElementById('cancelButton');
-            if (!btn) return;
-            if (hasAnnotations()) {
-                btn.classList.remove('btn-danger');
-                btn.classList.add('btn-warning');
-                btn.innerText = 'Cancel with annotations';
+
+            function hasAnnotations() {
+                const g = document.getElementById('globalAnnotation')?.value || '';
+                if (g && String(g).trim()) return true;
+                for (const k in optionAnnotations) {
+                    if (optionAnnotations[k] && String(optionAnnotations[k]).trim()) return true;
+                }
+                return false;
+            }
+
+            function updateCancelBtn() {
+                const btn = document.getElementById('cancelButton');
+                if (!btn) return;
+                if (hasAnnotations()) {
+                    btn.classList.remove('btn-danger');
+                    btn.classList.add('btn-warning');
+                    btn.innerText = 'Cancel with annotations';
+                } else {
+                    btn.classList.remove('btn-warning');
+                    btn.classList.add('btn-danger');
+                    btn.innerText = 'Cancel';
+                }
+            }
+
+            function submitCancel() {
+                const payload = { action_status: 'cancelled' };
+                if (hasAnnotations()) {
+                    payload.option_annotations = optionAnnotations;
+                    payload.global_annotation = document.getElementById('globalAnnotation')?.value || null;
+                }
+                submitPayload(payload, 'cancelled');
+            }
+
+            function submitPayload(base, statusType = 'manual') {
+                const config = collectConfig();
+                base.config = config;
+                postSelection(base, statusType);
+            }
+
+            // Update cancel button when global annotation changes
+            document.getElementById('globalAnnotation').addEventListener('input', () => {
+                updateCancelBtn();
+                const section = document.getElementById('globalAnnotation').closest('.annotation-section');
+                if (document.getElementById('globalAnnotation').value.trim()) {
+                    section.classList.add('has-content');
+                } else {
+                    section.classList.remove('has-content');
+                }
+            });
+
+            // Section: Event Listeners
+            document.getElementById('singleSubmitMode').onchange = () => {
+                renderOptions();
+                updateConfigHighlights();
+            };
+            const useDefaultToggle = document.getElementById('useDefaultOption');
+            if (useDefaultToggle) {
+                useDefaultToggle.checked = !!defaults.use_default_option;
+                useDefaultToggle.onchange = () => {
+                    updateConfigHighlights();
+                    if (isUseDefaultOption()) {
+                        applyDefaultSelections();
+                    } else {
+                        renderOptions();
+                    }
+                };
+            }
+
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                // Don't capture keys when typing in inputs
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                    if (e.key === 'Escape') {
+                        e.target.blur();
+                        document.getElementById('options').focus();
+                    }
+                    return;
+                }
+                handleKeyNavigation(e);
+            });
+
+            // Focus options container on click
+            document.getElementById('options').addEventListener('click', () => {
+                document.getElementById('options').focus();
+            });
+
+            // Section: Init
+            if (defaults.use_default_option) {
+                applyDefaultSelections();
             } else {
-                btn.classList.remove('btn-warning');
-                btn.classList.add('btn-danger');
-                btn.innerText = 'Cancel';
+                renderOptions();
             }
-        }
-
-        function submitCancel() {
-            const payload = { action_status: 'cancelled' };
-            if (hasAnnotations()) {
-                payload.option_annotations = optionAnnotations;
-                payload.global_annotation = document.getElementById('globalAnnotation')?.value || null;
-            }
-            submitPayload(payload, 'cancelled');
-        }
-
-        function submitPayload(base, statusType = 'manual') {
-            const config = collectConfig();
-            base.config = config;
-            postSelection(base, statusType);
-        }
-
-        // Update cancel button when global annotation changes
-        document.getElementById('globalAnnotation').addEventListener('input', () => {
+            updateConfigHighlights();
             updateCancelBtn();
-            const section = document.getElementById('globalAnnotation').closest('.annotation-section');
-            if (document.getElementById('globalAnnotation').value.trim()) {
-                section.classList.add('has-content');
-            } else {
-                section.classList.remove('has-content');
-            }
-        });
 
-        // Section: Event Listeners
-        document.getElementById('singleSubmitMode').onchange = renderOptions;
-        const useDefaultToggle = document.getElementById('useDefaultOption');
-        if (useDefaultToggle) {
-            useDefaultToggle.checked = !!defaults.use_default_option;
-            useDefaultToggle.onchange = () => {
-                if (isUseDefaultOption()) {
-                    applyDefaultSelections();
-                } else {
-                    renderOptions();
+            // Section: Timeout Countdown
+            let _timeoutTimerId = null;
+            let _timeoutTotal = 0;
+            let _timeoutRemaining = 0;
+
+            function stopTimeout() {
+                if (_timeoutTimerId !== null) {
+                    clearInterval(_timeoutTimerId);
+                    _timeoutTimerId = null;
                 }
-            };
-        }
-
-        // Keyboard navigation
-        document.addEventListener('keydown', (e) => {
-            // Don't capture keys when typing in inputs
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
-                if (e.key === 'Escape') {
-                    e.target.blur();
-                    document.getElementById('options').focus();
-                }
-                return;
-            }
-            handleKeyNavigation(e);
-        });
-
-        // Focus options container on click
-        document.getElementById('options').addEventListener('click', () => {
-            document.getElementById('options').focus();
-        });
-
-        // Section: Init
-        if (defaults.use_default_option) {
-            applyDefaultSelections();
-        } else {
-            renderOptions();
-        }
-        updateCancelBtn();
-
-        // Section: Timeout Countdown
-        let _timeoutTimerId = null;
-        let _timeoutTotal = 0;
-        let _timeoutRemaining = 0;
-
-        function stopTimeout() {
-            if (_timeoutTimerId !== null) {
-                clearInterval(_timeoutTimerId);
-                _timeoutTimerId = null;
-            }
-        }
-
-        function startTimeout(seconds) {
-            stopTimeout();
-            const timeoutText = document.getElementById('timeoutText');
-            const container = document.getElementById('timeoutContainer');
-            const bar = document.getElementById('timeoutProgressBar');
-
-            const sec = Number.isFinite(Number(seconds)) ? parseInt(seconds, 10) : 0;
-            if (!sec || sec <= 0) {
-                timeoutText.innerText = 'No Timeout';
-                container.style.display = 'none';
-                bar.style.width = '0%';
-                bar.classList.remove('warning', 'danger');
-                return;
             }
 
-            container.style.display = 'block';
-            _timeoutTotal = sec;
-            _timeoutRemaining = sec;
-            bar.style.width = '100%';
-            bar.classList.remove('warning', 'danger');
+            function startTimeout(seconds) {
+                stopTimeout();
+                const timeoutText = document.getElementById('timeoutText');
+                const container = document.getElementById('timeoutContainer');
+                const bar = document.getElementById('timeoutProgressBar');
 
-            const updateText = (s) => {
-                const mins = Math.floor(s / 60);
-                const secs = s % 60;
-                timeoutText.innerText = mins + ':' + (secs < 10 ? '0' : '') + secs;
-            };
-
-            updateText(_timeoutRemaining);
-
-            _timeoutTimerId = setInterval(() => {
-                if (submitting) {
-                    stopTimeout();
+                const sec = Number.isFinite(Number(seconds)) ? parseInt(seconds, 10) : 0;
+                if (!sec || sec <= 0) {
+                    timeoutText.innerText = 'No Timeout';
+                    container.style.display = 'none';
+                    bar.style.width = '0%';
+                    bar.classList.remove('warning', 'danger');
                     return;
                 }
 
-                _timeoutRemaining -= 1;
-                updateText(Math.max(0, _timeoutRemaining));
-                const percentage = Math.max(0, (_timeoutRemaining / _timeoutTotal) * 100);
-                bar.style.width = percentage + '%';
+                container.style.display = 'block';
+                _timeoutTotal = sec;
+                _timeoutRemaining = sec;
+                bar.style.width = '100%';
+                bar.classList.remove('warning', 'danger');
 
-                bar.classList.toggle('warning', percentage < 50 && percentage >= 20);
-                bar.classList.toggle('danger', percentage < 20);
+                const updateText = (s) => {
+                    const mins = Math.floor(s / 60);
+                    const secs = s % 60;
+                    timeoutText.innerText = mins + ':' + (secs < 10 ? '0' : '') + secs;
+                };
 
-                if (_timeoutRemaining <= 0) {
-                    stopTimeout();
-                    const headerStatusText = document.getElementById('statusText');
-                    const headerStatusDot = document.getElementById('connectionDot');
-                    headerStatusText.innerText = 'Timeout';
-                    headerStatusDot.className = 'status-dot offline';
-                    const hasDefault = defaults.timeout_default_enabled && defaults.timeout_default_index !== null;
-                    if (hasDefault) {
-                        submitPayload({ action_status: 'timeout_auto_submitted' }, 'timeout_auto_submitted');
-                    } else {
-                        submitPayload({ action_status: 'timeout_cancelled' }, 'timeout_cancelled');
+                updateText(_timeoutRemaining);
+
+                _timeoutTimerId = setInterval(() => {
+                    if (submitting) {
+                        stopTimeout();
+                        return;
                     }
-                }
-            }, 1000);
-        }
 
-        // Initialize using the current timeout input (fallback to template default)
-        startTimeout(parseInt(document.getElementById('timeoutInput')?.value || '${timeout_value}', 10));
+                    _timeoutRemaining -= 1;
+                    updateText(Math.max(0, _timeoutRemaining));
+                    const percentage = Math.max(0, (_timeoutRemaining / _timeoutTotal) * 100);
+                    bar.style.width = percentage + '%';
 
-        // When the user changes the timeout, restart the countdown using that value
-        document.getElementById('timeoutInput').addEventListener('change', (e) => {
-            const v = parseInt(e.target.value, 10);
-            startTimeout(v);
-        });
+                    bar.classList.toggle('warning', percentage < 50 && percentage >= 20);
+                    bar.classList.toggle('danger', percentage < 20);
 
-        // Auto-focus options for keyboard navigation
-        setTimeout(() => {
-            document.getElementById('options').focus();
-            if (options.length > 0) {
-                focusedIndex = 0;
-                updateFocusVisual();
+                    if (_timeoutRemaining <= 0) {
+                        stopTimeout();
+                        const headerStatusText = document.getElementById('statusText');
+                        const headerStatusDot = document.getElementById('connectionDot');
+                        headerStatusText.innerText = 'Timeout';
+                        headerStatusDot.className = 'status-dot offline';
+                        const hasDefault = defaults.timeout_default_enabled && defaults.timeout_default_index !== null;
+                        if (hasDefault) {
+                            submitPayload({ action_status: 'timeout_auto_submitted' }, 'timeout_auto_submitted');
+                        } else {
+                            submitPayload({ action_status: 'timeout_cancelled' }, 'timeout_cancelled');
+                        }
+                    }
+                }, 1000);
             }
-        }, 100);
-    </script>
+
+            // Initialize using the current timeout input (fallback to template default)
+            startTimeout(parseInt(document.getElementById('timeoutInput')?.value || '${timeout_value}', 10));
+
+            // When the user changes the timeout, restart the countdown using that value
+            document.getElementById('timeoutInput').addEventListener('change', (e) => {
+                const v = parseInt(e.target.value, 10);
+                startTimeout(v);
+            });
+
+            // Auto-focus options for keyboard navigation
+            setTimeout(() => {
+                document.getElementById('options').focus();
+                if (options.length > 0) {
+                    focusedIndex = 0;
+                    updateFocusVisual();
+                }
+            }, 100);
+        </script>
 </body>
 
 </html>
