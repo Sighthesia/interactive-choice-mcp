@@ -774,6 +774,32 @@
                             </div>
                         </div>
 
+                        <div class="config-item" id="item-annotationEnabled">
+                            <label class="config-label">
+                                <input id="annotationToggle" type="checkbox" />
+                                启用批注输入
+                            </label>
+                            <div class="config-desc">
+                                允许为选项或全局提供备注
+                            </div>
+                        </div>
+
+                        <div class="config-item" id="item-placeholderVisibility">
+                            <label class="config-label">
+                                <input id="placeholderToggle" type="checkbox" />
+                                显示占位提示
+                            </label>
+                            <div class="config-desc">
+                                控制文本输入是否展示占位符
+                            </div>
+                        </div>
+
+                        <div class="config-item" id="item-optionVisibility">
+                            <div class="config-label">可见选项</div>
+                            <div class="options-grid" id="optionVisibilityGrid"></div>
+                            <div class="config-desc">取消勾选可隐藏无需关注的选项</div>
+                        </div>
+
                         <div class="config-section-title">Global Settings</div>
 
                         <div class="config-item">
@@ -850,10 +876,39 @@
             const defaults = JSON.parse(document.getElementById('mcp-defaults').textContent);
             const options = JSON.parse(document.getElementById('mcp-options').textContent);
             const promptType = '${prompt_type}';
+            let optionVisibility = defaults.option_visibility || {};
+            let placeholderVisible = defaults.placeholder_visibility !== false;
+            let annotationEnabled = defaults.annotation_enabled !== false;
             let submitting = false;
             let selectedIndices = new Set();
             let optionAnnotations = {};
             let focusedIndex = -1;
+
+            function ensureOptionVisibility() {
+                if (!optionVisibility || Object.keys(optionVisibility).length === 0) {
+                    optionVisibility = {};
+                }
+                options.forEach(opt => {
+                    if (typeof optionVisibility[opt.id] === 'undefined') {
+                        optionVisibility[opt.id] = true;
+                    }
+                });
+            }
+
+            function getVisibleOptions() {
+                return options.filter(opt => optionVisibility[opt.id] !== false);
+            }
+
+            ensureOptionVisibility();
+            let ws = null;
+            let wsReconnectTimer = null;
+            let wsConnected = false;
+            let notificationPermissionRequested = false;
+            let notifiedThreshold = false;
+            let notifiedTimeout = false;
+            let _timeoutExpired = false;
+            const headerStatusText = document.getElementById('statusText');
+            const headerStatusDot = document.getElementById('connectionDot');
 
             // Section: Config Toggle
             function toggleConfig() {
@@ -872,9 +927,98 @@
                 return document.getElementById('useDefaultOption').checked;
             }
 
+            function isAnnotationEnabled() {
+                return annotationEnabled;
+            }
+
+            function isPlaceholderVisible() {
+                return placeholderVisible;
+            }
+
             function validateSelection() {
                 // Min/Max constraints removed — always accept selection (no limits)
                 return null;
+            }
+
+            function connectWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+                const wsUrl = protocol + '//' + window.location.host + '/ws/' + choiceId;
+
+                if (ws) {
+                    ws.close();
+                }
+
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = () => {
+                    wsConnected = true;
+                    updateConnectionStatus('Connected', '');
+                    if (wsReconnectTimer) {
+                        clearTimeout(wsReconnectTimer);
+                        wsReconnectTimer = null;
+                    }
+                };
+
+                ws.onclose = () => {
+                    wsConnected = false;
+                    updateConnectionStatus('Offline', 'offline');
+                    if (!submitting) {
+                        wsReconnectTimer = setTimeout(connectWebSocket, 1500);
+                    }
+                };
+
+                ws.onmessage = (event) => {
+                    let data;
+                    try {
+                        data = JSON.parse(event.data);
+                    } catch (e) {
+                        return;
+                    }
+                    if (data.type === 'sync') {
+                        updateTimeoutFromServer(data.remaining_seconds, data.timeout_seconds);
+                    }
+                    if (data.type === 'status') {
+                        if (data.status === 'timeout') {
+                            updateConnectionStatus('Timeout', 'offline');
+                            handleTimeoutReached();
+                        } else if (data.status === 'submitted') {
+                            updateConnectionStatus('Submitted', '');
+                        } else if (data.status === 'connected') {
+                            updateConnectionStatus('Connected', '');
+                        }
+                    }
+                };
+            }
+
+            function sendUpdateTimeout(seconds) {
+                if (!wsConnected || !ws) return;
+                ws.send(JSON.stringify({ type: 'update_timeout', seconds }));
+            }
+
+            function updateConnectionStatus(text, stateClass = '') {
+                if (headerStatusText) headerStatusText.innerText = text;
+                if (headerStatusDot) {
+                    headerStatusDot.className = 'status-dot' + (stateClass ? ' ' + stateClass : '');
+                }
+            }
+
+            function requestNotificationPermission() {
+                if (notificationPermissionRequested) return;
+                if (!('Notification' in window)) return;
+                notificationPermissionRequested = true;
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            }
+
+            function notifyEvent(title, body) {
+                if (!('Notification' in window)) return;
+                if (Notification.permission !== 'granted') return;
+                try {
+                    new Notification(title, { body });
+                } catch (e) {
+                    // Ignore notification errors silently to avoid breaking flow
+                }
             }
 
             // Section: Render Functions
@@ -884,7 +1028,14 @@
                 container.innerHTML = '';
                 const singleSubmit = isSingleSubmit();
                 const useDefault = isUseDefaultOption();
-                const visibleOpts = options;
+                const visibleOpts = getVisibleOptions();
+
+                if (focusedIndex >= visibleOpts.length) {
+                    focusedIndex = visibleOpts.length - 1;
+                }
+                if (focusedIndex < 0 && visibleOpts.length > 0) {
+                    focusedIndex = 0;
+                }
 
                 visibleOpts.forEach((opt, idx) => {
                     const block = document.createElement('div');
@@ -935,19 +1086,22 @@
                     content.innerHTML = '<div class="option-label">' + labelText + '</div><div class="option-desc">' + opt.description + '</div>';
                     block.appendChild(content);
 
-                    const noteInput = document.createElement('input');
-                    noteInput.type = 'text';
-                    noteInput.placeholder = 'Add note...';
-                    noteInput.className = 'option-note';
-                    noteInput.value = optionAnnotations[opt.id] || '';
-                    noteInput.addEventListener('input', () => { optionAnnotations[opt.id] = noteInput.value; updateCancelBtn(); });
-                    noteInput.onclick = (e) => e.stopPropagation();
-                    block.appendChild(noteInput);
+                    if (annotationEnabled) {
+                        const noteInput = document.createElement('input');
+                        noteInput.type = 'text';
+                        noteInput.placeholder = placeholderVisible ? 'Add note...' : '';
+                        noteInput.className = 'option-note';
+                        noteInput.value = optionAnnotations[opt.id] || '';
+                        noteInput.addEventListener('input', () => { optionAnnotations[opt.id] = noteInput.value; updateCancelBtn(); });
+                        noteInput.onclick = (e) => e.stopPropagation();
+                        block.appendChild(noteInput);
+                    }
 
                     container.appendChild(block);
                 });
 
                 updateSubmitBtn();
+                updateCancelBtn();
             }
 
             function toggleOptionSelection(optionId, block) {
@@ -967,7 +1121,7 @@
             function applyDefaultSelections() {
                 selectedIndices.clear();
                 if (isUseDefaultOption()) {
-                    options.forEach(opt => {
+                    getVisibleOptions().forEach(opt => {
                         if (opt.recommended) {
                             selectedIndices.add(opt.id);
                         }
@@ -995,7 +1149,8 @@
 
             // Section: Keyboard Navigation
             function handleKeyNavigation(e) {
-                const optionCount = options.length;
+                const visible = getVisibleOptions();
+                const optionCount = visible.length;
                 if (optionCount === 0) return;
 
                 const singleSubmit = isSingleSubmit();
@@ -1024,7 +1179,7 @@
                             if (singleSubmit && promptType !== 'multi' && focusedIndex >= 0) {
                                 submitPayload({
                                     action_status: 'selected',
-                                    selected_indices: [options[focusedIndex].id],
+                                    selected_indices: [visible[focusedIndex].id],
                                     option_annotations: optionAnnotations
                                 }, 'manual');
                             } else {
@@ -1033,15 +1188,15 @@
                         } else {
                             // Enter: Toggle selection
                             if (focusedIndex >= 0 && focusedIndex < optionCount) {
-                                const block = document.querySelector('.option[data-id="' + options[focusedIndex].id + '"]');
+                                const block = document.querySelector('.option[data-id="' + visible[focusedIndex].id + '"]');
                                 if (singleSubmit && promptType !== 'multi') {
                                     submitPayload({
                                         action_status: 'selected',
-                                        selected_indices: [options[focusedIndex].id],
+                                        selected_indices: [visible[focusedIndex].id],
                                         option_annotations: optionAnnotations
                                     }, 'manual');
                                 } else if (block) {
-                                    toggleOptionSelection(options[focusedIndex].id, block);
+                                    toggleOptionSelection(visible[focusedIndex].id, block);
                                 }
                             }
                         }
@@ -1067,7 +1222,7 @@
                             e.preventDefault();
                             // Shift+A: Focus annotation for the current option
                             if (focusedIndex >= 0 && focusedIndex < optionCount) {
-                                const block = document.querySelector('.option[data-id="' + options[focusedIndex].id + '"]');
+                                const block = document.querySelector('.option[data-id="' + visible[focusedIndex].id + '"]');
                                 if (block) {
                                     const noteInput = block.querySelector('.option-note');
                                     if (noteInput) {
@@ -1099,6 +1254,39 @@
                 if (itemDefault) itemDefault.classList.toggle('highlighted', useDefault.checked);
             }
 
+            function renderOptionVisibilityGrid() {
+                const grid = document.getElementById('optionVisibilityGrid');
+                if (!grid) return;
+                grid.innerHTML = '';
+                options.forEach(opt => {
+                    const label = document.createElement('label');
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.value = opt.id;
+                    cb.checked = optionVisibility[opt.id] !== false;
+                    cb.onchange = () => {
+                        optionVisibility[opt.id] = cb.checked;
+                        selectedIndices = new Set(Array.from(selectedIndices).filter(id => optionVisibility[id] !== false));
+                        renderOptions();
+                        updateConfigHighlights();
+                    };
+                    label.appendChild(cb);
+                    const span = document.createElement('span');
+                    span.textContent = opt.recommended ? opt.id + ' (推荐)' : opt.id;
+                    label.appendChild(span);
+                    grid.appendChild(label);
+                });
+            }
+
+            function syncAnnotationVisibility() {
+                const section = document.getElementById('annotationSection');
+                if (section) {
+                    section.style.display = isAnnotationEnabled() ? 'block' : 'none';
+                }
+                renderOptions();
+                updateCancelBtn();
+            }
+
             function collectConfig() {
                 const rawTimeout = parseInt(document.getElementById('timeoutInput').value || defaults.timeout_seconds, 10);
                 const timeout = Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : defaults.timeout_seconds;
@@ -1112,6 +1300,9 @@
                     single_submit_mode: isSingleSubmit(),
                     use_default_option: isUseDefaultOption(),
                     timeout_action: timeoutAction,
+                    option_visibility: optionVisibility,
+                    placeholder_visibility: isPlaceholderVisible(),
+                    annotation_enabled: isAnnotationEnabled(),
                 };
             }
 
@@ -1182,20 +1373,24 @@
             function submitBatch(statusType = 'manual') {
                 const err = validateSelection();
                 if (err) { document.getElementById('error').innerText = err; return; }
-                const globalAnnotation = document.getElementById('globalAnnotation').value || null;
-                submitPayload({
+                const payload = {
                     action_status: 'selected',
                     selected_indices: Array.from(selectedIndices),
-                    option_annotations: optionAnnotations,
-                    global_annotation: globalAnnotation,
-                }, statusType);
+                };
+                if (isAnnotationEnabled()) {
+                    payload.option_annotations = optionAnnotations;
+                    payload.global_annotation = document.getElementById('globalAnnotation').value || null;
+                }
+                submitPayload(payload, statusType);
             }
 
 
             function hasAnnotations() {
+                if (!isAnnotationEnabled()) return false;
                 const g = document.getElementById('globalAnnotation')?.value || '';
                 if (g && String(g).trim()) return true;
                 for (const k in optionAnnotations) {
+                    if (optionVisibility[k] === false) continue;
                     if (optionAnnotations[k] && String(optionAnnotations[k]).trim()) return true;
                 }
                 return false;
@@ -1259,6 +1454,29 @@
                 };
             }
 
+            const annotationToggle = document.getElementById('annotationToggle');
+            if (annotationToggle) {
+                annotationToggle.checked = annotationEnabled;
+                annotationToggle.onchange = () => {
+                    annotationEnabled = annotationToggle.checked;
+                    syncAnnotationVisibility();
+                };
+            }
+
+            const placeholderToggle = document.getElementById('placeholderToggle');
+            if (placeholderToggle) {
+                placeholderToggle.checked = placeholderVisible;
+                placeholderToggle.onchange = () => {
+                    placeholderVisible = placeholderToggle.checked;
+                    document.getElementById('globalAnnotation').placeholder = placeholderVisible ? 'Optional note when provided options don\'t fully meet your needs' : '';
+                    renderOptions();
+                };
+                document.getElementById('globalAnnotation').placeholder = placeholderVisible ? 'Optional note when provided options don\'t fully meet your needs' : '';
+            }
+
+            renderOptionVisibilityGrid();
+            syncAnnotationVisibility();
+
             // Keyboard navigation
             document.addEventListener('keydown', (e) => {
                 // Don't capture keys when typing in inputs
@@ -1277,6 +1495,12 @@
                 document.getElementById('options').focus();
             });
 
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    notifiedThreshold = false;
+                }
+            });
+
             // Section: Init
             if (defaults.use_default_option) {
                 applyDefaultSelections();
@@ -1286,7 +1510,10 @@
             updateConfigHighlights();
             updateCancelBtn();
 
-            // Section: Timeout Countdown
+            requestNotificationPermission();
+            connectWebSocket();
+
+            // Section: Timeout Countdown + Sync + Notifications
             let _timeoutTimerId = null;
             let _timeoutTotal = 0;
             let _timeoutRemaining = 0;
@@ -1298,14 +1525,12 @@
                 }
             }
 
-            function startTimeout(seconds) {
-                stopTimeout();
+            function renderTimeout() {
                 const timeoutText = document.getElementById('timeoutText');
                 const container = document.getElementById('timeoutContainer');
                 const bar = document.getElementById('timeoutProgressBar');
 
-                const sec = Number.isFinite(Number(seconds)) ? parseInt(seconds, 10) : 0;
-                if (!sec || sec <= 0) {
+                if (!_timeoutTotal || _timeoutTotal <= 0) {
                     timeoutText.innerText = 'No Timeout';
                     container.style.display = 'none';
                     bar.style.width = '0%';
@@ -1314,59 +1539,99 @@
                 }
 
                 container.style.display = 'block';
-                _timeoutTotal = sec;
-                _timeoutRemaining = sec;
-                bar.style.width = '100%';
-                bar.classList.remove('warning', 'danger');
+                const clamped = Math.max(0, _timeoutRemaining);
+                const mins = Math.floor(clamped / 60);
+                const secs = clamped % 60;
+                timeoutText.innerText = mins + ':' + (secs < 10 ? '0' : '') + secs;
 
-                const updateText = (s) => {
-                    const mins = Math.floor(s / 60);
-                    const secs = s % 60;
-                    timeoutText.innerText = mins + ':' + (secs < 10 ? '0' : '') + secs;
-                };
+                const percentage = Math.max(0, (_timeoutRemaining / _timeoutTotal) * 100);
+                bar.style.width = percentage + '%';
+                bar.classList.toggle('warning', percentage < 50 && percentage >= 20);
+                bar.classList.toggle('danger', percentage < 20);
 
-                updateText(_timeoutRemaining);
+                if (_timeoutRemaining <= 10 && _timeoutRemaining > 0 && document.hidden && !notifiedThreshold) {
+                    requestNotificationPermission();
+                    notifyEvent('Timeout approaching', '~' + _timeoutRemaining + 's remaining');
+                    notifiedThreshold = true;
+                }
 
+                if (_timeoutRemaining <= 0 && !_timeoutExpired) {
+                    _timeoutExpired = true;
+                    handleTimeoutReached();
+                }
+            }
+
+            function startTick() {
+                if (_timeoutTimerId !== null) return;
                 _timeoutTimerId = setInterval(() => {
                     if (submitting) {
                         stopTimeout();
                         return;
                     }
+                    _timeoutRemaining = Math.max(0, _timeoutRemaining - 1);
+                    renderTimeout();
+                }, 1000);
+            }
 
-                    _timeoutRemaining -= 1;
-                    updateText(Math.max(0, _timeoutRemaining));
-                    const percentage = Math.max(0, (_timeoutRemaining / _timeoutTotal) * 100);
-                    bar.style.width = percentage + '%';
+            function startTimeout(seconds) {
+                stopTimeout();
+                notifiedThreshold = false;
+                notifiedTimeout = false;
+                _timeoutExpired = false;
+                const sec = Number.isFinite(Number(seconds)) ? parseInt(seconds, 10) : 0;
+                _timeoutTotal = sec > 0 ? sec : 0;
+                _timeoutRemaining = _timeoutTotal;
+                renderTimeout();
+                if (_timeoutTotal > 0) {
+                    startTick();
+                }
+            }
 
-                    bar.classList.toggle('warning', percentage < 50 && percentage >= 20);
-                    bar.classList.toggle('danger', percentage < 20);
+            function updateTimeoutFromServer(remainingSeconds, totalSeconds) {
+                if (!Number.isFinite(Number(remainingSeconds))) return;
+                const remaining = Math.max(0, Math.round(Number(remainingSeconds)));
+                const total = Number.isFinite(Number(totalSeconds)) && totalSeconds > 0 ? Math.round(Number(totalSeconds)) : null;
+                if (total) {
+                    _timeoutTotal = total;
+                } else if (_timeoutTotal < remaining) {
+                    _timeoutTotal = remaining;
+                }
+                _timeoutRemaining = remaining;
+                if (remaining > 0) {
+                    _timeoutExpired = false;
+                    notifiedTimeout = false;
+                }
+                renderTimeout();
+                if (_timeoutTotal > 0) {
+                    startTick();
+                }
+            }
 
-                    if (_timeoutRemaining <= 0) {
-                        stopTimeout();
-                        const headerStatusText = document.getElementById('statusText');
-                        const headerStatusDot = document.getElementById('connectionDot');
-                        headerStatusText.innerText = 'Timeout';
-                        headerStatusDot.className = 'status-dot offline';
-
-                        const config = collectConfig();
-                        if (config.timeout_action === 'reinvoke') {
-                            submitPayload({ action_status: 'timeout_reinvoke_requested' }, 'timeout');
-                        } else if (config.timeout_action === 'cancel') {
-                            submitPayload({ action_status: 'timeout_cancelled' }, 'timeout');
-                        } else { // submit
-                            if (selectedIndices.size > 0) {
-                                submitBatch('timeout_auto_submitted');
-                            } else {
-                                const hasDefault = defaults.timeout_default_enabled && defaults.timeout_default_index !== null;
-                                if (hasDefault) {
-                                    submitPayload({ action_status: 'timeout_auto_submitted' }, 'timeout_auto_submitted');
-                                } else {
-                                    submitPayload({ action_status: 'timeout_cancelled' }, 'timeout_cancelled');
-                                }
-                            }
+            function handleTimeoutReached() {
+                stopTimeout();
+                updateConnectionStatus('Timeout', 'offline');
+                const config = collectConfig();
+                if (config.timeout_action === 'reinvoke') {
+                    submitPayload({ action_status: 'timeout_reinvoke_requested' }, 'timeout');
+                } else if (config.timeout_action === 'cancel') {
+                    submitPayload({ action_status: 'timeout_cancelled' }, 'timeout');
+                } else {
+                    if (selectedIndices.size > 0) {
+                        submitBatch('timeout_auto_submitted');
+                    } else {
+                        const hasDefault = defaults.timeout_default_enabled && defaults.timeout_default_index !== null;
+                        if (hasDefault) {
+                            submitPayload({ action_status: 'timeout_auto_submitted' }, 'timeout_auto_submitted');
+                        } else {
+                            submitPayload({ action_status: 'timeout_cancelled' }, 'timeout_cancelled');
                         }
                     }
-                }, 1000);
+                }
+                if (!notifiedTimeout) {
+                    requestNotificationPermission();
+                    notifyEvent('Interaction timed out', 'The choice session has expired.');
+                    notifiedTimeout = true;
+                }
             }
 
             // Initialize using the current timeout input (fallback to template default)
@@ -1376,6 +1641,7 @@
             document.getElementById('timeoutInput').addEventListener('change', (e) => {
                 const v = parseInt(e.target.value, 10);
                 startTimeout(v);
+                sendUpdateTimeout(v);
             });
 
             // Auto-focus options for keyboard navigation
