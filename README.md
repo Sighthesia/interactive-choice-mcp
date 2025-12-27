@@ -68,7 +68,7 @@ AI 代理可以调用此工具来请求用户输入。
 - `title` (string): 选择界面的标题。
 - `prompt` (string): 向用户展示的提示信息，应包含上下文。
 - `selection_mode` (string): 选择模式 (`single`, `multi`)。
-- `options` (array): 选项列表，每个选项包含 `id` 和 `description`。
+- `options` (array): 选项列表，每个选项包含 `id`、`description`、`recommended` (至少一个需要为 `true`)。
 - `transport` (string, optional): 强制指定传输方式 (`terminal` 或 `web`)。
 - `timeout_seconds` (integer, optional): 超时时间（秒）。
 

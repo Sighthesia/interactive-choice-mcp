@@ -37,7 +37,7 @@ def _build_choices(options: Iterable[ProvideChoiceOption]) -> List[questionary.C
     """Convert internal options to questionary Choice objects using option IDs as values."""
     return [
         questionary.Choice(
-            title=f"{opt.id} (默认选项)" if opt.default else opt.id,
+            title=f"{opt.id} (推荐)" if opt.recommended else opt.id,
             value=opt.id
         )
         for opt in options
@@ -52,7 +52,7 @@ def _build_config_choices(options: Iterable[ProvideChoiceOption], defaults: List
     """
     return [
         questionary.Choice(
-            title=f"{opt.id} (默认选项)" if opt.default else opt.id,
+            title=f"{opt.id} (推荐)" if opt.recommended else opt.id,
             value=idx,
             checked=idx in defaults
         )
@@ -88,7 +88,7 @@ def _run_prompt_sync(
     # Determine default selection if use_default_option is enabled
     default_selection: List[str] = []
     if config and config.use_default_option:
-        default_selection = [opt.id for opt in req.options if opt.default]
+        default_selection = [opt.id for opt in req.options if opt.recommended]
 
     try:
         # Single select: auto-submit or select from list
@@ -131,9 +131,9 @@ def _run_prompt_sync(
             if config and config.use_default_option:
                 choices = [
                     questionary.Choice(
-                        title=f"{opt.id} (默认选项)" if opt.default else opt.id,
+                        title=f"{opt.id} (推荐)" if opt.recommended else opt.id,
                         value=opt.id,
-                        checked=opt.default
+                        checked=opt.recommended
                     )
                     for opt in req.options
                 ]
@@ -241,7 +241,7 @@ async def prompt_configuration(
 
             # Use default option toggle
             use_default_option = questionary.confirm(
-                "采用默认选项 (自动勾选标记为默认的选项)", default=defaults.use_default_option
+                "采用推荐选项 (自动勾选标记为推荐的选项)", default=defaults.use_default_option
             ).unsafe_ask()
             if use_default_option is None:
                 return None

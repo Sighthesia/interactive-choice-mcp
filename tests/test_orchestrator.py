@@ -32,7 +32,7 @@ def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
             title="Title",
             prompt="Prompt",
             selection_mode="single",
-            options=[{"id": "A", "description": "desc"}],
+            options=[{"id": "A", "description": "desc", "recommended": True}],
         )
     )
 
@@ -66,7 +66,7 @@ def test_orchestrator_terminal_config_abort_falls_back_to_web(monkeypatch, tmp_p
             title="Title",
             prompt="Prompt",
             selection_mode="single",
-            options=[{"id": "A", "description": "desc"}],
+            options=[{"id": "A", "description": "desc", "recommended": True}],
         )
     )
 
@@ -94,7 +94,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
             title="Title",
             prompt="Prompt",
             selection_mode="single",
-            options=[{"id": "B", "description": "desc"}],
+            options=[{"id": "B", "description": "desc", "recommended": True}],
         )
     )
 

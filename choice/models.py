@@ -22,7 +22,7 @@ class ProvideChoiceOption:
     """
     id: str
     description: str
-    default: bool = False
+    recommended: bool = False
 
     @property
     def label(self) -> str:
@@ -115,27 +115,31 @@ def _validate_options(options: Sequence[dict | ProvideChoiceOption]) -> List[Pro
                 raw_id = raw.get("id") if isinstance(raw, dict) else None
                 if raw_id is None:
                     raise ValidationError("options entries must include an 'id' and description")
-                opt_default_raw = raw.get("default", False)
-                if isinstance(opt_default_raw, bool):
-                    opt_default = opt_default_raw
+                opt_recommended_raw = raw.get("recommended", False)
+                if isinstance(opt_recommended_raw, bool):
+                    opt_recommended = opt_recommended_raw
                 else:
-                    raise ValidationError("option.default must be a boolean when provided")
+                    raise ValidationError("option.recommended must be a boolean when provided")
                 opt = ProvideChoiceOption(
                     id=str(raw_id),
                     description=str(raw.get("description", "")),
-                    default=opt_default,
+                    recommended=opt_recommended,
                 )
             except ValidationError:
                 raise
             except Exception as exc:  # noqa: BLE001
                 raise ValidationError("options entries must include an 'id' and description") from exc
         _ensure_non_empty(opt.id, "option.id")
-        if not isinstance(opt.default, bool):
-            raise ValidationError("option.default must be a boolean when provided")
+        if not isinstance(opt.recommended, bool):
+            raise ValidationError("option.recommended must be a boolean when provided")
         if opt.id in seen_ids:
             raise ValidationError(f"duplicate option id: {opt.id}")
         seen_ids.add(opt.id)
         parsed.append(opt)
+
+    if not any(opt.recommended for opt in parsed):
+        raise ValidationError("at least one option must be marked as recommended")
+
     return parsed
 
 
@@ -188,10 +192,10 @@ def parse_request(
         if timeout_default_index < 0 or timeout_default_index >= len(parsed_options):
             raise ValidationError(f"timeout_default_index {timeout_default_index} out of range")
 
-    # Enforce single-select cannot declare multiple default options.
-    default_count = sum(1 for opt in parsed_options if opt.default)
-    if selection_mode == "single" and default_count > 1:
-        raise ValidationError("single requests may only mark one default option")
+    # Enforce single-select cannot declare multiple recommended options.
+    recommended_count = sum(1 for opt in parsed_options if opt.recommended)
+    if selection_mode == "single" and recommended_count > 1:
+        raise ValidationError("single requests may only mark one recommended option")
 
     return ProvideChoiceRequest(
         title=title.strip(),

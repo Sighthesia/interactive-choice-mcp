@@ -57,7 +57,7 @@ def _render_html(
     """Generate HTML that includes a configuration panel and the choice UI."""
 
     option_payload = [
-        {"id": o.id, "description": o.description, "default": o.default}
+        {"id": o.id, "description": o.description, "recommended": o.recommended}
         for o in req.options
     ]
 

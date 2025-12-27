@@ -33,7 +33,7 @@ async def provide_choice(
 
 		selection_mode: Use "single" for binary/exclusive choices, "multi" for configuration/feature sets.
 
-		default: Set `true` for the most recommended/standard path to enable fast user confirmation.
+		recommended: Mark at least one option with `recommended: true` to surface the suggested path (required).
 	"""
 
 	# Delegate the execution to the orchestrator.
