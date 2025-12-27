@@ -774,31 +774,7 @@
                             </div>
                         </div>
 
-                        <div class="config-item" id="item-annotationEnabled">
-                            <label class="config-label">
-                                <input id="annotationToggle" type="checkbox" />
-                                启用批注输入
-                            </label>
-                            <div class="config-desc">
-                                允许为选项或全局提供备注
-                            </div>
-                        </div>
 
-                        <div class="config-item" id="item-placeholderVisibility">
-                            <label class="config-label">
-                                <input id="placeholderToggle" type="checkbox" />
-                                显示占位提示
-                            </label>
-                            <div class="config-desc">
-                                控制文本输入是否展示占位符
-                            </div>
-                        </div>
-
-                        <div class="config-item" id="item-optionVisibility">
-                            <div class="config-label">可见选项</div>
-                            <div class="options-grid" id="optionVisibilityGrid"></div>
-                            <div class="config-desc">取消勾选可隐藏无需关注的选项</div>
-                        </div>
 
                         <div class="config-section-title">Global Settings</div>
 
@@ -876,30 +852,16 @@
             const defaults = JSON.parse(document.getElementById('mcp-defaults').textContent);
             const options = JSON.parse(document.getElementById('mcp-options').textContent);
             const promptType = '${prompt_type}';
-            let optionVisibility = defaults.option_visibility || {};
-            let placeholderVisible = defaults.placeholder_visibility !== false;
-            let annotationEnabled = defaults.annotation_enabled !== false;
+            let placeholderVisible = true;
+            let annotationEnabled = true;
             let submitting = false;
             let selectedIndices = new Set();
             let optionAnnotations = {};
             let focusedIndex = -1;
 
-            function ensureOptionVisibility() {
-                if (!optionVisibility || Object.keys(optionVisibility).length === 0) {
-                    optionVisibility = {};
-                }
-                options.forEach(opt => {
-                    if (typeof optionVisibility[opt.id] === 'undefined') {
-                        optionVisibility[opt.id] = true;
-                    }
-                });
-            }
-
             function getVisibleOptions() {
-                return options.filter(opt => optionVisibility[opt.id] !== false);
+                return options;
             }
-
-            ensureOptionVisibility();
             let ws = null;
             let wsReconnectTimer = null;
             let wsConnected = false;
@@ -1086,16 +1048,14 @@
                     content.innerHTML = '<div class="option-label">' + labelText + '</div><div class="option-desc">' + opt.description + '</div>';
                     block.appendChild(content);
 
-                    if (annotationEnabled) {
-                        const noteInput = document.createElement('input');
-                        noteInput.type = 'text';
-                        noteInput.placeholder = placeholderVisible ? 'Add note...' : '';
-                        noteInput.className = 'option-note';
-                        noteInput.value = optionAnnotations[opt.id] || '';
-                        noteInput.addEventListener('input', () => { optionAnnotations[opt.id] = noteInput.value; updateCancelBtn(); });
-                        noteInput.onclick = (e) => e.stopPropagation();
-                        block.appendChild(noteInput);
-                    }
+                    const noteInput = document.createElement('input');
+                    noteInput.type = 'text';
+                    noteInput.placeholder = 'Add note...';
+                    noteInput.className = 'option-note';
+                    noteInput.value = optionAnnotations[opt.id] || '';
+                    noteInput.addEventListener('input', () => { optionAnnotations[opt.id] = noteInput.value; updateCancelBtn(); });
+                    noteInput.onclick = (e) => e.stopPropagation();
+                    block.appendChild(noteInput);
 
                     container.appendChild(block);
                 });
@@ -1254,35 +1214,8 @@
                 if (itemDefault) itemDefault.classList.toggle('highlighted', useDefault.checked);
             }
 
-            function renderOptionVisibilityGrid() {
-                const grid = document.getElementById('optionVisibilityGrid');
-                if (!grid) return;
-                grid.innerHTML = '';
-                options.forEach(opt => {
-                    const label = document.createElement('label');
-                    const cb = document.createElement('input');
-                    cb.type = 'checkbox';
-                    cb.value = opt.id;
-                    cb.checked = optionVisibility[opt.id] !== false;
-                    cb.onchange = () => {
-                        optionVisibility[opt.id] = cb.checked;
-                        selectedIndices = new Set(Array.from(selectedIndices).filter(id => optionVisibility[id] !== false));
-                        renderOptions();
-                        updateConfigHighlights();
-                    };
-                    label.appendChild(cb);
-                    const span = document.createElement('span');
-                    span.textContent = opt.recommended ? opt.id + ' (推荐)' : opt.id;
-                    label.appendChild(span);
-                    grid.appendChild(label);
-                });
-            }
 
             function syncAnnotationVisibility() {
-                const section = document.getElementById('annotationSection');
-                if (section) {
-                    section.style.display = isAnnotationEnabled() ? 'block' : 'none';
-                }
                 renderOptions();
                 updateCancelBtn();
             }
@@ -1300,9 +1233,6 @@
                     single_submit_mode: isSingleSubmit(),
                     use_default_option: isUseDefaultOption(),
                     timeout_action: timeoutAction,
-                    option_visibility: optionVisibility,
-                    placeholder_visibility: isPlaceholderVisible(),
-                    annotation_enabled: isAnnotationEnabled(),
                 };
             }
 
@@ -1390,7 +1320,6 @@
                 const g = document.getElementById('globalAnnotation')?.value || '';
                 if (g && String(g).trim()) return true;
                 for (const k in optionAnnotations) {
-                    if (optionVisibility[k] === false) continue;
                     if (optionAnnotations[k] && String(optionAnnotations[k]).trim()) return true;
                 }
                 return false;
@@ -1454,27 +1383,8 @@
                 };
             }
 
-            const annotationToggle = document.getElementById('annotationToggle');
-            if (annotationToggle) {
-                annotationToggle.checked = annotationEnabled;
-                annotationToggle.onchange = () => {
-                    annotationEnabled = annotationToggle.checked;
-                    syncAnnotationVisibility();
-                };
-            }
+            document.getElementById('globalAnnotation').placeholder = 'Optional note when provided options don\'t fully meet your needs';
 
-            const placeholderToggle = document.getElementById('placeholderToggle');
-            if (placeholderToggle) {
-                placeholderToggle.checked = placeholderVisible;
-                placeholderToggle.onchange = () => {
-                    placeholderVisible = placeholderToggle.checked;
-                    document.getElementById('globalAnnotation').placeholder = placeholderVisible ? 'Optional note when provided options don\'t fully meet your needs' : '';
-                    renderOptions();
-                };
-                document.getElementById('globalAnnotation').placeholder = placeholderVisible ? 'Optional note when provided options don\'t fully meet your needs' : '';
-            }
-
-            renderOptionVisibilityGrid();
             syncAnnotationVisibility();
 
             // Keyboard navigation

@@ -81,16 +81,14 @@ def _run_prompt_sync(
     It handles the different prompt types (select, checkbox, text, hybrid),
     respects single_submit_mode, and annotations (always enabled).
     """
-    option_visibility = config.option_visibility if config else {opt.id: True for opt in req.options}
-    visible_options = [opt for opt in req.options if option_visibility.get(opt.id, True)]
-    if not visible_options:
-        return cancelled_response(transport=TRANSPORT_TERMINAL)
-
+    # Option visibility setting removed — all options are shown
+    visible_options = list(req.options)
     choices = _build_choices(visible_options)
     option_annotations: dict[str, str] = {}
     global_annotation: Optional[str] = None
-    annotation_enabled = config.annotation_enabled if config else True
-    placeholder_visible = config.placeholder_visibility if config else True
+    # Annotation inputs are always enabled and placeholders are shown by default
+    annotation_enabled = True
+    placeholder_visible = True
 
     # Determine default selection if use_default_option is enabled
     default_selection: List[str] = []
@@ -301,35 +299,6 @@ async def prompt_configuration(
                     default=default_val
                 ).unsafe_ask()
 
-            # Option visibility toggles
-            visibility_choices = [
-                questionary.Choice(
-                    title=f"{opt.id} (推荐)" if opt.recommended else opt.id,
-                    value=opt.id,
-                    checked=defaults.option_visibility.get(opt.id, True),
-                )
-                for opt in req.options
-            ]
-            visible_ids = questionary.checkbox(
-                "可见选项 (未选中则隐藏)",
-                choices=visibility_choices,
-            ).unsafe_ask()
-            if visible_ids is None:
-                return None
-            option_visibility = {opt.id: opt.id in visible_ids for opt in req.options}
-
-            placeholder_visibility = questionary.confirm(
-                "显示占位提示", default=defaults.placeholder_visibility
-            ).unsafe_ask()
-            if placeholder_visibility is None:
-                return None
-
-            annotation_enabled = questionary.confirm(
-                "启用批注输入", default=defaults.annotation_enabled
-            ).unsafe_ask()
-            if annotation_enabled is None:
-                return None
-
             return ProvideChoiceConfig(
                 transport=chosen_transport,
                 timeout_seconds=timeout_val,
@@ -338,9 +307,6 @@ async def prompt_configuration(
                 timeout_default_index=timeout_default_idx if timeout_default_idx is not None else 0,
                 use_default_option=bool(use_default_option),
                 timeout_action=timeout_action,
-                option_visibility=option_visibility,
-                placeholder_visibility=bool(placeholder_visibility),
-                annotation_enabled=bool(annotation_enabled),
             )
         except (KeyboardInterrupt, ValueError):
             return None

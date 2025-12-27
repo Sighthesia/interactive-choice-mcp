@@ -62,14 +62,6 @@ class ConfigStore:
             use_default_option = bool(raw.get("use_default_option", False))
             timeout_action = raw.get("timeout_action", "submit") or "submit"
 
-            option_visibility_raw: Dict[str, Any] = raw.get("option_visibility") or {}
-            option_visibility: Dict[str, bool] = {}
-            if isinstance(option_visibility_raw, dict):
-                option_visibility = {str(k): bool(v) for k, v in option_visibility_raw.items()}
-
-            placeholder_visibility = bool(raw.get("placeholder_visibility", True))
-            annotation_enabled = bool(raw.get("annotation_enabled", True))
-
             return ProvideChoiceConfig(
                 transport=transport,
                 timeout_seconds=timeout_seconds,
@@ -78,9 +70,6 @@ class ConfigStore:
                 timeout_default_enabled=timeout_default_enabled,
                 use_default_option=use_default_option,
                 timeout_action=timeout_action,
-                option_visibility=option_visibility,
-                placeholder_visibility=placeholder_visibility,
-                annotation_enabled=annotation_enabled,
             )
         except Exception:
             return None
@@ -95,9 +84,6 @@ class ConfigStore:
             "timeout_default_enabled": config.timeout_default_enabled,
             "use_default_option": config.use_default_option,
             "timeout_action": config.timeout_action,
-            "option_visibility": config.option_visibility,
-            "placeholder_visibility": config.placeholder_visibility,
-            "annotation_enabled": config.annotation_enabled,
         }
 
         try:

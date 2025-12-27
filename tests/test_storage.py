@@ -19,9 +19,6 @@ def test_save_and_load_roundtrip(tmp_path: Path):
         timeout_default_enabled=True,
         use_default_option=True,
         timeout_action="cancel",
-        option_visibility={"A": True, "B": False},
-        placeholder_visibility=False,
-        annotation_enabled=False,
     )
 
     store.save(original)
@@ -35,9 +32,6 @@ def test_save_and_load_roundtrip(tmp_path: Path):
     assert loaded.timeout_default_enabled is True
     assert loaded.use_default_option is True
     assert loaded.timeout_action == "cancel"
-    assert loaded.option_visibility == {"A": True, "B": False}
-    assert loaded.placeholder_visibility is False
-    assert loaded.annotation_enabled is False
 
 
 def test_load_sanitizes_invalid_values(tmp_path: Path):
@@ -46,10 +40,7 @@ def test_load_sanitizes_invalid_values(tmp_path: Path):
         """
         {
             "transport": "invalid",
-            "timeout_seconds": -5,
-            "option_visibility": {"A": "yes"},
-            "placeholder_visibility": "nope",
-            "annotation_enabled": 0
+            "timeout_seconds": -5
         }
         """
     )
@@ -60,6 +51,3 @@ def test_load_sanitizes_invalid_values(tmp_path: Path):
     assert loaded is not None
     assert loaded.transport == models.TRANSPORT_TERMINAL
     assert loaded.timeout_seconds == models.DEFAULT_TIMEOUT_SECONDS
-    assert loaded.option_visibility == {"A": True}
-    assert loaded.placeholder_visibility is True
-    assert loaded.annotation_enabled is False

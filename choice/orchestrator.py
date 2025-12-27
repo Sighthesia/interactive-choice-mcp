@@ -112,12 +112,6 @@ class ChoiceOrchestrator:
         timeout_default_enabled_pref = saved.timeout_default_enabled if saved else req.timeout_default_enabled
         use_default_option_pref = saved.use_default_option if saved else req.use_default_option
         timeout_action_pref = saved.timeout_action if saved else req.timeout_action
-        option_visibility_pref = saved.option_visibility if saved else {o.id: True for o in req.options}
-        placeholder_visibility_pref = saved.placeholder_visibility if saved else req.placeholder_visibility
-        annotation_enabled_pref = saved.annotation_enabled if saved else req.annotation_enabled
-
-        normalized_visibility = {opt.id: option_visibility_pref.get(opt.id, True) for opt in req.options}
-
         return ProvideChoiceConfig(
             transport=transport_pref,
             timeout_seconds=timeout_pref,
@@ -126,10 +120,8 @@ class ChoiceOrchestrator:
             timeout_default_enabled=timeout_default_enabled_pref,
             use_default_option=use_default_option_pref,
             timeout_action=timeout_action_pref,
-            option_visibility=normalized_visibility,
-            placeholder_visibility=placeholder_visibility_pref,
-            annotation_enabled=annotation_enabled_pref,
         )
+
 
 
 # Section: Safety Wrapper

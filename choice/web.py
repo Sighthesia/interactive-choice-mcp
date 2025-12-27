@@ -128,9 +128,6 @@ def _render_html(
         "timeout_default_index": defaults.timeout_default_index,
         "use_default_option": defaults.use_default_option,
         "timeout_action": defaults.timeout_action,
-        "option_visibility": getattr(defaults, "option_visibility", {}),
-        "placeholder_visibility": getattr(defaults, "placeholder_visibility", True),
-        "annotation_enabled": getattr(defaults, "annotation_enabled", True),
     }
 
     # Build transport options HTML
@@ -456,21 +453,6 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
     if isinstance(timeout_action_raw, str):
         timeout_action = timeout_action_raw
 
-    option_visibility_raw = payload.get("option_visibility")
-    option_visibility = getattr(defaults, "option_visibility", {})
-    if isinstance(option_visibility_raw, dict):
-        option_visibility = {str(k): bool(v) for k, v in option_visibility_raw.items()}
-
-    placeholder_visibility_raw = payload.get("placeholder_visibility")
-    placeholder_visibility = getattr(defaults, "placeholder_visibility", True)
-    if isinstance(placeholder_visibility_raw, bool):
-        placeholder_visibility = placeholder_visibility_raw
-
-    annotation_enabled_raw = payload.get("annotation_enabled")
-    annotation_enabled = getattr(defaults, "annotation_enabled", True)
-    if isinstance(annotation_enabled_raw, bool):
-        annotation_enabled = annotation_enabled_raw
-
     return ProvideChoiceConfig(
         transport=transport,
         timeout_seconds=timeout_val,
@@ -479,7 +461,4 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
         timeout_default_index=timeout_default_idx,
         use_default_option=use_default_option,
         timeout_action=timeout_action,
-        option_visibility=option_visibility,
-        placeholder_visibility=placeholder_visibility,
-        annotation_enabled=annotation_enabled,
     )

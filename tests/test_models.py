@@ -15,9 +15,6 @@ def test_parse_request_defaults():
     assert req.timeout_seconds == models.DEFAULT_TIMEOUT_SECONDS
     assert req.transport is None
     assert req.single_submit_mode is True
-    assert req.placeholder_visibility is True
-    assert req.annotation_enabled is True
-    assert req.option_visibility == {"A": True}
 
 
 def test_parse_request_env_timeout(monkeypatch):
@@ -188,9 +185,9 @@ def test_apply_configuration():
     config = models.ProvideChoiceConfig(
         transport=models.TRANSPORT_WEB,
         timeout_seconds=42,
-        option_visibility={"A": True, "B": False},
     )
     adjusted = models.apply_configuration(req, config)
     assert adjusted.timeout_seconds == 42
     assert adjusted.transport == models.TRANSPORT_WEB
-    assert [opt.id for opt in adjusted.options] == ["A"]
+    # option_visibility setting removed; options are unchanged
+    assert [opt.id for opt in adjusted.options] == ["A", "B"]
