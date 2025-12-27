@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-import json
 from pathlib import Path
 from typing import Dict, List, Optional
 
 from .models import (
-    DEFAULT_TIMEOUT_SECONDS,
     ProvideChoiceConfig,
     ProvideChoiceRequest,
     ProvideChoiceResponse,
@@ -18,6 +16,7 @@ from .models import (
     TRANSPORT_TERMINAL,
     TRANSPORT_WEB,
 )
+from .storage import ConfigStore
 from .terminal import is_terminal_available, run_terminal_choice
 from .terminal import prompt_configuration as prompt_terminal_configuration
 from .web import run_web_choice
@@ -34,8 +33,8 @@ class ChoiceOrchestrator:
     3. Executing the interaction on the chosen transport.
     """
     def __init__(self, *, config_path: Optional[Path] = None) -> None:
-        self._config_path = config_path or Path.home() / ".interactive_choice_config.json"
-        self._last_config: Optional[ProvideChoiceConfig] = self._load_config()
+        self._store = ConfigStore(path=config_path)
+        self._last_config: Optional[ProvideChoiceConfig] = self._store.load()
 
     async def handle(
         self,
@@ -83,19 +82,23 @@ class ChoiceOrchestrator:
             if config is None:
                 # User aborted terminal configuration — fall back to web portal when possible
                 response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=False)
-                self._persist_config(final_config)
+                self._store.save(final_config)
+                self._last_config = final_config
                 return response
             if config.transport == TRANSPORT_WEB:
                 response, final_config = await run_web_choice(req, defaults=config, allow_terminal=False)
-                self._persist_config(final_config)
+                self._store.save(final_config)
+                self._last_config = final_config
                 return response
             filtered_req = apply_configuration(req, config)
             response = await run_terminal_choice(filtered_req, timeout_seconds=config.timeout_seconds, config=config)
-            self._persist_config(config)
+            self._store.save(config)
+            self._last_config = config
             return response
 
         response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=False)
-        self._persist_config(final_config)
+        self._store.save(final_config)
+        self._last_config = final_config
         return response
 
     def _build_default_config(self, req: ProvideChoiceRequest) -> ProvideChoiceConfig:
@@ -109,6 +112,11 @@ class ChoiceOrchestrator:
         timeout_default_enabled_pref = saved.timeout_default_enabled if saved else req.timeout_default_enabled
         use_default_option_pref = saved.use_default_option if saved else req.use_default_option
         timeout_action_pref = saved.timeout_action if saved else req.timeout_action
+        option_visibility_pref = saved.option_visibility if saved else {o.id: True for o in req.options}
+        placeholder_visibility_pref = saved.placeholder_visibility if saved else req.placeholder_visibility
+        annotation_enabled_pref = saved.annotation_enabled if saved else req.annotation_enabled
+
+        normalized_visibility = {opt.id: option_visibility_pref.get(opt.id, True) for opt in req.options}
 
         return ProvideChoiceConfig(
             transport=transport_pref,
@@ -118,52 +126,10 @@ class ChoiceOrchestrator:
             timeout_default_enabled=timeout_default_enabled_pref,
             use_default_option=use_default_option_pref,
             timeout_action=timeout_action_pref,
+            option_visibility=normalized_visibility,
+            placeholder_visibility=placeholder_visibility_pref,
+            annotation_enabled=annotation_enabled_pref,
         )
-
-    def _load_config(self) -> Optional[ProvideChoiceConfig]:
-        """Load persisted config from disk, migrating older formats safely."""
-        try:
-            if not self._config_path.exists():
-                return None
-            payload = json.loads(self._config_path.read_text())
-            transport = payload.get("transport")
-            timeout_seconds = int(payload.get("timeout_seconds", 0))
-            single_submit_mode = bool(payload.get("single_submit_mode", True))
-            timeout_default_index_raw = payload.get("timeout_default_index")
-            timeout_default_index = int(timeout_default_index_raw) if timeout_default_index_raw is not None else None
-            timeout_default_enabled = bool(payload.get("timeout_default_enabled", False))
-            use_default_option = bool(payload.get("use_default_option", False))
-            timeout_action = payload.get("timeout_action", "submit")
-
-            config = ProvideChoiceConfig(
-                transport=transport or TRANSPORT_TERMINAL,
-                timeout_seconds=timeout_seconds if timeout_seconds > 0 else DEFAULT_TIMEOUT_SECONDS,
-                single_submit_mode=single_submit_mode,
-                timeout_default_index=timeout_default_index,
-                timeout_default_enabled=timeout_default_enabled,
-                use_default_option=use_default_option,
-                timeout_action=timeout_action,
-            )
-            return config
-        except Exception:
-            return None
-
-    def _persist_config(self, config: ProvideChoiceConfig) -> None:
-        try:
-            data = {
-                "transport": config.transport,
-                "timeout_seconds": config.timeout_seconds,
-                "single_submit_mode": config.single_submit_mode,
-                "timeout_default_index": config.timeout_default_index,
-                "timeout_default_enabled": config.timeout_default_enabled,
-                "use_default_option": config.use_default_option,
-                "timeout_action": config.timeout_action,
-            }
-            self._config_path.write_text(json.dumps(data))
-            self._last_config = config
-        except Exception:
-            # Persistence failures should not break the interaction flow.
-            pass
 
 
 # Section: Safety Wrapper

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 DEFAULT_TIMEOUT_SECONDS = 300
 TRANSPORT_TERMINAL = "terminal"
@@ -45,6 +45,10 @@ class ProvideChoiceRequest:
     timeout_default_enabled: bool = False
     use_default_option: bool = False
     timeout_action: str = "submit"
+    # Interaction toggles
+    option_visibility: Dict[str, bool] = field(default_factory=dict)
+    placeholder_visibility: bool = True
+    annotation_enabled: bool = True
 
 
 @dataclass
@@ -59,6 +63,9 @@ class ProvideChoiceConfig:
     timeout_default_enabled: bool = False
     use_default_option: bool = False
     timeout_action: str = "submit"
+    option_visibility: Dict[str, bool] = field(default_factory=dict)
+    placeholder_visibility: bool = True
+    annotation_enabled: bool = True
 
 
 @dataclass
@@ -201,6 +208,8 @@ def parse_request(
     if selection_mode == "single" and recommended_count > 1:
         raise ValidationError("single requests may only mark one recommended option")
 
+    option_visibility = {opt.id: True for opt in parsed_options}
+
     return ProvideChoiceRequest(
         title=title.strip(),
         prompt=prompt.strip(),
@@ -213,6 +222,9 @@ def parse_request(
         timeout_default_enabled=bool(timeout_default_enabled),
         use_default_option=bool(use_default_option),
         timeout_action=timeout_action or "submit",
+        option_visibility=option_visibility,
+        placeholder_visibility=True,
+        annotation_enabled=True,
     )
 
 
@@ -226,19 +238,36 @@ def apply_configuration(
         raise ValidationError(f"transport must be one of {sorted(VALID_TRANSPORTS)}")
     if config.timeout_seconds <= 0:
         raise ValidationError("timeout_seconds must be positive")
+    if not isinstance(config.option_visibility, dict):
+        raise ValidationError("option_visibility must be a mapping")
+    if not isinstance(config.placeholder_visibility, bool):
+        raise ValidationError("placeholder_visibility must be a boolean")
+    if not isinstance(config.annotation_enabled, bool):
+        raise ValidationError("annotation_enabled must be a boolean")
+
+    normalized_visibility = {opt.id: config.option_visibility.get(opt.id, True) for opt in req.options}
+    filtered_options = [opt for opt in req.options if normalized_visibility.get(opt.id, True)]
+
+    timeout_default_index = config.timeout_default_index
+    if timeout_default_index is not None:
+        if timeout_default_index < 0 or timeout_default_index >= len(filtered_options):
+            timeout_default_index = None
 
     return ProvideChoiceRequest(
         title=req.title,
         prompt=req.prompt,
         selection_mode=req.selection_mode,
-        options=req.options,
+        options=filtered_options,
         transport=config.transport,
         timeout_seconds=config.timeout_seconds,
         single_submit_mode=config.single_submit_mode,
-        timeout_default_index=config.timeout_default_index,
+        timeout_default_index=timeout_default_index,
         timeout_default_enabled=config.timeout_default_enabled,
         use_default_option=config.use_default_option,
         timeout_action=config.timeout_action,
+        option_visibility=normalized_visibility,
+        placeholder_visibility=config.placeholder_visibility,
+        annotation_enabled=config.annotation_enabled,
     )
 
 
