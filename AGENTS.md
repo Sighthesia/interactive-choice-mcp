@@ -24,9 +24,9 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 - **核心调度 (Orchestration)**: [choice/orchestrator.py](../choice/orchestrator.py) 中的 `ChoiceOrchestrator` 是大脑，负责验证请求、选择传输方式（终端或 Web）以及持久化用户配置。
 - **传输层 (Transports)**:
-  - **Terminal**: [choice/terminal.py](../choice/terminal.py) 使用 `questionary` 实现 ANSI 交互。
-  - **Web**: [choice/web.py](../choice/web.py) 使用 `FastAPI` 启动临时服务器。
-- **数据模型**: [choice/models.py](../choice/models.py) 定义了所有核心数据结构（使用 `@dataclass`）。
+  - **Terminal**: [choice/terminal/runner.py](../choice/terminal/runner.py) + [choice/terminal/ui.py](../choice/terminal/ui.py) 使用 `questionary` 实现 ANSI 交互。
+  - **Web**: [choice/web/server.py](../choice/web/server.py) + [choice/web/session.py](../choice/web/session.py) + [choice/web/templates.py](../choice/web/templates.py) 使用 `FastAPI` 启动临时服务器。
+- **数据模型**: [choice/models.py](../choice/models.py) 定义核心数据结构；验证与配置应用在 [choice/validation.py](../choice/validation.py)，响应归一化在 [choice/response.py](../choice/response.py)。
 - **持久化**: [choice/storage.py](../choice/storage.py) 将用户偏好保存至 `~/.interactive_choice_config.json`。
 
 ## 🛠️ 关键工作流 (Workflows)
@@ -53,4 +53,6 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 - [server.py](../server.py): MCP 入口与工具定义。
 - [choice/orchestrator.py](../choice/orchestrator.py): 核心调度逻辑。
 - [choice/models.py](../choice/models.py): 协议数据模型。
+- [choice/validation.py](../choice/validation.py): 请求校验与配置应用。
+- [choice/response.py](../choice/response.py): 响应归一化与超时处理。
 - [choice/storage.py](../choice/storage.py): 配置持久化实现。

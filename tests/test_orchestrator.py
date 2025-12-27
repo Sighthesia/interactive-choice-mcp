@@ -2,6 +2,7 @@ import asyncio
 import pytest
 from choice.orchestrator import ChoiceOrchestrator, safe_handle
 from choice import models
+from choice import response as r
 
 def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
@@ -19,7 +20,7 @@ def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
     monkeypatch.setattr("choice.orchestrator.prompt_terminal_configuration", fake_prompt)
 
     async def fake_run(req, timeout_seconds, config=None):
-        return models.normalize_response(
+        return r.normalize_response(
             req=req,
             selected_indices=["A"],
             transport=models.TRANSPORT_TERMINAL,
@@ -51,7 +52,7 @@ def test_orchestrator_terminal_config_abort_falls_back_to_web(monkeypatch, tmp_p
 
     async def fake_web(req, defaults, allow_terminal):
         return (
-            models.normalize_response(
+            r.normalize_response(
                 req=req,
                 selected_indices=["A"],
                 transport=models.TRANSPORT_WEB,
@@ -79,7 +80,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
 
     async def fake_web(req, defaults, allow_terminal):
         return (
-            models.normalize_response(
+            r.normalize_response(
                 req=req,
                 selected_indices=["B"],
                 transport=models.TRANSPORT_WEB,

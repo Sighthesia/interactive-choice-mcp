@@ -9,16 +9,14 @@ from .models import (
     ProvideChoiceRequest,
     ProvideChoiceResponse,
     ValidationError,
-    apply_configuration,
-    cancelled_response,
-    parse_request,
-    timeout_response,
     TRANSPORT_TERMINAL,
     TRANSPORT_WEB,
 )
 from .storage import ConfigStore
 from .terminal import is_terminal_available, run_terminal_choice
 from .terminal import prompt_configuration as prompt_terminal_configuration
+from .validation import apply_configuration, parse_request
+from .response import cancelled_response, timeout_response
 from .web import run_web_choice
 
 

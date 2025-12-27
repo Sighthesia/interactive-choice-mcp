@@ -3,10 +3,12 @@ import os
 import pytest
 
 from choice import models
+from choice import validation as v
+from choice import response as r
 
 
 def test_parse_request_defaults():
-    req = models.parse_request(
+    req = v.parse_request(
         title="Title",
         prompt="Prompt",
         selection_mode="single",
@@ -19,7 +21,7 @@ def test_parse_request_defaults():
 
 def test_parse_request_env_timeout(monkeypatch):
     monkeypatch.setenv("CHOICE_TIMEOUT_SECONDS", "120")
-    req = models.parse_request(
+    req = v.parse_request(
         title="Title",
         prompt="Prompt",
         selection_mode="single",
@@ -30,7 +32,7 @@ def test_parse_request_env_timeout(monkeypatch):
 
 def test_parse_request_invalid_type():
     with pytest.raises(models.ValidationError):
-        models.parse_request(
+        v.parse_request(
             title="Title",
             prompt="Prompt",
             selection_mode="bad",
@@ -40,7 +42,7 @@ def test_parse_request_invalid_type():
 
 def test_option_recommended_must_be_boolean():
     with pytest.raises(models.ValidationError):
-        models.parse_request(
+        v.parse_request(
             title="Title",
             prompt="Prompt",
             selection_mode="single",
@@ -50,7 +52,7 @@ def test_option_recommended_must_be_boolean():
 
 def test_options_require_recommended_present():
     with pytest.raises(models.ValidationError):
-        models.parse_request(
+        v.parse_request(
             title="Title",
             prompt="Prompt",
             selection_mode="multi",
@@ -60,7 +62,7 @@ def test_options_require_recommended_present():
 
 def test_selection_mode_alias_rejected():
     with pytest.raises(models.ValidationError):
-        models.parse_request(
+        v.parse_request(
             title="Title",
             prompt="Prompt",
             selection_mode="single_select",
@@ -70,7 +72,7 @@ def test_selection_mode_alias_rejected():
 
 def test_single_select_multiple_recommended_rejected():
     with pytest.raises(models.ValidationError):
-        models.parse_request(
+        v.parse_request(
             title="Title",
             prompt="Prompt",
             selection_mode="single",
@@ -82,7 +84,7 @@ def test_single_select_multiple_recommended_rejected():
 
 
 def test_parse_request_extended_fields():
-    req = models.parse_request(
+    req = v.parse_request(
         title="Title",
         prompt="Prompt",
         selection_mode="multi",
@@ -96,13 +98,13 @@ def test_parse_request_extended_fields():
 
 
 def test_normalize_response_selection():
-    req = models.parse_request(
+    req = v.parse_request(
         title="Title",
         prompt="Prompt",
         selection_mode="single",
         options=[{"id": "A", "description": "desc", "recommended": True}],
     )
-    resp = models.normalize_response(
+    resp = r.normalize_response(
         req=req,
         selected_indices=["A"],
         transport=models.TRANSPORT_WEB,
@@ -116,14 +118,14 @@ def test_normalize_response_selection():
 
 
 def test_normalize_response_rejects_invalid_action_status():
-    req = models.parse_request(
+    req = v.parse_request(
         title="Title",
         prompt="Prompt",
         selection_mode="single",
         options=[{"id": "A", "description": "desc", "recommended": True}],
     )
     with pytest.raises(models.ValidationError):
-        models.normalize_response(
+        r.normalize_response(
             req=req,
             selected_indices=["A"],
             transport=models.TRANSPORT_TERMINAL,
@@ -132,7 +134,7 @@ def test_normalize_response_rejects_invalid_action_status():
 
 
 def test_timeout_response_auto_select():
-    req = models.parse_request(
+    req = v.parse_request(
         title="Title",
         prompt="Prompt",
         selection_mode="single",
@@ -143,27 +145,27 @@ def test_timeout_response_auto_select():
         timeout_default_enabled=True,
         timeout_default_index=1,
     )
-    resp = models.timeout_response(req=req, transport=models.TRANSPORT_TERMINAL)
+    resp = r.timeout_response(req=req, transport=models.TRANSPORT_TERMINAL)
     assert resp.action_status == "timeout_auto_submitted"
     assert resp.selection.selected_indices == ["B"]
 
 
 def test_timeout_response_cancelled_when_no_default():
-    req = models.parse_request(
+    req = v.parse_request(
         title="Title",
         prompt="Prompt",
         selection_mode="single",
         options=[{"id": "A", "description": "desc", "recommended": True}],
         timeout_default_enabled=False,
     )
-    resp = models.timeout_response(req=req, transport=models.TRANSPORT_TERMINAL)
+    resp = r.timeout_response(req=req, transport=models.TRANSPORT_TERMINAL)
     assert resp.action_status == "timeout_cancelled"
     assert resp.selection.selected_indices == []
 
 
 def test_timeout_default_index_out_of_range():
     with pytest.raises(models.ValidationError):
-        models.parse_request(
+        v.parse_request(
             title="Title",
             prompt="Prompt",
             selection_mode="multi",
@@ -173,7 +175,7 @@ def test_timeout_default_index_out_of_range():
 
 
 def test_apply_configuration():
-    req = models.parse_request(
+    req = v.parse_request(
         title="Title",
         prompt="Prompt",
         selection_mode="single",
@@ -186,7 +188,7 @@ def test_apply_configuration():
         transport=models.TRANSPORT_WEB,
         timeout_seconds=42,
     )
-    adjusted = models.apply_configuration(req, config)
+    adjusted = v.apply_configuration(req, config)
     assert adjusted.timeout_seconds == 42
     assert adjusted.transport == models.TRANSPORT_WEB
     assert [opt.id for opt in adjusted.options] == ["A", "B"]
