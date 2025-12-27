@@ -12,12 +12,14 @@ import socket
 import time
 import uuid
 import webbrowser
+from datetime import datetime
 from typing import Dict, Optional
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from ..logging import get_logger, get_session_logger
 from ..models import (
     ProvideChoiceConfig,
     ProvideChoiceRequest,
@@ -35,6 +37,8 @@ __all__ = [
     "WebChoiceServer",
     "run_web_choice",
 ]
+
+_logger = get_logger(__name__)
 
 _DEFAULT_WEB_HOST = "127.0.0.1"
 _DEFAULT_WEB_PORT = 17863
@@ -91,8 +95,12 @@ class WebChoiceServer:
                 defaults=session.effective_defaults(),
                 allow_terminal=session.allow_terminal,
                 session_state=session.to_template_state(),
+                invocation_time=session.invocation_time,
             )
-            return HTMLResponse(html)
+            return HTMLResponse(
+                content=html,
+                headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"},
+            )
 
         @app.websocket("/ws/{incoming_id}")
         async def websocket_channel(websocket: WebSocket, incoming_id: str) -> None:
@@ -104,7 +112,15 @@ class WebChoiceServer:
             session.connections.add(websocket)
             status_payload = session.to_template_state()
             status_text = status_payload.get("status", "connected")
-            await websocket.send_json({"type": "status", "status": status_text, "action_status": status_payload.get("action_status")})
+            # Send full state including selected_indices to support page refresh recovery
+            await websocket.send_json({
+                "type": "status",
+                "status": status_text,
+                "action_status": status_payload.get("action_status"),
+                "selected_indices": status_payload.get("selected_indices"),
+                "option_annotations": status_payload.get("option_annotations"),
+                "global_annotation": status_payload.get("global_annotation"),
+            })
             await session.broadcast_sync()
             try:
                 while not session.result_future.done():
@@ -172,6 +188,7 @@ class WebChoiceServer:
                     )
                     session.set_result(response)
                     await session.broadcast_status("cancelled", action_status=response.action_status)
+                    _logger.info(f"Session {incoming_id[:8]} cancelled by user")
                     return {"status": "ok"}
 
                 if action == "selected":
@@ -193,6 +210,7 @@ class WebChoiceServer:
                     )
                     session.set_result(response)
                     await session.broadcast_status("submitted", action_status=response.action_status)
+                    _logger.info(f"Session {incoming_id[:8]} submitted: selected={ids}")
                     return {"status": "ok"}
 
                 if action == "timeout" or action in {"timeout_auto_submitted", "timeout_cancelled", "timeout_reinvoke_requested"}:
@@ -203,6 +221,7 @@ class WebChoiceServer:
                     )
                     session.set_result(response)
                     await session.broadcast_status("timeout", action_status=response.action_status)
+                    _logger.info(f"Session {incoming_id[:8]} timeout: action={response.action_status}")
                     return {"status": "ok"}
 
                 raise HTTPException(status_code=400, detail="invalid action_status")
@@ -210,16 +229,16 @@ class WebChoiceServer:
             except HTTPException:
                 raise
             except ValidationError as exc:
+                _logger.warning(f"Session {incoming_id[:8]} validation error: {exc}")
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
             except Exception as exc:
-                import traceback
-                print(f"Internal Server Error in submit_choice: {exc}")
-                traceback.print_exc()
+                _logger.exception(f"Session {incoming_id[:8]} internal error: {exc}")
                 raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(exc)}") from exc
 
     async def ensure_running(self) -> None:
         if self._server_task and not self._server_task.done():
             return
+        _logger.info(f"Starting web server on http://{self.host}:{self.port}")
         config = uvicorn.Config(self.app, host=self.host, port=self.port, log_level="error")
         self._server = uvicorn.Server(config)
         self._server_task = asyncio.create_task(self._server.serve())
@@ -233,7 +252,9 @@ class WebChoiceServer:
         defaults.transport = TRANSPORT_WEB
         loop = asyncio.get_running_loop()
         result_future: asyncio.Future[ProvideChoiceResponse] = loop.create_future()
-        deadline = _deadline_from_seconds(defaults.timeout_seconds)
+        now = time.monotonic()
+        deadline = _deadline_from_seconds(defaults.timeout_seconds, now=now)
+        invocation_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         session = ChoiceSession(
             choice_id=choice_id,
             req=req,
@@ -244,9 +265,12 @@ class WebChoiceServer:
             result_future=result_future,
             connections=set(),
             config_used=defaults,
+            created_at=now,
+            invocation_time=invocation_time,
         )
         session.monitor_task = asyncio.create_task(session.monitor_deadline())
         self.sessions[choice_id] = session
+        _logger.info(f"Created session {choice_id[:8]}: title='{req.title}', timeout={defaults.timeout_seconds}s")
         return session
 
     async def _cleanup_loop(self) -> None:
@@ -255,12 +279,14 @@ class WebChoiceServer:
             now = time.monotonic()
             expired = [cid for cid, session in self.sessions.items() if session.is_expired(now)]
             for cid in expired:
+                _logger.debug(f"Cleaning up expired session {cid[:8]}")
                 await self._remove_session(cid)
 
     async def _remove_session(self, choice_id: str) -> None:
         session = self.sessions.pop(choice_id, None)
         if not session:
             return
+        _logger.debug(f"Removed session {choice_id[:8]}")
         await session.close()
 
 
