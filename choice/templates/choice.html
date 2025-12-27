@@ -20,6 +20,47 @@
             --radius: 8px;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.25);
+
+            /* Header bar colors */
+            --header-bg: #1e293b;
+            --header-text: #f8fafc;
+            --header-brand: #818cf8;
+            --header-muted: #94a3b8;
+
+            /* Status colors */
+            --success-bg: #dcfce7;
+            --success-text: #166534;
+            --success-border: #bbf7d0;
+            --error-bg: #fee2e2;
+            --error-text: #991b1b;
+            --error-border: #fecaca;
+
+            --secondary-hover: #d1d5db;
+        }
+
+        .dark {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.3);
+
+            --header-bg: #020617;
+            --header-text: #f8fafc;
+            --header-brand: #818cf8;
+            --header-muted: #94a3b8;
+
+            /* Status colors */
+            --success-bg: #064e3b;
+            --success-text: #34d399;
+            --success-border: #065f46;
+            --error-bg: #7f1d1d;
+            --error-text: #f87171;
+            --error-border: #991b1b;
+
+            --secondary-hover: #475569;
         }
 
         * {
@@ -35,6 +76,7 @@
             line-height: 1.5;
             min-height: 100vh;
             padding: 72px 16px 24px;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         /* Section: Header Bar */
@@ -44,20 +86,21 @@
             left: 0;
             right: 0;
             height: 48px;
-            background: #1e293b;
-            color: #f8fafc;
+            background: var(--header-bg);
+            color: var(--header-text);
             display: flex;
             align-items: center;
             padding: 0 24px;
             font-size: 0.8125rem;
             z-index: 1000;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .header-bar .brand {
             font-weight: 700;
             margin-right: 24px;
-            color: #818cf8;
+            color: var(--header-brand);
         }
 
         .header-bar .status-item {
@@ -65,11 +108,11 @@
             align-items: center;
             gap: 6px;
             margin-right: 20px;
-            color: #94a3b8;
+            color: var(--header-muted);
         }
 
         .header-bar .status-item span {
-            color: #f8fafc;
+            color: var(--header-text);
         }
 
         .header-bar .status-dot {
@@ -398,7 +441,7 @@
         }
 
         .btn-secondary:hover {
-            background: #d1d5db;
+            background: var(--secondary-hover);
         }
 
         .btn-danger {
@@ -420,13 +463,13 @@
         }
 
         .status.success {
-            background: #dcfce7;
-            color: #166534;
+            background: var(--success-bg);
+            color: var(--success-text);
         }
 
         .status.error {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--error-bg);
+            color: var(--error-text);
         }
 
         /* Section: Submitted States */
@@ -474,15 +517,15 @@
 
         /* Status Colors */
         .status.manual {
-            color: #166534;
-            background: #dcfce7;
-            border: 1px solid #bbf7d0;
+            color: var(--success-text);
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
         }
 
         .status.timeout {
-            color: #991b1b;
-            background: #fee2e2;
-            border: 1px solid #fecaca;
+            color: var(--error-text);
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
         }
 
         .error-message {
@@ -578,8 +621,7 @@
 
 <body>
     <header class="header-bar">
-        <div class="brand">Interactive Choice MCP Web Portal</Portal>
-        </div>
+        <div class="brand">Interactive Choice MCP Web Portal</div>
 
         <div class="status-item">
             Version: <span>${mcp_version}</span>
@@ -593,6 +635,16 @@
 
         <div class="status-item">
             Invoked: <span>${invocation_time}</span>
+        </div>
+
+        <div class="status-item">
+            Theme:
+            <select id="themeSelect"
+                style="margin-left: 4px; padding: 1px 4px; height: 22px; font-size: 0.75rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; cursor: pointer; outline: none;">
+                <option value="light" style="color: black;">Light</option>
+                <option value="dark" style="color: black;">Dark</option>
+                <option value="system" style="color: black;">System</option>
+            </select>
         </div>
 
         <div class="status-item">
@@ -690,6 +742,35 @@
     <script type="application/json" id="mcp-defaults">${defaults_json}</script>
     <script type="application/json" id="mcp-options">${options_json}</script>
     <script>
+        // Section: Theme Management
+        const themeSelect = document.getElementById('themeSelect');
+        const htmlElement = document.documentElement;
+
+        function applyTheme(theme) {
+            if (theme === 'system') {
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                htmlElement.classList.toggle('dark', isDark);
+            } else {
+                htmlElement.classList.toggle('dark', theme === 'dark');
+            }
+            localStorage.setItem('mcp-theme', theme);
+            themeSelect.value = theme;
+        }
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('mcp-theme') || 'system';
+        applyTheme(savedTheme);
+
+        // Listen for manual changes
+        themeSelect.addEventListener('change', (e) => applyTheme(e.target.value));
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (themeSelect.value === 'system') {
+                applyTheme('system');
+            }
+        });
+
         const choiceId = '${choice_id}';
         const defaults = JSON.parse(document.getElementById('mcp-defaults').textContent);
         const options = JSON.parse(document.getElementById('mcp-options').textContent);
