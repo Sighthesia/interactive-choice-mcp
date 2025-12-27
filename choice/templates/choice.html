@@ -812,10 +812,12 @@
 
         <script type="application/json" id="mcp-defaults">${defaults_json}</script>
         <script type="application/json" id="mcp-options">${options_json}</script>
+        <script type="application/json" id="mcp-session-state">${session_state_json}</script>
         <script>
             const choiceId = '${choice_id}';
             const defaults = JSON.parse(document.getElementById('mcp-defaults').textContent);
             const options = JSON.parse(document.getElementById('mcp-options').textContent);
+            const sessionState = JSON.parse(document.getElementById('mcp-session-state').textContent || '{}');
             const promptType = '${prompt_type}';
             let placeholderVisible = defaults.placeholder_visibility !== false;
             let annotationEnabled = defaults.annotation_enabled !== false;
@@ -823,6 +825,30 @@
             let selectedIndices = new Set();
             let optionAnnotations = {};
             let focusedIndex = -1;
+            let hasFinalResult = sessionState.status && sessionState.status !== 'pending';
+
+            if (hasFinalResult && Array.isArray(sessionState.selected_indices)) {
+                selectedIndices = new Set(sessionState.selected_indices);
+            }
+            if (sessionState.option_annotations) {
+                optionAnnotations = sessionState.option_annotations;
+            }
+            if (typeof sessionState.global_annotation === 'string') {
+                const globalEl = document.getElementById('globalAnnotation');
+                if (globalEl) {
+                    globalEl.value = sessionState.global_annotation || '';
+                }
+            }
+
+            const statusMap = {
+                'manual': { text: '✅ Submitted successfully. You can close this tab.', class: 'manual' },
+                'selected': { text: '✅ Submitted successfully. You can close this tab.', class: 'manual' },
+                'timeout_auto_submitted': { text: '⏰ Timeout: Auto-submitted.', class: 'timeout' },
+                'timeout_cancelled': { text: '⏰ Timeout: Cancelled (no default selection).', class: 'timeout' },
+                'timeout_reinvoke_requested': { text: '⏰ Timeout: Re-invocation requested.', class: 'timeout' },
+                'timeout': { text: '⏰ Timeout reached.', class: 'timeout' },
+                'cancelled': { text: '🚫 Cancelled.', class: 'timeout' }
+            };
 
             // Section: Theme Management
             const themeSelect = document.getElementById('themeSelect');
@@ -923,6 +949,10 @@
 
                 ws.onclose = () => {
                     wsConnected = false;
+                    if (hasFinalResult) {
+                        updateConnectionStatus('Submitted', '');
+                        return;
+                    }
                     updateConnectionStatus('Offline', 'offline');
                     if (!submitting) {
                         wsReconnectTimer = setTimeout(connectWebSocket, 1500);
@@ -941,10 +971,11 @@
                     }
                     if (data.type === 'status') {
                         if (data.status === 'timeout') {
-                            updateConnectionStatus('Timeout', 'offline');
-                            handleTimeoutReached();
+                            applyFinalizedState({ action_status: data.action_status || 'timeout' });
                         } else if (data.status === 'submitted') {
-                            updateConnectionStatus('Submitted', '');
+                            applyFinalizedState({ action_status: data.action_status || 'selected', selected_indices: Array.from(selectedIndices), option_annotations: optionAnnotations, global_annotation: document.getElementById('globalAnnotation').value || null });
+                        } else if (data.status === 'cancelled') {
+                            applyFinalizedState({ action_status: 'cancelled' });
                         } else if (data.status === 'connected') {
                             updateConnectionStatus('Connected', '');
                         }
@@ -962,6 +993,41 @@
                 if (headerStatusDot) {
                     headerStatusDot.className = 'status-dot' + (stateClass ? ' ' + stateClass : '');
                 }
+            }
+
+            function applyFinalizedState(state) {
+                hasFinalResult = true;
+                submitting = false;
+                stopTimeout();
+
+                const statusEl = document.getElementById('status');
+                const actionKey = state.action_status || 'manual';
+                const config = statusMap[actionKey] || statusMap['manual'];
+
+                if (Array.isArray(state.selected_indices)) {
+                    selectedIndices = new Set(state.selected_indices);
+                    renderOptions();
+                }
+                if (state.option_annotations) {
+                    optionAnnotations = state.option_annotations;
+                }
+                if (typeof state.global_annotation === 'string') {
+                    const globalEl = document.getElementById('globalAnnotation');
+                    if (globalEl) {
+                        globalEl.value = state.global_annotation || '';
+                    }
+                }
+
+                statusEl.className = 'status ' + config.class;
+                statusEl.innerText = config.text;
+                statusEl.style.display = 'block';
+                document.body.classList.add('submitted');
+                updateConnectionStatus(actionKey.startsWith('timeout') ? 'Timeout' : 'Submitted', '');
+
+                const submitBtn = document.getElementById('submitBatchBtn');
+                const cancelBtn = document.getElementById('cancelButton');
+                if (submitBtn) submitBtn.disabled = true;
+                if (cancelBtn) cancelBtn.disabled = true;
             }
 
             function requestNotificationPermission() {
@@ -1244,16 +1310,6 @@
                 const headerStatusText = document.getElementById('statusText');
                 const headerStatusDot = document.getElementById('connectionDot');
 
-                const statusMap = {
-                    'manual': { text: '✅ Submitted successfully. You can close this tab.', class: 'manual' },
-                    'timeout_auto_submitted': { text: '⏰ Timeout: Auto-submitted.', class: 'timeout' },
-                    'timeout_cancelled': { text: '⏰ Timeout: Cancelled (no default selection).', class: 'timeout' },
-                    'timeout_reinvoke_requested': { text: '⏰ Timeout: Re-invocation requested.', class: 'timeout' },
-                    'cancelled': { text: '🚫 Cancelled.', class: 'timeout' }
-                };
-
-                const config = statusMap[statusType] || statusMap['manual'];
-
                 headerStatusText.innerText = 'Submitting...';
                 headerStatusDot.className = 'status-dot busy';
 
@@ -1269,7 +1325,6 @@
                             const data = await res.json();
                             errorDetail = data.detail || errorDetail;
                         } catch (e) {
-                            // If not JSON, try text
                             const text = await res.text().catch(() => '');
                             if (text) errorDetail = text.substring(0, 200);
                         }
@@ -1281,13 +1336,13 @@
                         headerStatusDot.className = 'status-dot offline';
                         submitting = false;
                     } else {
-                        statusEl.className = 'status ' + config.class;
-                        statusEl.innerText = config.text;
-                        statusEl.style.display = 'block';
-                        document.body.classList.add('submitted');
-
-                        headerStatusText.innerText = 'Submitted';
-                        headerStatusDot.className = 'status-dot';
+                        const actionKey = payload.action_status || statusType || 'manual';
+                        applyFinalizedState({
+                            action_status: actionKey,
+                            selected_indices: payload.selected_indices || Array.from(selectedIndices),
+                            option_annotations: payload.option_annotations || optionAnnotations,
+                            global_annotation: payload.global_annotation || document.getElementById('globalAnnotation').value || null
+                        });
                     }
                 } catch (e) {
                     statusEl.className = 'status error';
@@ -1412,7 +1467,9 @@
             });
 
             // Section: Init
-            if (defaults.use_default_option) {
+            if (hasFinalResult) {
+                renderOptions();
+            } else if (defaults.use_default_option) {
                 applyDefaultSelections();
             } else {
                 renderOptions();
@@ -1422,6 +1479,10 @@
 
             requestNotificationPermission();
             connectWebSocket();
+
+            if (hasFinalResult) {
+                applyFinalizedState(sessionState);
+            }
 
             // Section: Timeout Countdown + Sync + Notifications
             let _timeoutTimerId = null;
@@ -1485,6 +1546,12 @@
 
             function startTimeout(seconds) {
                 stopTimeout();
+                if (hasFinalResult) {
+                    _timeoutTotal = 0;
+                    _timeoutRemaining = 0;
+                    renderTimeout();
+                    return;
+                }
                 notifiedThreshold = false;
                 notifiedTimeout = false;
                 _timeoutExpired = false;
