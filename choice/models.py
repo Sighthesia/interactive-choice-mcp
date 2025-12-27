@@ -16,9 +16,17 @@ class ValidationError(ValueError):
 # Section: Data Models
 @dataclass
 class ProvideChoiceOption:
-    """Represents a single selectable option."""
-    label: str
+    """Represents a single selectable option. The option has an `id` which is
+    used as its canonical identifier and also displayed to the user as the
+    visible label (per new schema semantics).
+    """
+    id: str
     description: str
+
+    @property
+    def label(self) -> str:
+        # Backwards-compatible accessor for templates and existing code
+        return self.id
 
 
 @dataclass
@@ -51,12 +59,13 @@ class ProvideChoiceConfig:
 @dataclass
 class ProvideChoiceSelection:
     """The actual data selected or entered by the user."""
-    selected_indices: List[int] = field(default_factory=list)
+    # Note: selected_indices now holds option IDs (strings) instead of numeric indices.
+    selected_indices: List[str] = field(default_factory=list)
     transport: str = TRANSPORT_TERMINAL
     summary: str = ""
     url: Optional[str] = None
-    # Annotation fields
-    option_annotations: dict[int, str] = field(default_factory=dict)
+    # Annotation fields (keys are option IDs)
+    option_annotations: dict[str, str] = field(default_factory=dict)
     global_annotation: Optional[str] = None
 
 
@@ -81,23 +90,33 @@ def _ensure_non_empty(value: str, field_name: str) -> None:
 def _validate_options(options: Sequence[dict | ProvideChoiceOption]) -> List[ProvideChoiceOption]:
     """
     Validate and normalize the list of options.
-    Ensures all options have required fields.
+    Options MUST provide an `id` string. The `id` is the
+    canonical identifier and is displayed to the user as the visible label.
     """
     if not options:
         raise ValidationError("options must contain at least one entry")
     parsed: List[ProvideChoiceOption] = []
+    seen_ids: set[str] = set()
     for raw in options:
         if isinstance(raw, ProvideChoiceOption):
             opt = raw
         else:
             try:
+                raw_id = raw.get("id") if isinstance(raw, dict) else None
+                if raw_id is None:
+                    raise ValidationError("options entries must include an 'id' and description")
                 opt = ProvideChoiceOption(
-                    label=str(raw["label"]),
+                    id=str(raw_id),
                     description=str(raw.get("description", "")),
                 )
+            except ValidationError:
+                raise
             except Exception as exc:  # noqa: BLE001
-                raise ValidationError("options entries must include label, description") from exc
-        _ensure_non_empty(opt.label, "option.label")
+                raise ValidationError("options entries must include an 'id' and description") from exc
+        _ensure_non_empty(opt.id, "option.id")
+        if opt.id in seen_ids:
+            raise ValidationError(f"duplicate option id: {opt.id}")
+        seen_ids.add(opt.id)
         parsed.append(opt)
     return parsed
 
@@ -122,8 +141,6 @@ def parse_request(
     single_submit_mode: Optional[bool] = None,
     timeout_default_index: Optional[int] = None,
     timeout_default_enabled: Optional[bool] = None,
-    # Legacy: allow_cancel is ignored, cancel always enabled
-    allow_cancel: bool = True,  # noqa: ARG001
 ) -> ProvideChoiceRequest:
     """Validate and normalize tool inputs into a request model."""
 
@@ -192,28 +209,32 @@ def apply_configuration(
 def normalize_response(
     *,
     req: ProvideChoiceRequest,
-    selected_indices: Sequence[int] | None,
+    selected_indices: Sequence[str] | None,
     transport: str,
     url: Optional[str] = None,
-    option_annotations: Optional[dict[int, str]] = None,
+    option_annotations: Optional[dict[str, str]] = None,
     global_annotation: Optional[str] = None,
     action_status: str = "selected",
 ) -> ProvideChoiceResponse:
     """
-    Normalize response, enforcing min/max selection counts.
+    Normalize response. `selected_indices` is now a sequence of option IDs (strings).
+    Validate that each provided ID exists in the request options.
     """
     if transport not in VALID_TRANSPORTS:
         raise ValidationError("invalid transport for response")
 
     if selected_indices is None:
         selected_indices = []
-    ordered_indices = list(selected_indices)
+    ordered_ids = list(selected_indices)
 
-
+    # Validate IDs exist in request
+    valid_ids = {o.id for o in req.options}
+    if any(i not in valid_ids for i in ordered_ids):
+        raise ValidationError("selected_indices contains unknown option id")
 
     summary_parts: list[str] = []
-    if ordered_indices:
-        summary_parts.append(f"indices={ordered_indices}")
+    if ordered_ids:
+        summary_parts.append(f"ids={ordered_ids}")
     if option_annotations:
         summary_parts.append(f"option_annotations={option_annotations}")
     if global_annotation:
@@ -221,7 +242,7 @@ def normalize_response(
     summary = ", ".join(summary_parts) if summary_parts else "no selection"
 
     selection = ProvideChoiceSelection(
-        selected_indices=ordered_indices,
+        selected_indices=ordered_ids,
         transport=transport,
         summary=summary,
         url=url,
@@ -236,7 +257,7 @@ def cancelled_response(
     *,
     transport: str,
     url: Optional[str] = None,
-    option_annotations: Optional[dict[int, str]] = None,
+    option_annotations: Optional[dict[str, str]] = None,
     global_annotation: Optional[str] = None,
 ) -> ProvideChoiceResponse:
     selection = ProvideChoiceSelection(
@@ -252,13 +273,17 @@ def cancelled_response(
 
 def timeout_response(*, req: ProvideChoiceRequest, transport: str, url: Optional[str] = None) -> ProvideChoiceResponse:
     """Generate a timeout response, potentially with a default selection."""
-    indices = []
+    ids: list[str] = []
     if req.timeout_default_enabled and req.timeout_default_index is not None:
-        indices = [req.timeout_default_index]
+        # Map index to id
+        idx = req.timeout_default_index
+        if idx < 0 or idx >= len(req.options):
+            raise ValidationError("timeout_default_index out of range")
+        ids = [req.options[idx].id]
 
     return normalize_response(
         req=req,
-        selected_indices=indices,
+        selected_indices=ids,
         transport=transport,
         url=url,
         action_status="timeout"

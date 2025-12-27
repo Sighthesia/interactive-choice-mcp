@@ -7,7 +7,7 @@ def test_parse_request_defaults():
         title="Title",
         prompt="Prompt",
         type="single_select",
-        options=[{"label": "A", "description": "desc"}],
+        options=[{"id": "A", "description": "desc"}],
     )
     assert req.timeout_seconds == models.DEFAULT_TIMEOUT_SECONDS
     assert req.transport is None
@@ -19,7 +19,7 @@ def test_parse_request_env_timeout(monkeypatch):
         title="Title",
         prompt="Prompt",
         type="single_select",
-        options=[{"label": "A", "description": "desc"}],
+        options=[{"id": "A", "description": "desc"}],
     )
     assert req.timeout_seconds == 120
 
@@ -29,7 +29,7 @@ def test_parse_request_invalid_type():
             title="Title",
             prompt="Prompt",
             type="bad",
-            options=[{"label": "A", "description": "desc"}],
+            options=[{"id": "A", "description": "desc"}],
         )
 
 def test_parse_request_extended_fields():
@@ -38,8 +38,8 @@ def test_parse_request_extended_fields():
         prompt="Prompt",
         type="multi_select",
         options=[
-            {"label": "A", "description": "desc"},
-            {"label": "B", "description": "desc"},
+            {"id": "A", "description": "desc"},
+            {"id": "B", "description": "desc"},
         ],
         single_submit_mode=False,
     )
@@ -52,17 +52,17 @@ def test_normalize_response_selection():
         title="Title",
         prompt="Prompt",
         type="single_select",
-        options=[{"label": "A", "description": "desc"}],
+        options=[{"id": "A", "description": "desc"}],
     )
     resp = models.normalize_response(
         req=req, 
-        selected_indices=[0], 
+        selected_indices=["A"], 
         transport=models.TRANSPORT_WEB, 
         url="http://localhost",
         global_annotation="some note"
     )
     assert resp.action_status == "selected"
-    assert resp.selection.selected_indices == [0]
+    assert resp.selection.selected_indices == ["A"]
     assert resp.selection.transport == models.TRANSPORT_WEB
     assert resp.selection.global_annotation == "some note"
 
@@ -71,13 +71,13 @@ def test_timeout_response_auto_select():
         title="Title",
         prompt="Prompt",
         type="single_select",
-        options=[{"label": "A", "description": "desc"}, {"label": "B", "description": "desc"}],
+        options=[{"id": "A", "description": "desc"}, {"id": "B", "description": "desc"}],
         timeout_default_enabled=True,
         timeout_default_index=1
     )
     resp = models.timeout_response(req=req, transport=models.TRANSPORT_TERMINAL)
     assert resp.action_status == "timeout"
-    assert resp.selection.selected_indices == [1]
+    assert resp.selection.selected_indices == ["B"]
 
 
 def test_apply_configuration():
@@ -86,8 +86,8 @@ def test_apply_configuration():
         prompt="Prompt",
         type="single_select",
         options=[
-            {"label": "A", "description": "desc"},
-            {"label": "B", "description": "desc"},
+            {"id": "A", "description": "desc"},
+            {"id": "B", "description": "desc"},
         ],
     )
     config = models.ProvideChoiceConfig(

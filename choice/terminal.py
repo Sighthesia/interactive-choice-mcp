@@ -34,20 +34,24 @@ def _clear_terminal() -> None:
 
 # Section: UI Construction
 def _build_choices(options: Iterable[ProvideChoiceOption]) -> List[questionary.Choice]:
-    """Convert internal options to questionary Choice objects using indices as values."""
-    return [questionary.Choice(title=opt.label, value=idx) for idx, opt in enumerate(options)]
+    """Convert internal options to questionary Choice objects using option IDs as values."""
+    return [questionary.Choice(title=opt.id, value=opt.id) for opt in options]
 
 
 def _build_config_choices(options: Iterable[ProvideChoiceOption], defaults: List[int]) -> List[questionary.Choice]:
-    """Convert options to choices while marking defaults by index."""
-    return [questionary.Choice(title=opt.label, value=idx, checked=idx in defaults) for idx, opt in enumerate(options)]
+    """Convert options to choices while marking defaults by index.
+
+    Note: config choices use numeric indices as values so the config UI remains
+    index-based (keeps backward-compatibility for timeout_default_index).
+    """
+    return [questionary.Choice(title=opt.id, value=idx, checked=idx in defaults) for idx, opt in enumerate(options)]
 
 
 def _summary_line(selection: ProvideChoiceResponse) -> str:
     """Generate a concise summary string for the final output."""
     sel = selection.selection
     if sel.selected_indices:
-        return f"Selected indices: {sel.selected_indices}"
+        return f"Selected: {sel.selected_indices}"
     return "No selection"
 
 
@@ -64,7 +68,7 @@ def _run_prompt_sync(
     respects single_submit_mode, and annotations (always enabled).
     """
     choices = _build_choices(req.options)
-    option_annotations: dict[int, str] = {}
+    option_annotations: dict[str, str] = {}
     global_annotation: Optional[str] = None
 
     try:
@@ -76,7 +80,7 @@ def _run_prompt_sync(
 
             # Capture optional annotation for the selected option
             try:
-                opt_note = questionary.text(f"Note for '{req.options[answer].label}' (optional)", default="").unsafe_ask()
+                opt_note = questionary.text(f"Note for '{answer}' (optional)", default="").unsafe_ask()
             except (KeyboardInterrupt, EOFError, Exception):
                 return cancelled_response(transport=TRANSPORT_TERMINAL)
             if opt_note:
@@ -104,16 +108,16 @@ def _run_prompt_sync(
                 return cancelled_response(transport=TRANSPORT_TERMINAL)
 
             # Capture annotations for selected options
-            for idx in answer:
+            for opt_id in answer:
                 try:
-                    opt_note = questionary.text(f"Note for '{req.options[idx].label}' (optional)", default="").unsafe_ask()
+                    opt_note = questionary.text(f"Note for '{opt_id}' (optional)", default="").unsafe_ask()
                 except (KeyboardInterrupt, EOFError, Exception):
                     return cancelled_response(
                         transport=TRANSPORT_TERMINAL,
                         option_annotations=option_annotations,
                     )
                 if opt_note:
-                    option_annotations[idx] = opt_note
+                    option_annotations[opt_id] = opt_note
             try:
                 global_annotation = questionary.text("Global annotation (optional)", default="").unsafe_ask()
             except (KeyboardInterrupt, EOFError, Exception):
@@ -194,10 +198,6 @@ async def prompt_configuration(
             except Exception:
                 timeout_val = defaults.timeout_seconds
 
-            # Placeholder is no longer supported in current schema; keep defaults for config UI
-            placeholder_value = ""
-            placeholder_enabled_choice = False
-
             # Single submit mode toggle
             single_submit_choice = questionary.confirm(
                 "Single submit mode (auto-submit on selection)", default=defaults.single_submit_mode
@@ -209,11 +209,11 @@ async def prompt_configuration(
             timeout_default_enabled = questionary.confirm("Enable default selection on timeout?", default=defaults.timeout_default_enabled).unsafe_ask()
             timeout_default_idx = defaults.timeout_default_index
             if timeout_default_enabled:
-                choices = _build_choices(req.options)
+                choices = _build_config_choices(req.options, list(range(len(req.options))))
                 default_val = None
                 if timeout_default_idx is not None and 0 <= timeout_default_idx < len(choices):
                     default_val = choices[timeout_default_idx]
-                
+
                 timeout_default_idx = questionary.select(
                     "Default option for timeout",
                     choices=choices,

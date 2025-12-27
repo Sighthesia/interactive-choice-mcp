@@ -21,7 +21,7 @@ def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
     async def fake_run(req, timeout_seconds, config=None):
         return models.normalize_response(
             req=req,
-            selected_indices=[0],
+            selected_indices=["A"],
             transport=models.TRANSPORT_TERMINAL,
         )
 
@@ -32,12 +32,12 @@ def test_orchestrator_prefers_terminal_when_available(monkeypatch, tmp_path):
             title="Title",
             prompt="Prompt",
             type="single_select",
-            options=[{"label": "A", "description": "desc"}],
+            options=[{"id": "A", "description": "desc"}],
         )
     )
 
     assert result.selection.transport == models.TRANSPORT_TERMINAL
-    assert result.selection.selected_indices == [0]
+    assert result.selection.selected_indices == ["A"]
 
 def test_orchestrator_terminal_config_abort_falls_back_to_web(monkeypatch, tmp_path):
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
@@ -53,7 +53,7 @@ def test_orchestrator_terminal_config_abort_falls_back_to_web(monkeypatch, tmp_p
         return (
             models.normalize_response(
                 req=req,
-                selected_indices=[0],
+                selected_indices=["A"],
                 transport=models.TRANSPORT_WEB,
             ),
             defaults,
@@ -66,12 +66,12 @@ def test_orchestrator_terminal_config_abort_falls_back_to_web(monkeypatch, tmp_p
             title="Title",
             prompt="Prompt",
             type="single_select",
-            options=[{"label": "A", "description": "desc"}],
+            options=[{"id": "A", "description": "desc"}],
         )
     )
 
     assert result.selection.transport == models.TRANSPORT_WEB
-    assert result.selection.selected_indices == [0]
+    assert result.selection.selected_indices == ["A"]
 
 def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
@@ -81,7 +81,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
         return (
             models.normalize_response(
                 req=req,
-                selected_indices=[0],
+                selected_indices=["B"],
                 transport=models.TRANSPORT_WEB,
             ),
             defaults,
@@ -94,9 +94,9 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
             title="Title",
             prompt="Prompt",
             type="single_select",
-            options=[{"label": "B", "description": "desc"}],
+            options=[{"id": "B", "description": "desc"}],
         )
     )
 
     assert result.selection.transport == models.TRANSPORT_WEB
-    assert result.selection.selected_indices == [0]
+    assert result.selection.selected_indices == ["B"]

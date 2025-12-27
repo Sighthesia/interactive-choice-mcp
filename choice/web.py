@@ -57,7 +57,7 @@ def _render_html(
     """Generate HTML that includes a configuration panel and the choice UI."""
 
     option_payload = [
-        {"label": o.label, "description": o.description}
+        {"id": o.id, "description": o.description}
         for o in req.options
     ]
 
@@ -144,9 +144,9 @@ async def run_web_choice(
 
             # Extract annotations from payload
             option_annotations_raw = payload.get("option_annotations") or {}
-            option_annotations: dict[int, str] = {}
+            option_annotations: dict[str, str] = {}
             if isinstance(option_annotations_raw, dict):
-                option_annotations = {int(k): str(v) for k, v in option_annotations_raw.items() if v}
+                option_annotations = {str(k): str(v) for k, v in option_annotations_raw.items() if v}
             global_annotation_raw = payload.get("global_annotation")
             global_annotation: str | None = str(global_annotation_raw) if global_annotation_raw else None
 
@@ -162,17 +162,18 @@ async def run_web_choice(
                 return {"status": "ok"}
             
             if action == "selected":
-                selected_indices = payload.get("selected_indices")
-                if not isinstance(selected_indices, list):
+                selected_ids = payload.get("selected_indices")
+                if not isinstance(selected_ids, list):
                     raise HTTPException(status_code=400, detail="selected_indices must be list")
-                indices = [int(x) for x in selected_indices]
-                if any(idx < 0 or idx >= len(adjusted_req.options) for idx in indices):
-                    raise HTTPException(status_code=400, detail="selected_indices out of range")
+                ids = [str(x) for x in selected_ids]
+                valid_ids = {o.id for o in adjusted_req.options}
+                if any(i not in valid_ids for i in ids):
+                    raise HTTPException(status_code=400, detail="selected_indices contains unknown id")
                 
                 result_future.set_result(
                     normalize_response(
                         req=adjusted_req,
-                        selected_indices=indices,
+                        selected_indices=ids,
                         transport=TRANSPORT_WEB,
                         url=session_url,
                         option_annotations=option_annotations,

@@ -429,6 +429,68 @@
             color: #991b1b;
         }
 
+        /* Section: Submitted States */
+        body.submitted .option:not(.selected) {
+            opacity: 0.5;
+            filter: grayscale(1);
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        body.submitted .option.selected {
+            border-color: var(--success);
+            background: rgba(34, 197, 94, 0.05);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        body.submitted .annotation-section:not(.has-content) {
+            opacity: 0.5;
+            filter: grayscale(1);
+            pointer-events: none;
+        }
+
+        body.submitted .annotation-section.has-content {
+            border-color: var(--success);
+            background: rgba(34, 197, 94, 0.05);
+            pointer-events: none;
+        }
+
+        body.submitted .actions {
+            display: none;
+        }
+
+        body.submitted .status {
+            display: block !important;
+            margin-top: 20px;
+            padding: 16px;
+            font-size: 1rem;
+        }
+
+        .annotation-section.has-content {
+            border-color: var(--primary);
+            box-shadow: var(--focus-ring);
+        }
+
+        /* Status Colors */
+        .status.manual {
+            color: #166534;
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+        }
+
+        .status.auto {
+            color: #854d0e;
+            background: #fef9c3;
+            border: 1px solid #fef08a;
+        }
+
+        .status.timeout {
+            color: #991b1b;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+        }
+
         .error-message {
             color: var(--danger);
             font-size: 0.875rem;
@@ -525,22 +587,22 @@
         <div class="brand">Interactive Choice MCP Web Console</div>
 
         <div class="status-item">
-            <div id="connectionDot" class="status-dot"></div>
-            Status: <span id="statusText">Connected</span>
-        </div>
-
-        <div class="status-item">
             Version: <span>${mcp_version}</span>
-        </div>
-
-        <div class="status-item">
-            Invoked: <span>${invocation_time}</span>
         </div>
 
         <div class="spacer"></div>
 
         <div class="status-item">
             Time Left: <span id="timeoutText" class="timeout-text">--:--</span>
+        </div>
+
+        <div class="status-item">
+            Invoked: <span>${invocation_time}</span>
+        </div>
+
+        <div class="status-item">
+            <div id="connectionDot" class="status-dot"></div>
+            Status: <span id="statusText">Connected</span>
         </div>
 
         <!-- Progress Bar integrated at bottom of header -->
@@ -571,9 +633,10 @@
 
             <!-- Keyboard Navigation Hint -->
             <div class="keyboard-hint">
-                <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
-                <span><kbd>Space</kbd> Toggle selection</span>
-                <span><kbd>Enter</kbd> Submit</span>
+                <span><kbd>↑</kbd><kbd>↓</kbd>/<kbd>k</kbd><kbd>j</kbd> Navigate</span>
+                <span><kbd>Enter</kbd> Toggle selection</span>
+                <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Submit</span>
+                <span><kbd>Shift</kbd>+<kbd>A</kbd> Focus annotation</span>
                 <span><kbd>Esc</kbd> Cancel</span>
             </div>
 
@@ -613,7 +676,7 @@
                         <div class="config-row">
                             <label>
                                 <input id="singleSubmitMode" type="checkbox" ${single_submit_checked} />
-                                Auto Submit (Single Selection Mode)
+                                Auto Submit on Single Selection Mode
                             </label>
                         </div>
                     </div>
@@ -662,8 +725,8 @@
 
             visibleOpts.forEach((opt, idx) => {
                 const block = document.createElement('div');
-                block.className = 'option' + (selectedIndices.has(idx) ? ' selected' : '');
-                block.dataset.index = idx;
+                block.className = 'option' + (selectedIndices.has(opt.id) ? ' selected' : '');
+                block.dataset.id = opt.id;
                 block.tabIndex = 0;
 
                 if (idx === focusedIndex) {
@@ -680,23 +743,23 @@
                     if (singleSubmit && promptType !== 'multi_select') {
                         submitPayload({
                             action_status: 'selected',
-                            selected_indices: [idx],
+                            selected_indices: [opt.id],
                             option_annotations: optionAnnotations
-                        });
+                        }, 'auto');
                     } else {
-                        toggleOptionSelection(idx, block);
+                        toggleOptionSelection(opt.id, block);
                     }
                 };
 
                 if (!singleSubmit || promptType === 'multi_select') {
                     const cb = document.createElement('input');
                     cb.type = 'checkbox';
-                    cb.value = idx;
-                    cb.checked = selectedIndices.has(idx);
+                    cb.value = opt.id;
+                    cb.checked = selectedIndices.has(opt.id);
                     cb.onchange = (e) => {
                         e.stopPropagation();
-                        if (cb.checked) selectedIndices.add(idx);
-                        else { selectedIndices.delete(idx); block.classList.remove('selected'); }
+                        if (cb.checked) selectedIndices.add(opt.id);
+                        else { selectedIndices.delete(opt.id); block.classList.remove('selected'); }
                         block.classList.toggle('selected', cb.checked);
                         updateSubmitBtn();
                     };
@@ -705,19 +768,17 @@
 
                 const content = document.createElement('div');
                 content.className = 'option-content';
-                content.innerHTML = '<div class="option-label">' + opt.label + '</div><div class="option-desc">' + opt.description + '</div>';
+                content.innerHTML = '<div class="option-label">' + opt.id + '</div><div class="option-desc">' + opt.description + '</div>';
                 block.appendChild(content);
 
-                if (!singleSubmit) {
-                    const noteInput = document.createElement('input');
-                    noteInput.type = 'text';
-                    noteInput.placeholder = 'Add note...';
-                    noteInput.className = 'option-note';
-                    noteInput.value = optionAnnotations[idx] || '';
-                    noteInput.addEventListener('input', () => { optionAnnotations[idx] = noteInput.value; updateCancelBtn(); });
-                    noteInput.onclick = (e) => e.stopPropagation();
-                    block.appendChild(noteInput);
-                }
+                const noteInput = document.createElement('input');
+                noteInput.type = 'text';
+                noteInput.placeholder = singleSubmit && promptType !== 'multi_select' ? 'Add note (will be submitted on selection)' : 'Add note...';
+                noteInput.className = 'option-note';
+                noteInput.value = optionAnnotations[opt.id] || '';
+                noteInput.addEventListener('input', () => { optionAnnotations[opt.id] = noteInput.value; updateCancelBtn(); });
+                noteInput.onclick = (e) => e.stopPropagation();
+                block.appendChild(noteInput);
 
                 container.appendChild(block);
             });
@@ -725,17 +786,17 @@
             updateSubmitBtn();
         }
 
-        function toggleOptionSelection(optionIdx, block) {
-            if (selectedIndices.has(optionIdx)) {
-                selectedIndices.delete(optionIdx);
+        function toggleOptionSelection(optionId, block) {
+            if (selectedIndices.has(optionId)) {
+                selectedIndices.delete(optionId);
                 block.classList.remove('selected');
             } else {
-                selectedIndices.add(optionIdx);
+                selectedIndices.add(optionId);
                 block.classList.add('selected');
             }
             // Update checkbox if present
             const cb = block.querySelector('input[type="checkbox"]');
-            if (cb) cb.checked = selectedIndices.has(optionIdx);
+            if (cb) cb.checked = selectedIndices.has(optionId);
             updateSubmitBtn();
         }
 
@@ -780,32 +841,33 @@
                     scrollOptionIntoView();
                     break;
 
-                case ' ':
-                    e.preventDefault();
-                    if (focusedIndex >= 0 && focusedIndex < optionCount) {
-                        const block = document.querySelector('.option[data-index="' + focusedIndex + '"]');
-                        if (singleSubmit && promptType !== 'multi_select') {
-                            submitPayload({
-                                action_status: 'selected',
-                                selected_indices: [focusedIndex],
-                                option_annotations: optionAnnotations
-                            });
-                        } else if (block) {
-                            toggleOptionSelection(focusedIndex, block);
-                        }
-                    }
-                    break;
-
                 case 'Enter':
                     e.preventDefault();
-                    if (singleSubmit && promptType !== 'multi_select' && focusedIndex >= 0) {
-                        submitPayload({
-                            action_status: 'selected',
-                            selected_indices: [focusedIndex],
-                            option_annotations: optionAnnotations
-                        });
+                    if (e.ctrlKey) {
+                        // Ctrl+Enter: Submit
+                        if (singleSubmit && promptType !== 'multi_select' && focusedIndex >= 0) {
+                            submitPayload({
+                                action_status: 'selected',
+                                selected_indices: [options[focusedIndex].id],
+                                option_annotations: optionAnnotations
+                            }, 'auto');
+                        } else {
+                            submitBatch('manual');
+                        }
                     } else {
-                        submitBatch();
+                        // Enter: Toggle selection
+                        if (focusedIndex >= 0 && focusedIndex < optionCount) {
+                            const block = document.querySelector('.option[data-id="' + options[focusedIndex].id + '"]');
+                            if (singleSubmit && promptType !== 'multi_select') {
+                                submitPayload({
+                                    action_status: 'selected',
+                                    selected_indices: [options[focusedIndex].id],
+                                    option_annotations: optionAnnotations
+                                }, 'auto');
+                            } else if (block) {
+                                toggleOptionSelection(options[focusedIndex].id, block);
+                            }
+                        }
                     }
                     break;
 
@@ -826,6 +888,23 @@
                     focusedIndex = optionCount - 1;
                     updateFocusVisual();
                     scrollOptionIntoView();
+                    break;
+
+                case 'A':
+                case 'a':
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        // Shift+A: Focus annotation for the current option
+                        if (focusedIndex >= 0 && focusedIndex < optionCount) {
+                            const block = document.querySelector('.option[data-id="' + options[focusedIndex].id + '"]');
+                            if (block) {
+                                const noteInput = block.querySelector('.option-note');
+                                if (noteInput) {
+                                    noteInput.focus();
+                                }
+                            }
+                        }
+                    }
                     break;
             }
         }
@@ -851,12 +930,21 @@
         }
 
         // Section: Submission
-        async function postSelection(payload) {
+        async function postSelection(payload, statusType = 'manual') {
             if (submitting) return;
             submitting = true;
             const statusEl = document.getElementById('status');
             const headerStatusText = document.getElementById('statusText');
             const headerStatusDot = document.getElementById('connectionDot');
+
+            const statusMap = {
+                'manual': { text: '✅ Submitted successfully. You can close this tab.', class: 'manual' },
+                'auto': { text: '⚡ Auto-submitted successfully.', class: 'auto' },
+                'timeout': { text: '⏰ Timeout: Auto-submitted.', class: 'timeout' },
+                'cancelled': { text: '🚫 Cancelled.', class: 'timeout' }
+            };
+
+            const config = statusMap[statusType] || statusMap['manual'];
 
             headerStatusText.innerText = 'Submitting...';
             headerStatusDot.className = 'status-dot busy';
@@ -885,9 +973,10 @@
                     headerStatusDot.className = 'status-dot offline';
                     submitting = false;
                 } else {
-                    statusEl.className = 'status success';
-                    statusEl.innerText = '✓ Submitted successfully. You can close this tab.';
+                    statusEl.className = 'status ' + config.class;
+                    statusEl.innerText = config.text;
                     statusEl.style.display = 'block';
+                    document.body.classList.add('submitted');
 
                     headerStatusText.innerText = 'Submitted';
                     headerStatusDot.className = 'status-dot';
@@ -903,7 +992,7 @@
             }
         }
 
-        function submitBatch() {
+        function submitBatch(statusType = 'manual') {
             const err = validateSelection();
             if (err) { document.getElementById('error').innerText = err; return; }
             const globalAnnotation = document.getElementById('globalAnnotation').value || null;
@@ -912,7 +1001,7 @@
                 selected_indices: Array.from(selectedIndices),
                 option_annotations: optionAnnotations,
                 global_annotation: globalAnnotation,
-            });
+            }, statusType);
         }
 
 
@@ -945,17 +1034,25 @@
                 payload.option_annotations = optionAnnotations;
                 payload.global_annotation = document.getElementById('globalAnnotation')?.value || null;
             }
-            submitPayload(payload);
+            submitPayload(payload, 'cancelled');
         }
 
-        function submitPayload(base) {
+        function submitPayload(base, statusType = 'manual') {
             const config = collectConfig();
             base.config = config;
-            postSelection(base);
+            postSelection(base, statusType);
         }
 
         // Update cancel button when global annotation changes
-        document.getElementById('globalAnnotation').addEventListener('input', updateCancelBtn);
+        document.getElementById('globalAnnotation').addEventListener('input', () => {
+            updateCancelBtn();
+            const section = document.getElementById('globalAnnotation').closest('.annotation-section');
+            if (document.getElementById('globalAnnotation').value.trim()) {
+                section.classList.add('has-content');
+            } else {
+                section.classList.remove('has-content');
+            }
+        });
 
         // Section: Event Listeners
         document.getElementById('singleSubmitMode').onchange = renderOptions;
@@ -1043,7 +1140,7 @@
                     const headerStatusDot = document.getElementById('connectionDot');
                     headerStatusText.innerText = 'Timeout';
                     headerStatusDot.className = 'status-dot offline';
-                    submitPayload({ action_status: 'timeout' });
+                    submitPayload({ action_status: 'timeout' }, 'timeout');
                 }
             }, 1000);
         }
