@@ -39,7 +39,7 @@ async def provide_choice(
 	Terminal Mode Workflow:
 		When `action_status` is "pending_terminal_launch":
 		
-		Step 1: Run the command in `terminal_command` field in a terminal
+		Step 1: Use terminal tool to run the `terminal_command`
 		Step 2: Wait for user to complete the terminal interaction  
 		Step 3: Call provide_choice again with the same parameters + `session_id` to get result
 
@@ -92,7 +92,7 @@ async def provide_choice(
 		out["terminal_command"] = selection.summary
 		# Simple instructions for the agent
 		out["instructions"] = (
-			f"1. Run the terminal_command in a terminal\n"
+			f"1. Use terminal tool to run the `terminal_command`\n"
 			f"2. Wait for user to complete the interaction\n"
 			f"3. Call provide_choice again with session_id='{session_id_val}' to get the result"
 		)
