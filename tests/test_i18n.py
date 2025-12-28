@@ -37,6 +37,18 @@ class TestGetText:
             assert "en" in translations, f"Key '{key}' missing English translation"
             assert "zh" in translations, f"Key '{key}' missing Chinese translation"
 
+    def test_status_messages_present(self):
+        """Ensure human-readable status messages exist and contain expected emojis."""
+        assert get_text("status_message.manual", "en").startswith("✅")
+        assert get_text("status_message.manual", "zh").startswith("✅")
+        assert get_text("status_message.cancelled", "en").startswith("🚫")
+        assert get_text("status_message.cancelled", "zh").startswith("🚫")
+
+    def test_status_completed_localization(self):
+        """Ensure short completed label is localized."""
+        assert get_text("status.completed", "en") == "Completed"
+        assert get_text("status.completed", "zh") == "已完成"
+
 
 class TestGetLanguageFromEnv:
     """Tests for get_language_from_env function."""

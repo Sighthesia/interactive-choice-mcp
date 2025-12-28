@@ -1335,11 +1335,11 @@
             }
 
             const statusMap = {
-                'manual': { text: '✅ Submitted successfully. You can close this tab.', class: 'manual' },
-                'timeout_auto_submitted': { text: '⏰ Timeout: Auto-submitted.', class: 'timeout' },
-                'timeout_cancelled': { text: '⏰ Timeout: Cancelled.', class: 'timeout' },
-                'timeout_reinvoke_requested': { text: '⏰ Timeout: Re-invocation requested.', class: 'timeout' },
-                'cancelled': { text: '🚫 Cancelled.', class: 'timeout' }
+                'manual': { text: t('status_message.manual'), class: 'manual' },
+                'timeout_auto_submitted': { text: t('status_message.timeout_auto_submitted'), class: 'timeout' },
+                'timeout_cancelled': { text: t('status_message.timeout_cancelled'), class: 'timeout' },
+                'timeout_reinvoke_requested': { text: t('status_message.timeout_reinvoke_requested'), class: 'timeout' },
+                'cancelled': { text: t('status_message.cancelled'), class: 'timeout' }
             };
 
             // Section: Theme Management
@@ -1638,7 +1638,7 @@
                 statusEl.innerText = config.text;
                 statusEl.style.display = 'block';
                 document.body.classList.add('submitted');
-                updateConnectionStatus(actionKey.startsWith('timeout') ? 'Timeout' : 'Submitted', '');
+                updateConnectionStatus(actionKey.startsWith('timeout') ? t('status.timeout') : t('status.submitted'), '');
 
                 const submitBtn = document.getElementById('submitBatchBtn');
                 const cancelBtn = document.getElementById('cancelButton');
@@ -1656,21 +1656,12 @@
                         bar.classList.add('success');
                         bar.style.width = '100%';
                         container.style.display = 'block';
-                        if (timeoutText) timeoutText.innerText = 'Completed';
+                        if (timeoutText) timeoutText.innerText = t('status.completed');
                     } else {
                         // Timeout state: hide progress bar
                         container.style.display = 'none';
-                        if (timeoutText) timeoutText.innerText = 'Timeout';
+                        if (timeoutText) timeoutText.innerText = t('status.timeout');
                     }
-                }
-            }
-
-            function requestNotificationPermission() {
-                if (notificationPermissionRequested) return;
-                if (!('Notification' in window)) return;
-                notificationPermissionRequested = true;
-                if (Notification.permission === 'default') {
-                    Notification.requestPermission();
                 }
             }
 

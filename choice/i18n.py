@@ -187,6 +187,34 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "已超时",
     },
 
+    # Section: Status Messages
+    "status_message.manual": {
+        "en": "✅ Submitted successfully. You can close this tab.",
+        "zh": "✅ 提交成功。你可以关闭此标签页。",
+    },
+    "status_message.timeout_auto_submitted": {
+        "en": "⏰ Timeout: Auto-submitted.",
+        "zh": "⏰ 超时：已自动提交。",
+    },
+    "status_message.timeout_cancelled": {
+        "en": "⏰ Timeout: Cancelled.",
+        "zh": "⏰ 超时：已取消。",
+    },
+    "status_message.timeout_reinvoke_requested": {
+        "en": "⏰ Timeout: Re-invocation requested.",
+        "zh": "⏰ 超时：请求重新调用。",
+    },
+    "status_message.cancelled": {
+        "en": "🚫 Cancelled.",
+        "zh": "🚫 已取消。",
+    },
+
+    # Section: Header Timeout Status
+    "status.completed": {
+        "en": "Completed",
+        "zh": "已完成",
+    },
+
     # Section: Messages
     "msg.select_option": {
         "en": "Please select an option",
