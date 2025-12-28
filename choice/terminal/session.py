@@ -75,6 +75,8 @@ class TerminalSession:
             status = InteractionStatus.from_action_status(self.result.action_status)
         else:
             status = InteractionStatus.PENDING
+        remaining = self.remaining_seconds if status == InteractionStatus.PENDING else None
+        timeout_total = self.config.timeout_seconds if status == InteractionStatus.PENDING else None
         return InteractionEntry(
             session_id=self.session_id,
             title=self.req.title,
@@ -82,6 +84,8 @@ class TerminalSession:
             status=status,
             started_at=self.started_at_iso,
             url=None,
+            remaining_seconds=remaining,
+            timeout_seconds=timeout_total,
         )
 
     async def wait_for_result(self, timeout: Optional[float] = None) -> Optional["ProvideChoiceResponse"]:
