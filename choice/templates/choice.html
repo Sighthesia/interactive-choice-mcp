@@ -757,16 +757,6 @@
             gap: 6px;
         }
 
-        .config-toggle::before {
-            content: '▶';
-            font-size: 0.75rem;
-            transition: transform 0.2s;
-        }
-
-        .config-toggle.expanded::before {
-            transform: rotate(90deg);
-        }
-
         .config-content {
             margin-top: 12px;
             /* Allow config content to grow and fill sidebar card */
@@ -854,8 +844,9 @@
                 grid-template-columns: 1fr 280px;
             }
 
+            /* Keep the interaction list present (it will collapse and be re-ordered at smaller widths) */
             .interaction-list {
-                display: none;
+                display: block;
             }
         }
 
@@ -864,13 +855,43 @@
                 grid-template-columns: 1fr;
             }
 
+            /* Re-order columns so main content (including the submit buttons) comes first,
+               then the interactions list and configuration panel appear below it */
+            .main-column {
+                order: 1;
+            }
+
+            .interaction-list {
+                display: block;
+                position: static;
+                order: 2;
+            }
+
             .sidebar {
                 position: static;
-                order: -1;
+                order: 3;
+            }
+
+            /* Collapse the side cards into compact headers by default; expansion is triggered by click */
+            .card.collapsible {
+                max-height: 56px;
+                overflow: hidden;
+                transition: max-height 0.25s ease;
+                cursor: pointer;
+            }
+
+            .card.collapsible:focus {
+                box-shadow: var(--focus-ring);
+            }
+
+            .card.collapsible[aria-expanded="true"] {
+                max-height: calc(100vh - 160px);
+                box-shadow: var(--focus-ring);
             }
 
             .config-content {
-                display: none;
+                /* keep content available and scrollable inside collapsed card */
+                display: block !important;
             }
 
             .config-content.show {
@@ -881,10 +902,6 @@
         @media (min-width: 901px) {
             .config-content {
                 display: block !important;
-            }
-
-            .config-toggle::before {
-                display: none;
             }
         }
 
@@ -955,8 +972,10 @@
     <div class="layout">
         <!-- Interaction List (Left Sidebar) -->
         <div class="interaction-list">
-            <div class="card">
-                <div class="card-header" data-i18n="list.title">Interactions</div>
+            <div class="card collapsible" tabindex="0" aria-expanded="false">
+                <div class="card-header config-toggle" onclick="toggleInteractionList()" id="interactionToggle"
+                    role="button" tabindex="0" aria-controls="interactionListContent" data-i18n="list.title">
+                    Interactions</div>
                 <div class="filter-tabs">
                     <button class="filter-tab active" data-filter="all" onclick="filterInteractions('all')"
                         data-i18n="list.all">All</button>
@@ -1014,9 +1033,9 @@
 
         <!-- Sidebar (Right) - Configuration Panel -->
         <div class="sidebar">
-            <div class="card">
-                <div class="card-header config-toggle" onclick="toggleConfig()" id="configToggle"
-                    data-i18n="web.configuration">Configuration</div>
+            <div class="card collapsible" tabindex="0" aria-expanded="false">
+                <div class="card-header config-toggle" onclick="toggleConfig()" id="configToggle" role="button"
+                    tabindex="0" aria-controls="configContent" data-i18n="web.configuration">Configuration</div>
                 <div class="config-content" id="configContent">
                     <div class="config-grid">
                         <div class="config-section-title" data-i18n="web.portal_settings">Web Portal Settings</div>
@@ -1363,8 +1382,24 @@
             function toggleConfig() {
                 const toggle = document.getElementById('configToggle');
                 const content = document.getElementById('configContent');
-                toggle.classList.toggle('expanded');
-                content.classList.toggle('show');
+                const card = toggle.closest('.card');
+                const expanded = card.getAttribute('aria-expanded') === 'true';
+                card.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                card.setAttribute('data-user-expanded', (!expanded).toString());
+                toggle.classList.toggle('expanded', !expanded);
+                content.classList.toggle('show', !expanded);
+            }
+
+            // Section: Interaction List Toggle
+            function toggleInteractionList() {
+                const toggle = document.getElementById('interactionToggle');
+                const content = document.getElementById('interactionListContent');
+                const card = toggle.closest('.card');
+                const expanded = card.getAttribute('aria-expanded') === 'true';
+                card.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                card.setAttribute('data-user-expanded', (!expanded).toString());
+                toggle.classList.toggle('expanded', !expanded);
+                content.classList.toggle('show', !expanded);
             }
 
             // Section: Global Settings Persistence
