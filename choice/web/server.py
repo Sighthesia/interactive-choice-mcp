@@ -33,6 +33,10 @@ from ..validation import apply_configuration as apply_configuration_fn
 from .session import ChoiceSession, _deadline_from_seconds
 from .templates import _render_dashboard, _render_html
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..terminal.session import TerminalSession
+
 __all__ = [
     "WebChoiceServer",
     "run_web_choice",
@@ -47,7 +51,16 @@ _DEFAULT_WEB_PORT = 17863
 _SESSION_RETENTION_SECONDS = 600
 
 
+def _resolve_host() -> str:
+    """Resolve web host from environment variable or use default."""
+    raw = os.environ.get("CHOICE_WEB_HOST")
+    if raw:
+        return raw.strip()
+    return _DEFAULT_WEB_HOST
+
+
 def _resolve_port() -> int:
+    """Resolve web port from environment variable or use default."""
     raw = os.environ.get("CHOICE_WEB_PORT")
     if raw:
         try:
@@ -67,15 +80,21 @@ def _find_free_port(host: str, port: int) -> int:
             return int(s.getsockname()[1])
 
 
+# Section: Constants
+_MAX_RECENT_COMPLETED = 5  # Maximum number of recent completed interactions to keep
+
+
 class WebChoiceServer:
     def __init__(self) -> None:
-        self.host = _DEFAULT_WEB_HOST
+        self.host = _resolve_host()
         self.port = _find_free_port(self.host, _resolve_port())
         self.app = FastAPI()
         self.sessions: Dict[str, ChoiceSession] = {}
         self._server: Optional[uvicorn.Server] = None
         self._server_task: Optional[asyncio.Task[None]] = None
         self._cleanup_task: Optional[asyncio.Task[None]] = None
+        # Global WebSocket connections for interaction list updates
+        self._list_connections: set[WebSocket] = set()
         self._register_routes()
 
     def _register_routes(self) -> None:
@@ -189,7 +208,9 @@ class WebChoiceServer:
                         global_annotation=global_annotation,
                     )
                     session.set_result(response)
+                    self.save_session_to_store(session)
                     await session.broadcast_status("cancelled", action_status=response.action_status)
+                    await self.broadcast_interaction_list()
                     _logger.info(f"Session {incoming_id[:8]} cancelled by user")
                     return {"status": "ok"}
 
@@ -211,7 +232,9 @@ class WebChoiceServer:
                         global_annotation=global_annotation,
                     )
                     session.set_result(response)
+                    self.save_session_to_store(session)
                     await session.broadcast_status("submitted", action_status=response.action_status)
+                    await self.broadcast_interaction_list()
                     _logger.info(f"Session {incoming_id[:8]} submitted: selected={ids}")
                     return {"status": "ok"}
 
@@ -222,7 +245,9 @@ class WebChoiceServer:
                         url=session.url,
                     )
                     session.set_result(response)
+                    self.save_session_to_store(session)
                     await session.broadcast_status("timeout", action_status=response.action_status)
+                    await self.broadcast_interaction_list()
                     _logger.info(f"Session {incoming_id[:8]} timeout: action={response.action_status}")
                     return {"status": "ok"}
 
@@ -376,11 +401,66 @@ class WebChoiceServer:
                 raise HTTPException(status_code=400, detail="invalid action_status")
 
             session.set_result(response)
+            # Save terminal session to persistent store
+            self._save_terminal_session(session)
+            await self.broadcast_interaction_list()
             return JSONResponse({"status": "ok"})
+
+        # Section: Interaction List Endpoints
+        @app.get("/api/interactions")
+        async def get_interactions():  # noqa: ANN201
+            """Get the list of all interactions (active + recent completed)."""
+            interactions = self.get_interaction_list()
+            return JSONResponse({
+                "interactions": [i.to_dict() for i in interactions],
+            })
+
+        @app.websocket("/ws/interactions")
+        async def interaction_list_ws(websocket: WebSocket) -> None:
+            """WebSocket for real-time interaction list updates."""
+            await websocket.accept()
+            self._list_connections.add(websocket)
+            try:
+                # Send initial list
+                interactions = self.get_interaction_list()
+                await websocket.send_json({
+                    "type": "list",
+                    "interactions": [i.to_dict() for i in interactions],
+                })
+                while True:
+                    # Keep connection alive, handle pings
+                    try:
+                        message = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
+                        try:
+                            data = json.loads(message)
+                            if data.get("type") == "ping":
+                                await websocket.send_json({"type": "pong"})
+                        except json.JSONDecodeError:
+                            pass  # Ignore malformed messages
+                    except asyncio.TimeoutError:
+                        # Send periodic keepalive
+                        try:
+                            await websocket.send_json({"type": "ping"})
+                        except Exception:
+                            break  # Connection lost
+            except WebSocketDisconnect:
+                pass
+            except Exception as e:
+                _logger.debug(f"Interaction list WebSocket error: {e}")
+            finally:
+                self._list_connections.discard(websocket)
 
     async def ensure_running(self) -> None:
         if self._server_task and not self._server_task.done():
             return
+        # Initialize interaction store and cleanup expired sessions
+        from ..interaction_store import get_interaction_store
+        store = get_interaction_store()
+        store.load()
+        cleaned = store.cleanup()
+        if cleaned > 0:
+            _logger.info(f"Cleaned up {cleaned} expired sessions on startup")
+
         _logger.info(f"Starting web server on http://{self.host}:{self.port}")
         config = uvicorn.Config(self.app, host=self.host, port=self.port, log_level="error")
         self._server = uvicorn.Server(config)
@@ -414,6 +494,8 @@ class WebChoiceServer:
         session.monitor_task = asyncio.create_task(session.monitor_deadline())
         self.sessions[choice_id] = session
         _logger.info(f"Created session {choice_id[:8]}: title='{req.title}', timeout={defaults.timeout_seconds}s")
+        # Broadcast updated interaction list
+        await self.broadcast_interaction_list()
         return session
 
     async def _cleanup_loop(self) -> None:
@@ -431,6 +513,111 @@ class WebChoiceServer:
             return
         _logger.debug(f"Removed session {choice_id[:8]}")
         await session.close()
+        # Broadcast updated list after removal
+        await self.broadcast_interaction_list()
+
+    def get_interaction_list(self) -> list:
+        """Get the interaction list: all active + up to 5 most recent completed.
+
+        Combines web sessions, terminal sessions, and persisted historical sessions
+        into a unified list, sorted by status (active first) and then by start time
+        (newest first).
+        """
+        from ..models import InteractionEntry, InteractionStatus
+        from ..terminal.session import get_terminal_session_store
+        from ..interaction_store import get_interaction_store
+
+        entries: list[InteractionEntry] = []
+
+        # Collect web sessions
+        for session in self.sessions.values():
+            entries.append(session.to_interaction_entry())
+
+        # Collect terminal sessions
+        terminal_store = get_terminal_session_store()
+        for session in terminal_store._sessions.values():
+            entries.append(session.to_interaction_entry())
+
+        # Separate active and completed from in-memory sessions
+        active = [e for e in entries if e.status == InteractionStatus.PENDING]
+        in_memory_completed = [e for e in entries if e.status != InteractionStatus.PENDING]
+        in_memory_ids = {e.session_id for e in entries}
+
+        # Get persisted historical sessions (exclude those already in memory)
+        store = get_interaction_store()
+        persisted = store.get_recent(limit=_MAX_RECENT_COMPLETED)
+        historical = [e for e in persisted if e.session_id not in in_memory_ids]
+
+        # Combine completed sessions from both sources
+        all_completed = in_memory_completed + historical
+
+        # Sort: active by start time (newest first), completed by start time (newest first)
+        active.sort(key=lambda e: e.started_at, reverse=True)
+        all_completed.sort(key=lambda e: e.started_at, reverse=True)
+
+        # Limit completed to 5 most recent
+        all_completed = all_completed[:_MAX_RECENT_COMPLETED]
+
+        return active + all_completed
+
+    def save_session_to_store(self, session: ChoiceSession) -> None:
+        """Save a completed session to the persistent store."""
+        from ..interaction_store import get_interaction_store
+        from datetime import datetime
+
+        if not session.final_result:
+            return
+
+        store = get_interaction_store()
+        completed_at = datetime.now().isoformat() if session.completed_at else None
+        store.save_session(
+            session_id=session.choice_id,
+            req=session.req,
+            result=session.final_result,
+            started_at=session.invocation_time,
+            completed_at=completed_at,
+            url=session.url,
+            transport=TRANSPORT_WEB,
+        )
+
+    def _save_terminal_session(self, session: "TerminalSession") -> None:
+        """Save a completed terminal session to the persistent store."""
+        from ..interaction_store import get_interaction_store
+        from ..models import TRANSPORT_TERMINAL
+
+        if not session.result:
+            return
+
+        store = get_interaction_store()
+        completed_at = datetime.now().isoformat()
+        store.save_session(
+            session_id=session.session_id,
+            req=session.req,
+            result=session.result,
+            started_at=session.started_at_iso,
+            completed_at=completed_at,
+            url=None,
+            transport=TRANSPORT_TERMINAL,
+        )
+
+    async def broadcast_interaction_list(self) -> None:
+        """Broadcast the interaction list to all connected WebSocket clients."""
+        interactions = self.get_interaction_list()
+        _logger.debug(f"Broadcasting interaction list: {len(interactions)} entries, {len(self._list_connections)} connections")
+        if not self._list_connections:
+            return
+        payload = {
+            "type": "list",
+            "interactions": [i.to_dict() for i in interactions],
+        }
+        stale: set[WebSocket] = set()
+        for ws in list(self._list_connections):
+            try:
+                await ws.send_json(payload)
+            except Exception:
+                stale.add(ws)
+        for ws in stale:
+            self._list_connections.discard(ws)
 
 
 _WEB_SERVER: Optional[WebChoiceServer] = None
