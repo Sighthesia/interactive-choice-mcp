@@ -1059,7 +1059,7 @@
             <!-- Annotation Section -->
             <div id="annotationSection" class="card annotation-section">
                 <div class="card-header" data-i18n="label.global_annotation">Global Annotation</div>
-                <textarea id="globalAnnotation" placeholder="Optional note"></textarea>
+                <textarea id="globalAnnotation" placeholder=""></textarea>
             </div>
 
             <!-- Keyboard Navigation Hint -->
@@ -1320,6 +1320,8 @@
                 if (statusText && connectionDot) {
                     if (connectionDot.classList.contains('connected')) {
                         statusText.textContent = t('status.connected');
+                    } else if (connectionDot.classList.contains('offline')) {
+                        statusText.textContent = t('status.offline');
                     } else if (connectionDot.classList.contains('disconnected')) {
                         statusText.textContent = t('status.disconnected');
                     }
@@ -1360,7 +1362,8 @@
                 'timeout_cancelled': { text: t('status_message.timeout_cancelled'), class: 'error' },
                 'timeout_reinvoke_requested': { text: t('status_message.timeout_reinvoke_requested'), class: 'warning' },
                 'cancelled': { text: t('status_message.cancelled'), class: 'error' },
-                'cancel_with_annotation': { text: t('status_message.cancel_with_annotation'), class: 'primary' }
+                'cancel_with_annotation': { text: t('status_message.cancel_with_annotation'), class: 'primary' },
+                'error': { text: t('status_message.server_error'), class: 'error' }
             };
 
             // Section: Theme Management
@@ -1552,7 +1555,7 @@
 
                 ws.onopen = () => {
                     wsConnected = true;
-                    updateConnectionStatus('Connected', '');
+                    updateConnectionStatus(t('status.connected'), '');
                     if (wsReconnectTimer) {
                         clearTimeout(wsReconnectTimer);
                         wsReconnectTimer = null;
@@ -1562,10 +1565,10 @@
                 ws.onclose = () => {
                     wsConnected = false;
                     if (hasFinalResult) {
-                        updateConnectionStatus('Submitted', '');
+                        updateConnectionStatus(t('status.submitted'), '');
                         return;
                     }
-                    updateConnectionStatus('Offline', 'offline');
+                    updateConnectionStatus(t('status.offline'), 'offline');
                     if (!submitting) {
                         wsReconnectTimer = setTimeout(connectWebSocket, 1500);
                     }
@@ -1973,7 +1976,7 @@
                 const headerStatusText = document.getElementById('statusText');
                 const headerStatusDot = document.getElementById('connectionDot');
 
-                headerStatusText.innerText = 'Submitting...';
+                headerStatusText.innerText = t('status.submitting');
                 headerStatusDot.className = 'status-dot busy';
 
                 try {
@@ -1997,10 +2000,10 @@
                             if (text) errorDetail = text.substring(0, 200);
                         }
                         statusEl.className = 'status error';
-                        statusEl.innerText = 'Error (' + res.status + '): ' + errorDetail;
+                        statusEl.innerText = t('status_message.server_error') + ' (' + res.status + '): ' + errorDetail;
                         statusEl.style.display = 'block';
 
-                        headerStatusText.innerText = 'Error';
+                        headerStatusText.innerText = t('status.error');
                         headerStatusDot.className = 'status-dot offline';
                         submitting = false;
                         return;
@@ -2027,7 +2030,7 @@
                     statusEl.innerText = 'Network error. Please try again.';
                     statusEl.style.display = 'block';
 
-                    headerStatusText.innerText = 'Offline';
+                    headerStatusText.innerText = t('status.offline');
                     headerStatusDot.className = 'status-dot offline';
                     submitting = false;
                 }
@@ -2084,9 +2087,9 @@
                 if (!wsConnected) {
                     const statusEl = document.getElementById('status');
                     statusEl.className = 'status error';
-                    statusEl.innerText = 'Offline: unable to reach MCP server. Please reconnect and retry.';
+                    statusEl.innerText = t('status_message.sever_offline');
                     statusEl.style.display = 'block';
-                    updateConnectionStatus('Offline', 'offline');
+                    updateConnectionStatus(t('status.offline'), 'offline');
                     return;
                 }
                 const config = collectConfig();
@@ -2127,7 +2130,7 @@
                 };
             }
 
-            document.getElementById('globalAnnotation').placeholder = 'Optional note when provided options don\'t fully meet your needs';
+            document.getElementById('globalAnnotation').placeholder = t('terminal.global_annotation_prompt');
 
             syncAnnotationVisibility();
 

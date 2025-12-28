@@ -216,6 +216,14 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "🚫 Cancelled with annotations",
         "zh": "🚫 带备注取消",
     },
+    "status_message.server_error": {
+        "en": "Server error",
+        "zh": "服务器错误",
+    },
+    "status_message.sever_offline": {
+        "en": "Unable to reach MCP server. Please reconnect and retry.",
+        "zh": "无法连接到 MCP 服务器。请重新连接并重试。",
+    },
 
     # Section: Messages
     "msg.select_option": {
@@ -294,7 +302,7 @@ TEXTS: Dict[str, Dict[str, str]] = {
     # Section: Web Portal Settings
     "web.portal_settings": {
         "en": "Web Portal Settings",
-        "zh": "Web 门户设置",
+        "zh": "Web Portal 设置",
     },
     "web.global_settings": {
         "en": "Global Settings",
@@ -381,8 +389,8 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "提交",
     },
     "hint.cancel": {
-        "en": "Cancel",
-        "zh": "取消",
+        "en": "Unfocus Text Area",
+        "zh": "取消文本框聚焦",
     },
     "hint.toggle_config": {
         "en": "Toggle Config",
@@ -396,7 +404,7 @@ TEXTS: Dict[str, Dict[str, str]] = {
     # Section: Settings Additional
     "settings.timeout_action": {
         "en": "Timeout Action",
-        "zh": "超时动作",
+        "zh": "超时行为",
     },
     "settings.timeout_action_submit": {
         "en": "Auto-submit selected",
@@ -412,7 +420,7 @@ TEXTS: Dict[str, Dict[str, str]] = {
     },
     "desc.timeout_action": {
         "en": "Action to take when the timeout is reached",
-        "zh": "超时后执行的动作",
+        "zh": "超时后执行的操作",
     },
 
     # Section: Status Bar Labels
@@ -435,6 +443,18 @@ TEXTS: Dict[str, Dict[str, str]] = {
     "status.connecting": {
         "en": "Connecting...",
         "zh": "连接中...",
+    },
+    "status.offline": {
+        "en": "Offline",
+        "zh": "离线",
+    },
+    "status.error": {
+        "en": "Error",
+        "zh": "错误",
+    },
+    "status.submitting": {
+        "en": "Submitting...",
+        "zh": "提交中...",
     },
 
     # Section: Interaction List Additional
