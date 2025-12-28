@@ -39,7 +39,7 @@
             /* Header bar colors */
             --header-bg: #1e293b;
             --header-text: #f8fafc;
-            --header-brand: #818cf8;
+            --header-title: #818cf8;
             --header-muted: #94a3b8;
 
             /* Status colors */
@@ -64,7 +64,7 @@
 
             --header-bg: #020617;
             --header-text: #f8fafc;
-            --header-brand: #818cf8;
+            --header-title: #818cf8;
             --header-muted: #94a3b8;
 
             /* Status colors */
@@ -112,10 +112,19 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
-        .header-bar .brand {
+        .header-bar .title {
             font-weight: 700;
             margin-right: 24px;
-            color: var(--header-brand);
+            color: var(--header-title);
+            line-height: 1;
+        }
+
+        .header-bar .title .title-long {
+            display: inline;
+        }
+
+        .header-bar .title .title-short {
+            display: none;
         }
 
         .header-bar .status-item {
@@ -897,6 +906,27 @@
             .config-content.show {
                 display: block;
             }
+
+            /* Header: hide label text on narrow widths to save space */
+            .header-bar .status-item .status-label {
+                display: none;
+            }
+
+            /* Header: minimal title to save space */
+            .header-bar .title {
+                white-space: normal;
+                overflow-wrap: break-word;
+                max-width: 45%;
+                line-height: 1.1;
+            }
+
+            .header-bar .title .title-long {
+                display: none;
+            }
+
+            .header-bar .title .title-short {
+                display: inline;
+            }
         }
 
         @media (min-width: 901px) {
@@ -939,27 +969,32 @@
 
 <body>
     <header class="header-bar">
-        <div class="brand">Interactive Choice MCP Web Portal</div>
+        <div class="title">
+            <span class="title-long">Interactive Choice MCP Web Portal</span>
+            <span class="title-short">Interactive Choice</span>
+        </div>
 
         <div class="status-item">
-            Version: <span>${mcp_version}</span>
+            <span class="status-label" data-i18n="label.version">Version:</span>
+            <span class="status-value">${mcp_version}</span>
         </div>
 
         <div class="spacer"></div>
 
         <div class="status-item">
-            <span data-i18n="label.timeout_remaining">Time Left</span>: <span id="timeoutText"
-                class="timeout-text">--:--</span>
+            <span class="status-label" data-i18n="label.timeout_remaining">Time Left:</span>
+            <span id="timeoutText" class="timeout-text">--:--</span>
         </div>
 
         <div class="status-item">
-            <span data-i18n="label.started_at">Invoked</span>: <span>${invocation_time}</span>
+            <span class="status-label" data-i18n="label.started_at">Invoked:</span>
+            <span>${invocation_time}</span>
         </div>
 
         <div class="status-item">
             <div id="connectionDot" class="status-dot"></div>
-            <span data-i18n="label.status">Status</span>: <span id="statusText"
-                data-i18n="status.connected">Connected</span>
+            <span class="status-label" data-i18n="label.status">Status:</span>
+            <span id="statusText" data-i18n="status.connected">Connected</span>
         </div>
 
         <!-- Progress Bar integrated at bottom of header -->
