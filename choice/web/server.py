@@ -143,6 +143,14 @@ class WebChoiceServer:
                         use_default_option=latest_config.use_default_option,
                         timeout_action=latest_config.timeout_action,
                         language=latest_config.language,
+                        notify_new=latest_config.notify_new,
+                        notify_upcoming=latest_config.notify_upcoming,
+                        upcoming_threshold=latest_config.upcoming_threshold,
+                        notify_timeout=latest_config.notify_timeout,
+                        notify_if_foreground=latest_config.notify_if_foreground,
+                        notify_if_focused=latest_config.notify_if_focused,
+                        notify_if_background=latest_config.notify_if_background,
+                        notify_sound=latest_config.notify_sound,
                     )
                 session_state = session.to_template_state()
                 choice_id = session.choice_id

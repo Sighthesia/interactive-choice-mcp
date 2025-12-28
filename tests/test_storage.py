@@ -94,3 +94,32 @@ def test_language_zh_preserved(tmp_path: Path):
 
     assert loaded is not None
     assert loaded.language == "zh"
+
+
+def test_save_and_load_preserves_notification_fields(tmp_path: Path):
+    store = ConfigStore(path=tmp_path / "cfg.json")
+    original = models.ProvideChoiceConfig(
+        transport=models.TRANSPORT_WEB,
+        timeout_seconds=120,
+        notify_new=False,
+        notify_upcoming=False,
+        upcoming_threshold=42,
+        notify_timeout=False,
+        notify_if_foreground=False,
+        notify_if_focused=False,
+        notify_if_background=False,
+        notify_sound=False,
+    )
+
+    store.save(original)
+    loaded = store.load()
+
+    assert loaded is not None
+    assert loaded.notify_new is False
+    assert loaded.notify_upcoming is False
+    assert loaded.upcoming_threshold == 42
+    assert loaded.notify_timeout is False
+    assert loaded.notify_if_foreground is False
+    assert loaded.notify_if_focused is False
+    assert loaded.notify_if_background is False
+    assert loaded.notify_sound is False
