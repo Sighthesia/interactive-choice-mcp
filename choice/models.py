@@ -8,6 +8,11 @@ DEFAULT_TIMEOUT_SECONDS = 300
 TRANSPORT_TERMINAL = "terminal"
 TRANSPORT_WEB = "web"
 
+# Language constants
+LANG_EN = "en"
+LANG_ZH = "zh"
+VALID_LANGUAGES = {LANG_EN, LANG_ZH}
+
 
 class ValidationError(ValueError):
     """Raised when incoming tool payloads are invalid."""
@@ -86,6 +91,8 @@ class ProvideChoiceConfig:
     persistence_enabled: bool = True
     retention_days: int = 3
     max_sessions: int = 100
+    # Language setting (en/zh)
+    language: str = "en"
 
 
 @dataclass
