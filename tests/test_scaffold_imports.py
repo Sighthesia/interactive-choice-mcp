@@ -2,24 +2,24 @@
 from __future__ import annotations
 
 def test_validation_module_importable():
-    import choice.validation as v
+    import src.validation as v
 
     assert hasattr(v, "__all__")
 
 
 def test_response_module_importable():
-    import choice.response as r
+    import src.response as r
 
     assert hasattr(r, "__all__")
 
 
 def test_terminal_package_importable():
-    import choice.terminal as t
+    import src.terminal as t
 
     assert hasattr(t, "__all__")
 
 
 def test_web_package_importable():
-    import choice.web as w
+    import src.web as w
 
     assert hasattr(w, "__all__")

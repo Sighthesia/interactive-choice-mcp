@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-from choice.terminal import client
+from src.terminal import client
 
 
 class DummyResp:

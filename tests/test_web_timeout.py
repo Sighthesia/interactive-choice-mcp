@@ -1,4 +1,4 @@
-from choice import web
+from src import web
 
 
 def test_deadline_from_seconds_uses_now_reference():

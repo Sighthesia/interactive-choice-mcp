@@ -929,7 +929,7 @@ async def create_terminal_handoff_session(
     session = store.create_session(req, config, config.timeout_seconds)
 
     url = f"http://{server.host}:{server.port}/terminal/{session.session_id}"
-    launch_command = f"uv run python -m choice.terminal.client --session {session.session_id} --url http://{server.host}:{server.port}"
+    launch_command = f"uv run python -m src.terminal.client --session {session.session_id} --url http://{server.host}:{server.port}"
 
     return pending_terminal_launch_response(
         session_id=session.session_id,

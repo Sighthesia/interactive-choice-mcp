@@ -1,8 +1,8 @@
 import asyncio
 import pytest
-from choice.orchestrator import ChoiceOrchestrator, safe_handle
-from choice import models
-from choice import response as r
+from src.orchestrator import ChoiceOrchestrator, safe_handle
+from src import models
+from src import response as r
 
 
 # Section: Terminal Hand-off Tests
@@ -14,10 +14,10 @@ def test_orchestrator_terminal_handoff_returns_pending(monkeypatch, tmp_path):
         return r.pending_terminal_launch_response(
             session_id="test123",
             url="http://127.0.0.1:17863/terminal/test123",
-            launch_command="uv run python -m choice.terminal.client --session test123 --url http://127.0.0.1:17863",
+            launch_command="uv run python -m src.terminal.client --session test123 --url http://127.0.0.1:17863",
         )
 
-    monkeypatch.setattr("choice.orchestrator.create_terminal_handoff_session", fake_handoff)
+    monkeypatch.setattr("src.orchestrator.create_terminal_handoff_session", fake_handoff)
 
     result = asyncio.run(
         orch.handle(
@@ -47,7 +47,7 @@ def test_orchestrator_session_polling_returns_result(monkeypatch, tmp_path):
             transport=models.TRANSPORT_WEB,
         )
 
-    monkeypatch.setattr("choice.orchestrator.poll_terminal_session_result", fake_poll)
+    monkeypatch.setattr("src.orchestrator.poll_terminal_session_result", fake_poll)
 
     result = asyncio.run(
         orch.handle(
@@ -71,7 +71,7 @@ def test_orchestrator_session_polling_pending(monkeypatch, tmp_path):
         # Return None to simulate session not found or expired
         return None
 
-    monkeypatch.setattr("choice.orchestrator.poll_terminal_session_result", fake_poll)
+    monkeypatch.setattr("src.orchestrator.poll_terminal_session_result", fake_poll)
 
     result = asyncio.run(
         orch.handle(
@@ -94,7 +94,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
     
     # Pre-set config to web transport
-    from choice.storage import ConfigStore
+    from src.storage import ConfigStore
     store = ConfigStore(path=tmp_path / "cfg.json")
     store.save(models.ProvideChoiceConfig(
         transport=models.TRANSPORT_WEB,
@@ -112,7 +112,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
             defaults,
         )
 
-    monkeypatch.setattr("choice.orchestrator.run_web_choice", fake_web)
+    monkeypatch.setattr("src.orchestrator.run_web_choice", fake_web)
 
     result = asyncio.run(
         orch.handle(
@@ -130,7 +130,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
 # Section: Error Handling Tests
 def test_safe_handle_reports_validation_error(monkeypatch, tmp_path):
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
-    monkeypatch.setattr("choice.orchestrator.is_terminal_available", lambda: False)
+    monkeypatch.setattr("src.orchestrator.is_terminal_available", lambda: False)
 
     result = asyncio.run(
         safe_handle(

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from choice.logging import (
+from src.logging import (
     LOG_LEVEL_ENV,
     LOG_FILE_ENV,
     configure_logging,

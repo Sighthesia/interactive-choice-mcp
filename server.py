@@ -1,6 +1,6 @@
 from mcp.server.fastmcp import FastMCP
 
-from choice.orchestrator import ChoiceOrchestrator, safe_handle
+from src.orchestrator import ChoiceOrchestrator, safe_handle
 
 # Section: Initialization
 # Initialize the FastMCP server instance and the choice orchestrator.
@@ -51,7 +51,7 @@ async def provide_choice(
 		Example:
 		{
 		  "action_status": "pending_terminal_launch",
-		  "terminal_command": "uv run python -m choice.terminal.client --session abc123 --url http://127.0.0.1:17863",
+		  "terminal_command": "uv run python -m src.terminal.client --session abc123 --url http://127.0.0.1:17863",
 		  "session_id": "abc123",
 		  "instructions": "1. Run the terminal_command...\n2. Wait for user...\n3. Poll with session_id"
 		}
