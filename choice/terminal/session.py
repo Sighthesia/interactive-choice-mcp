@@ -11,6 +11,7 @@ import asyncio
 import time
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -54,6 +55,11 @@ class TerminalSession:
         """Return seconds remaining until deadline."""
         return max(0.0, self.deadline - time.monotonic())
 
+    @property
+    def started_at_iso(self) -> str:
+        """Return started_at as an ISO formatted datetime string."""
+        return datetime.fromtimestamp(self.started_at).strftime("%Y-%m-%d %H:%M:%S")
+
     def set_result(self, response: "ProvideChoiceResponse") -> bool:
         """Set the session result. Returns False if already set."""
         if self.result is not None:
@@ -61,6 +67,22 @@ class TerminalSession:
         self.result = response
         self.result_event.set()
         return True
+
+    def to_interaction_entry(self) -> "InteractionEntry":
+        """Convert this session to an InteractionEntry for the sidebar list."""
+        from ..models import InteractionEntry, InteractionStatus, TRANSPORT_TERMINAL
+        if self.result:
+            status = InteractionStatus.from_action_status(self.result.action_status)
+        else:
+            status = InteractionStatus.PENDING
+        return InteractionEntry(
+            session_id=self.session_id,
+            title=self.req.title,
+            transport=TRANSPORT_TERMINAL,
+            status=status,
+            started_at=self.started_at_iso,
+            url=None,
+        )
 
     async def wait_for_result(self, timeout: Optional[float] = None) -> Optional["ProvideChoiceResponse"]:
         """Wait for the result to be set, with optional timeout."""

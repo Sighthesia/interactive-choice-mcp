@@ -9,6 +9,8 @@ from datetime import datetime
 from typing import Iterable, Optional, Set, TYPE_CHECKING
 
 from ..models import (
+    InteractionEntry,
+    InteractionStatus,
     ProvideChoiceConfig,
     ProvideChoiceRequest,
     ProvideChoiceResponse,
@@ -131,6 +133,21 @@ class ChoiceSession:
             "option_annotations": selection.option_annotations,
             "global_annotation": selection.global_annotation,
         }
+
+    def to_interaction_entry(self) -> InteractionEntry:
+        """Convert this session to an InteractionEntry for the sidebar list."""
+        if self.final_result:
+            status = InteractionStatus.from_action_status(self.final_result.action_status)
+        else:
+            status = InteractionStatus.PENDING
+        return InteractionEntry(
+            session_id=self.choice_id,
+            title=self.req.title,
+            transport=TRANSPORT_WEB,
+            status=status,
+            started_at=self.invocation_time,
+            url=self.url,
+        )
 
     def is_expired(self, now: float) -> bool:
         return (

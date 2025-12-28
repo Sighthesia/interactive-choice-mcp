@@ -43,6 +43,12 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 **环境变量配置：**
 ```bash
+# Web 服务器地址（默认: 127.0.0.1）
+export CHOICE_WEB_HOST=0.0.0.0
+
+# Web 服务器端口（默认: 17863）
+export CHOICE_WEB_PORT=18000
+
 # 日志级别 (DEBUG, INFO, WARNING, ERROR)
 export CHOICE_LOG_LEVEL=DEBUG
 
@@ -68,6 +74,7 @@ session_logger.info("User submitted selection")  # 输出: [abc123de] User submi
 - `choice.orchestrator`: 请求处理、传输选择、完成状态
 - `choice.server`: Web 服务器启动、session 创建/提交/超时
 - `choice.session`: 超时监控、WebSocket 广播
+- `choice.interaction_store`: Session 持久化存储
 
 **调试技巧：**
 1. 设置 `CHOICE_LOG_LEVEL=DEBUG` 查看详细流程
@@ -83,10 +90,16 @@ session_logger.info("User submitted selection")  # 输出: [abc123de] User submi
   - 优先返回 `cancelled_response` 或 `timeout_response` 而非抛出未捕获异常。
 - **ID 语义**: `ProvideChoiceOption.id` 既是唯一标识也是显示标签。`selected_indices` 存储的是这些 ID 字符串，而非数字索引。
 - **日志记录**: 在关键操作点使用 `choice.logging` 模块记录日志，便于问题排查。
+- **持久化**: 完成的 session 自动保存到 `~/.local/share/interactive-choice-mcp/sessions/`。
 
 ## 🔗 集成要点 (Integration)
 - **FastMCP**: 使用 `@mcp.tool()` 注册工具。
 - **Web Bridge**: Web 模式是短寿命的，任务完成后应确保服务器关闭。
+- **Session 持久化**:
+  - 完成的 session 自动保存到本地存储
+  - 服务器启动时自动加载历史 session 并显示在交互列表中
+  - 默认保留最近 3 天的 session（可通过 `retention_days` 配置）
+  - 最多保存 100 个 session（可通过 `max_sessions` 配置）
 - **Terminal Hand-off**: 
   - 当 `provide_choice` 以终端传输方式调用时，工具立即返回 `action_status: pending_terminal_launch`
   - 响应包含 `terminal_command` 字段，这是一个可直接执行的 CLI 命令
@@ -108,4 +121,5 @@ session_logger.info("User submitted selection")  # 输出: [abc123de] User submi
 - [choice/validation.py](choice/validation.py): 请求校验与配置应用。
 - [choice/response.py](choice/response.py): 响应归一化与超时处理。
 - [choice/storage.py](choice/storage.py): 配置持久化实现。
+- [choice/interaction_store.py](choice/interaction_store.py): Session 历史持久化。
 - [choice/logging.py](choice/logging.py): 日志配置与工具。
