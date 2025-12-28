@@ -5,6 +5,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${title}</title>
+    <script>
+        (function () {
+            try {
+                const theme = localStorage.getItem('mcp-theme') || 'system';
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (theme === 'dark' || (theme === 'system' && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                }
+            }
+        })();
+    </script>
     <style>
         :root {
             --primary: #4f46e5;
@@ -201,6 +216,12 @@
             border-color: var(--primary);
         }
 
+        #interactionListContent {
+            max-height: calc(100vh - 220px);
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
         .interaction-item {
             display: flex;
             flex-direction: column;
@@ -222,6 +243,29 @@
             border-color: var(--primary);
             border-width: 2px;
             background: rgba(79, 70, 229, 0.05);
+        }
+
+        .interaction-progress {
+            height: 6px;
+            background: var(--border);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .interaction-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .interaction-progress-bar.warning {
+            background: #f59e0b;
+        }
+
+        .interaction-progress-bar.danger {
+            background: var(--danger);
         }
 
         .interaction-item-header {
@@ -424,6 +468,9 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            max-height: calc(100vh - 320px);
+            overflow-y: auto;
+            padding-right: 4px;
         }
 
         .option {
@@ -713,6 +760,9 @@
 
         .config-content {
             margin-top: 12px;
+            max-height: 360px;
+            overflow-y: auto;
+            padding-right: 4px;
         }
 
         /* Section: Config Items */
@@ -1347,6 +1397,10 @@
                         const serverAnnotations = data.option_annotations || null;
                         const serverGlobalAnnotation = typeof data.global_annotation === 'string' ? data.global_annotation : null;
 
+                        if (typeof data.remaining_seconds === 'number') {
+                            updateTimeoutFromServer(data.remaining_seconds, data.timeout_seconds);
+                        }
+
                         if (data.status === 'timeout') {
                             applyFinalizedState({
                                 action_status: data.action_status || 'timeout',
@@ -1836,6 +1890,14 @@
                     applyFinalizedState(sessionState.status ? sessionState : base);
                     return;
                 }
+                if (!wsConnected) {
+                    const statusEl = document.getElementById('status');
+                    statusEl.className = 'status error';
+                    statusEl.innerText = 'Offline: unable to reach MCP server. Please reconnect and retry.';
+                    statusEl.style.display = 'block';
+                    updateConnectionStatus('Offline', 'offline');
+                    return;
+                }
                 const config = collectConfig();
                 base.config = config;
                 postSelection(base, statusType);
@@ -1861,6 +1923,10 @@
             if (useDefaultToggle) {
                 useDefaultToggle.checked = !!defaults.use_default_option;
                 useDefaultToggle.onchange = () => {
+                    if (hasFinalResult) {
+                        updateConfigHighlights();
+                        return;
+                    }
                     updateConfigHighlights();
                     if (isUseDefaultOption()) {
                         applyDefaultSelections();
@@ -2064,6 +2130,7 @@
             let currentFilter = 'all';
             let wsRetryCount = 0;
             const maxWsRetries = 3;
+            let listCountdownTimer = null;
 
             function connectInteractionListWs() {
                 const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -2114,6 +2181,7 @@
                         if (data.type === 'list') {
                             interactionListData = data.interactions || [];
                             renderInteractionList();
+                            startListCountdown();
                         } else if (data.type === 'ping') {
                             interactionListWs.send(JSON.stringify({ type: 'pong' }));
                         }
@@ -2127,6 +2195,26 @@
             function startPolling() {
                 if (pollingInterval) return;
                 pollingInterval = setInterval(fetchInteractionListFallback, 5000);
+            }
+
+            function startListCountdown() {
+                if (listCountdownTimer) clearInterval(listCountdownTimer);
+                listCountdownTimer = setInterval(() => {
+                    let updated = false;
+                    interactionListData = interactionListData.map(item => {
+                        if (item.status === 'pending' && typeof item.remaining_seconds === 'number') {
+                            const next = Math.max(0, item.remaining_seconds - 1);
+                            if (next !== item.remaining_seconds) {
+                                updated = true;
+                            }
+                            return Object.assign({}, item, { remaining_seconds: next });
+                        }
+                        return item;
+                    });
+                    if (updated) {
+                        renderInteractionList();
+                    }
+                }, 1000);
             }
 
             function filterInteractions(filter) {
@@ -2160,13 +2248,23 @@
                     const transportBadge = '<span class="interaction-badge badge-' + item.transport + '">' + item.transport + '</span>';
                     const href = item.url || '#';
                     const clickHandler = item.url ? 'onclick="window.location.href=\'' + item.url + '\'"' : '';
+                    const timeoutHint = item.status === 'pending' && typeof item.remaining_seconds === 'number'
+                        ? ' · timeout ~' + Math.ceil(item.remaining_seconds) + 's'
+                        : '';
+                    let progressBar = '';
+                    if (item.status === 'pending' && typeof item.remaining_seconds === 'number' && typeof item.timeout_seconds === 'number' && item.timeout_seconds > 0) {
+                        const pct = Math.max(0, Math.min(100, (item.remaining_seconds / item.timeout_seconds) * 100));
+                        const barClass = pct < 20 ? 'danger' : (pct < 50 ? 'warning' : '');
+                        progressBar = '<div class="interaction-progress"><div class="interaction-progress-bar ' + barClass + '" style="width:' + pct + '%"></div></div>';
+                    }
 
                     return '<div class="interaction-item' + (isCurrent ? ' current' : '') + '" ' + clickHandler + '>' +
                         '<div class="interaction-item-header">' +
                         '<span class="interaction-item-title">' + (item.title || 'Untitled') + '</span>' +
                         statusBadge + transportBadge +
                         '</div>' +
-                        '<div class="interaction-item-meta">' + item.started_at + '</div>' +
+                        '<div class="interaction-item-meta">' + item.started_at + timeoutHint + '</div>' +
+                        progressBar +
                         '</div>';
                 }).join('');
             }
@@ -2179,6 +2277,7 @@
                         const data = await response.json();
                         interactionListData = data.interactions || [];
                         renderInteractionList();
+                        startListCountdown();
                     }
                 } catch (e) {
                     console.error('[InteractionList] Fallback fetch error:', e);
