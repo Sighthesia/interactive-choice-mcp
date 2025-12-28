@@ -2050,9 +2050,6 @@
                 if (!isAnnotationEnabled()) return false;
                 const g = document.getElementById('globalAnnotation')?.value || '';
                 if (g && String(g).trim()) return true;
-                for (const k in optionAnnotations) {
-                    if (optionAnnotations[k] && String(optionAnnotations[k]).trim()) return true;
-                }
                 return false;
             }
 
