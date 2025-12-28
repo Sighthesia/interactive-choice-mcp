@@ -62,6 +62,23 @@ class ConfigStore:
             use_default_option = bool(raw.get("use_default_option", False))
             timeout_action = raw.get("timeout_action", "submit") or "submit"
 
+            # Persistence settings
+            persistence_enabled = bool(raw.get("persistence_enabled", True))
+            retention_days = 3
+            raw_retention = raw.get("retention_days")
+            if isinstance(raw_retention, (int, float, str)):
+                try:
+                    retention_days = max(1, int(raw_retention))
+                except Exception:
+                    retention_days = 3
+            max_sessions = 100
+            raw_max = raw.get("max_sessions")
+            if isinstance(raw_max, (int, float, str)):
+                try:
+                    max_sessions = max(1, int(raw_max))
+                except Exception:
+                    max_sessions = 100
+
             return ProvideChoiceConfig(
                 transport=transport,
                 timeout_seconds=timeout_seconds,
@@ -70,6 +87,9 @@ class ConfigStore:
                 timeout_default_enabled=timeout_default_enabled,
                 use_default_option=use_default_option,
                 timeout_action=timeout_action,
+                persistence_enabled=persistence_enabled,
+                retention_days=retention_days,
+                max_sessions=max_sessions,
             )
         except Exception:
             return None
@@ -84,6 +104,9 @@ class ConfigStore:
             "timeout_default_enabled": config.timeout_default_enabled,
             "use_default_option": config.use_default_option,
             "timeout_action": config.timeout_action,
+            "persistence_enabled": config.persistence_enabled,
+            "retention_days": config.retention_days,
+            "max_sessions": config.max_sessions,
         }
 
         try:
