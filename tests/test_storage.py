@@ -19,6 +19,7 @@ def test_save_and_load_roundtrip(tmp_path: Path):
         timeout_default_enabled=True,
         use_default_option=True,
         timeout_action="cancel",
+        language="zh",
     )
 
     store.save(original)
@@ -32,6 +33,7 @@ def test_save_and_load_roundtrip(tmp_path: Path):
     assert loaded.timeout_default_enabled is True
     assert loaded.use_default_option is True
     assert loaded.timeout_action == "cancel"
+    assert loaded.language == "zh"
 
 
 def test_load_sanitizes_invalid_values(tmp_path: Path):
@@ -51,3 +53,44 @@ def test_load_sanitizes_invalid_values(tmp_path: Path):
     assert loaded is not None
     assert loaded.transport == models.TRANSPORT_TERMINAL
     assert loaded.timeout_seconds == models.DEFAULT_TIMEOUT_SECONDS
+    assert loaded.language == "en"  # Invalid values fall back to English
+
+
+def test_language_invalid_fallback(tmp_path: Path):
+    """Test that invalid language values fallback to English."""
+    path = tmp_path / "cfg.json"
+    path.write_text(
+        """
+        {
+            "transport": "terminal",
+            "timeout_seconds": 60,
+            "language": "invalid"
+        }
+        """
+    )
+
+    store = ConfigStore(path=path)
+    loaded = store.load()
+
+    assert loaded is not None
+    assert loaded.language == "en"
+
+
+def test_language_zh_preserved(tmp_path: Path):
+    """Test that valid Chinese language setting is preserved."""
+    path = tmp_path / "cfg.json"
+    path.write_text(
+        """
+        {
+            "transport": "terminal",
+            "timeout_seconds": 60,
+            "language": "zh"
+        }
+        """
+    )
+
+    store = ConfigStore(path=path)
+    loaded = store.load()
+
+    assert loaded is not None
+    assert loaded.language == "zh"
