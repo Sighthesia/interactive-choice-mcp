@@ -118,6 +118,10 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Cancel",
         "zh": "取消",
     },
+    "action.cancel_with_annotations": {
+        "en": "Cancel with annotations",
+        "zh": "带备注取消",
+    },
     "action.confirm": {
         "en": "Confirm",
         "zh": "确认",
@@ -208,11 +212,9 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "🚫 Cancelled.",
         "zh": "🚫 已取消。",
     },
-
-    # Section: Header Timeout Status
-    "status.completed": {
-        "en": "Completed",
-        "zh": "已完成",
+    "status_message.cancel_with_annotation": {
+        "en": "🚫 Cancelled with annotations",
+        "zh": "🚫 带备注取消",
     },
 
     # Section: Messages
@@ -364,7 +366,7 @@ TEXTS: Dict[str, Dict[str, str]] = {
     # Section: Keyboard Hints
     "hint.navigate": {
         "en": "Navigate",
-        "zh": "导航",
+        "zh": "浏览选项",
     },
     "hint.select": {
         "en": "Select",
@@ -414,6 +416,10 @@ TEXTS: Dict[str, Dict[str, str]] = {
     },
 
     # Section: Status Bar Labels
+    "status.completed": {
+        "en": "Completed",
+        "zh": "已完成",
+    },
     "label.status": {
         "en": "Status",
         "zh": "状态",

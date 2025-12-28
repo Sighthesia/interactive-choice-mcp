@@ -745,6 +745,26 @@
             border: 1px solid var(--success-border);
         }
 
+        /* Primary status
+        .status.primary {
+            color: white;
+            background: var(--primary);
+            border: 1px solid var(--primary-hover);
+        }
+
+        /* Warning status: yellow
+        .status.warning {
+            color: #92400e;
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+        }
+
+        .dark .status.warning {
+            color: #fde68a;
+            background: #78350f;
+            border: 1px solid #92400e;
+        }
+
         .status.timeout {
             color: var(--error-text);
             background: var(--error-bg);
@@ -1336,10 +1356,11 @@
 
             const statusMap = {
                 'manual': { text: t('status_message.manual'), class: 'manual' },
-                'timeout_auto_submitted': { text: t('status_message.timeout_auto_submitted'), class: 'timeout' },
-                'timeout_cancelled': { text: t('status_message.timeout_cancelled'), class: 'timeout' },
-                'timeout_reinvoke_requested': { text: t('status_message.timeout_reinvoke_requested'), class: 'timeout' },
-                'cancelled': { text: t('status_message.cancelled'), class: 'timeout' }
+                'timeout_auto_submitted': { text: t('status_message.timeout_auto_submitted'), class: 'warning' },
+                'timeout_cancelled': { text: t('status_message.timeout_cancelled'), class: 'error' },
+                'timeout_reinvoke_requested': { text: t('status_message.timeout_reinvoke_requested'), class: 'warning' },
+                'cancelled': { text: t('status_message.cancelled'), class: 'error' },
+                'cancel_with_annotation': { text: t('status_message.cancel_with_annotation'), class: 'primary' }
             };
 
             // Section: Theme Management
@@ -1638,7 +1659,10 @@
                 statusEl.innerText = config.text;
                 statusEl.style.display = 'block';
                 document.body.classList.add('submitted');
-                updateConnectionStatus(actionKey.startsWith('timeout') ? t('status.timeout') : t('status.submitted'), '');
+                let connLabel = t('status.submitted');
+                if (actionKey === 'cancelled' || actionKey === 'cancel_with_annotation') connLabel = t('status.cancelled');
+                else if (actionKey.startsWith('timeout')) connLabel = t('status.timeout');
+                updateConnectionStatus(connLabel, '');
 
                 const submitBtn = document.getElementById('submitBatchBtn');
                 const cancelBtn = document.getElementById('cancelButton');
@@ -2027,22 +2051,22 @@
                 if (!btn) return;
                 if (hasAnnotations()) {
                     btn.classList.remove('btn-danger');
-                    btn.classList.add('btn-warning');
-                    btn.innerText = 'Cancel with annotations';
+                    btn.classList.add('btn-primary');
+                    btn.innerText = t('action.cancel_with_annotations');
                 } else {
-                    btn.classList.remove('btn-warning');
+                    btn.classList.remove('btn-primary');
                     btn.classList.add('btn-danger');
-                    btn.innerText = 'Cancel';
+                    btn.innerText = t('action.cancel');
                 }
             }
 
             function submitCancel() {
-                const payload = { action_status: 'cancelled' };
+                const payload = { action_status: hasAnnotations() ? 'cancel_with_annotation' : 'cancelled' };
                 if (hasAnnotations()) {
                     payload.option_annotations = optionAnnotations;
                     payload.global_annotation = document.getElementById('globalAnnotation')?.value || null;
                 }
-                submitPayload(payload, 'cancelled');
+                submitPayload(payload, payload.action_status);
             }
 
             function submitPayload(base, statusType = 'manual') {

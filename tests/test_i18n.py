@@ -49,6 +49,13 @@ class TestGetText:
         assert get_text("status.completed", "en") == "Completed"
         assert get_text("status.completed", "zh") == "已完成"
 
+    def test_cancel_with_annotations_texts(self):
+        """Ensure cancel-with-annotations action and status message are present and localized."""
+        assert get_text("action.cancel_with_annotations", "en") == "Cancel with annotations"
+        assert get_text("action.cancel_with_annotations", "zh") == "带备注取消"
+        assert get_text("status_message.cancel_with_annotation", "en").startswith("🚫")
+        assert get_text("status_message.cancel_with_annotation", "zh").startswith("🚫")
+
 
 class TestGetLanguageFromEnv:
     """Tests for get_language_from_env function."""
