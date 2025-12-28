@@ -4,55 +4,313 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Interactive Choice - Active Sessions</title>
+    <title>Interactive Choice - Dashboard</title>
     <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --border: #e5e7eb;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --radius: 8px;
+        }
+
+        .dark {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: #f9fafb;
-            color: #111827;
+            background: var(--bg);
+            color: var(--text);
             padding: 24px;
-        }
-
-        h1 {
-            margin-bottom: 12px;
-        }
-
-        ul {
-            padding-left: 20px;
-        }
-
-        a {
-            color: #2563eb;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .card {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
             max-width: 720px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+            font-size: 1.5rem;
         }
 
         .muted {
-            color: #6b7280;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .filter-tab {
+            padding: 6px 14px;
+            font-size: 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-tab:hover {
+            border-color: var(--primary);
+        }
+
+        .filter-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .interaction-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .interaction-item:hover {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.02);
+        }
+
+        .interaction-item-content {
+            flex: 1;
+        }
+
+        .interaction-item-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .interaction-item-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            padding: 3px 8px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-left: 8px;
+        }
+
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .dark .badge-pending {
+            background: #78350f;
+            color: #fde68a;
+        }
+
+        .badge-submitted,
+        .badge-auto_submitted {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .dark .badge-submitted,
+        .dark .badge-auto_submitted {
+            background: #14532d;
+            color: #86efac;
+        }
+
+        .badge-cancelled,
+        .badge-timeout {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .dark .badge-cancelled,
+        .dark .badge-timeout {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        .badge-web {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .dark .badge-web {
+            background: #312e81;
+            color: #a5b4fc;
+        }
+
+        .badge-terminal {
+            background: #f0fdf4;
+            color: #15803d;
+        }
+
+        .dark .badge-terminal {
+            background: #14532d;
+            color: #86efac;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-muted);
+        }
+
+        .connection-status {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: right;
+            margin-top: 12px;
+        }
+
+        .connection-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            margin-right: 4px;
+        }
+
+        .connection-dot.offline {
+            background: #ef4444;
         }
     </style>
 </head>
 
 <body>
     <div class="card">
-        <h1>Active Interactions</h1>
-        <p class="muted">Re-open an in-progress web prompt from this list.</p>
-        <ul>
-            ${items}
-        </ul>
+        <h1>Interactive Choice Dashboard</h1>
+        <p class="muted">View and manage your active and recent interactions.</p>
+
+        <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="all" onclick="filterInteractions('all')">All</button>
+            <button class="filter-tab" data-filter="active" onclick="filterInteractions('active')">Active</button>
+            <button class="filter-tab" data-filter="completed"
+                onclick="filterInteractions('completed')">Completed</button>
+        </div>
+
+        <div id="interactionList">
+            <div class="empty">Loading interactions...</div>
+        </div>
+
+        <div class="connection-status">
+            <span id="connectionDot" class="connection-dot"></span>
+            <span id="connectionText">Connecting...</span>
+        </div>
     </div>
+
+    <script>
+        // Theme detection
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (isDark) document.documentElement.classList.add('dark');
+
+        let ws = null;
+        let interactions = [];
+        let currentFilter = 'all';
+
+        function connectWs() {
+            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            const wsUrl = protocol + '://' + window.location.host + '/ws/interactions';
+
+            if (ws) ws.close();
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                document.getElementById('connectionDot').className = 'connection-dot';
+                document.getElementById('connectionText').textContent = 'Connected';
+            };
+
+            ws.onclose = () => {
+                document.getElementById('connectionDot').className = 'connection-dot offline';
+                document.getElementById('connectionText').textContent = 'Reconnecting...';
+                setTimeout(connectWs, 2000);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'list') {
+                        interactions = data.interactions || [];
+                        renderList();
+                    } else if (data.type === 'ping') {
+                        ws.send(JSON.stringify({ type: 'pong' }));
+                    }
+                } catch (e) { }
+            };
+        }
+
+        function filterInteractions(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.filter === filter);
+            });
+            renderList();
+        }
+
+        function renderList() {
+            const container = document.getElementById('interactionList');
+            let filtered = interactions;
+
+            if (currentFilter === 'active') {
+                filtered = interactions.filter(i => i.status === 'pending');
+            } else if (currentFilter === 'completed') {
+                filtered = interactions.filter(i => i.status !== 'pending');
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty">No interactions found</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const href = item.url || '#';
+                const statusBadge = '<span class="badge badge-' + item.status + '">' + item.status.replace('_', ' ') + '</span>';
+                const transportBadge = '<span class="badge badge-' + item.transport + '">' + item.transport + '</span>';
+
+                return '<a href="' + href + '" class="interaction-item">' +
+                    '<div class="interaction-item-content">' +
+                    '<div class="interaction-item-title">' + (item.title || 'Untitled') + '</div>' +
+                    '<div class="interaction-item-meta">' + item.started_at + '</div>' +
+                    '</div>' +
+                    statusBadge + transportBadge +
+                    '</a>';
+            }).join('');
+        }
+
+        connectWs();
+    </script>
 </body>
 
 </html>

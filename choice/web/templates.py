@@ -36,28 +36,14 @@ def _load_dashboard_template() -> Template:
 
 
 def _render_dashboard(sessions: Iterable["ChoiceSession"]) -> str:
+    """Render the dashboard page.
+
+    The dashboard now uses WebSocket for real-time updates, so we just return
+    the static template without pre-rendering the session list.
+    """
     template = _load_dashboard_template()
-    rows = []
-    now = time.monotonic()
-    for session in sessions:
-        remaining = _remaining_seconds(session.deadline, now=now) if session.status == "pending" else 0
-        rows.append(
-            {
-                "choice_id": session.choice_id,
-                "title": session.req.title,
-                "url": session.url,
-                "remaining": int(remaining),
-                "status": session.status,
-            }
-        )
-    rows.sort(key=lambda r: (r["status"] != "pending", r["remaining"]))
-    items = []
-    for row in rows:
-        label = f"Open {row['title'] or row['choice_id']}"
-        status_text = f" — {row['status']}" if row["status"] != "pending" else f" — {row['remaining']}s remaining"
-        items.append(f"<li><a href='{row['url']}'>{label}</a>{status_text}</li>")
-    list_html = "\n".join(items) if items else "<li>No active interactions</li>"
-    return template.substitute(items=list_html)
+    # Dashboard is now fully dynamic via WebSocket, no server-side rendering needed
+    return template.template
 
 
 def _render_html(

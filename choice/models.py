@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Dict, List, Optional
 
 DEFAULT_TIMEOUT_SECONDS = 300
@@ -10,6 +11,29 @@ TRANSPORT_WEB = "web"
 
 class ValidationError(ValueError):
     """Raised when incoming tool payloads are invalid."""
+
+
+# Section: Interaction Status
+class InteractionStatus(str, Enum):
+    """Status states for an interaction session."""
+    PENDING = "pending"
+    SUBMITTED = "submitted"
+    AUTO_SUBMITTED = "auto_submitted"
+    CANCELLED = "cancelled"
+    TIMEOUT = "timeout"
+
+    @classmethod
+    def from_action_status(cls, action_status: str) -> "InteractionStatus":
+        """Convert an action_status string to an InteractionStatus."""
+        if action_status.startswith("timeout"):
+            if "auto_submitted" in action_status:
+                return cls.AUTO_SUBMITTED
+            return cls.TIMEOUT
+        if action_status == "cancelled":
+            return cls.CANCELLED
+        if action_status == "selected":
+            return cls.SUBMITTED
+        return cls.PENDING
 
 
 # Section: Data Models
@@ -58,6 +82,10 @@ class ProvideChoiceConfig:
     timeout_default_enabled: bool = False
     use_default_option: bool = False
     timeout_action: str = "submit"
+    # Persistence settings
+    persistence_enabled: bool = True
+    retention_days: int = 3
+    max_sessions: int = 100
 
 
 @dataclass
@@ -78,6 +106,34 @@ class ProvideChoiceResponse:
     """The final response envelope returned to the MCP client."""
     action_status: str
     selection: ProvideChoiceSelection
+
+
+# Section: Interaction List Entry
+@dataclass
+class InteractionEntry:
+    """Represents an entry in the interaction list shown in the sidebar.
+
+    This is a lightweight view model used for rendering the interaction list
+    in the web UI. It captures essential metadata for both web and terminal
+    interactions.
+    """
+    session_id: str
+    title: str
+    transport: str  # "web" or "terminal"
+    status: InteractionStatus
+    started_at: str  # ISO 8601 formatted datetime string
+    url: Optional[str] = None
+
+    def to_dict(self) -> dict:
+        """Convert to a JSON-serializable dictionary."""
+        return {
+            "session_id": self.session_id,
+            "title": self.title,
+            "transport": self.transport,
+            "status": self.status.value,
+            "started_at": self.started_at,
+            "url": self.url,
+        }
 
 
 VALID_SELECTION_MODES = {"single", "multi"}

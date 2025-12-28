@@ -142,12 +142,12 @@
             border-radius: 4px;
         }
 
-        /* Section: Two-Column Layout */
+        /* Section: Three-Column Layout */
         .layout {
             display: grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: 260px 1fr 320px;
             gap: 24px;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
@@ -159,6 +159,175 @@
             position: sticky;
             top: 24px;
             align-self: start;
+        }
+
+        /* Section: Interaction List (Left Sidebar) */
+        .interaction-list {
+            position: sticky;
+            top: 24px;
+            align-self: start;
+        }
+
+        .interaction-list .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .interaction-list .filter-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+
+        .interaction-list .filter-tab {
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .interaction-list .filter-tab:hover {
+            border-color: var(--primary);
+        }
+
+        .interaction-list .filter-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .interaction-item {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--card-bg);
+        }
+
+        .interaction-item:hover {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.02);
+        }
+
+        .interaction-item.current {
+            border-color: var(--primary);
+            border-width: 2px;
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .interaction-item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .interaction-item-title {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .interaction-badge {
+            padding: 2px 6px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .dark .badge-pending {
+            background: #78350f;
+            color: #fde68a;
+        }
+
+        .badge-submitted {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .dark .badge-submitted {
+            background: #14532d;
+            color: #86efac;
+        }
+
+        .badge-auto_submitted {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .dark .badge-auto_submitted {
+            background: #1e3a8a;
+            color: #93c5fd;
+        }
+
+        .badge-cancelled {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .dark .badge-cancelled {
+            background: #374151;
+            color: #d1d5db;
+        }
+
+        .badge-timeout {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .dark .badge-timeout {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        .badge-web {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .dark .badge-web {
+            background: #312e81;
+            color: #a5b4fc;
+        }
+
+        .badge-terminal {
+            background: #f0fdf4;
+            color: #15803d;
+        }
+
+        .dark .badge-terminal {
+            background: #14532d;
+            color: #86efac;
+        }
+
+        .interaction-item-meta {
+            font-size: 0.6875rem;
+            color: var(--text-muted);
+        }
+
+        .interaction-empty {
+            text-align: center;
+            padding: 24px 12px;
+            color: var(--text-muted);
+            font-size: 0.8125rem;
         }
 
         h1 {
@@ -364,7 +533,7 @@
             height: 100%;
             background: var(--primary);
             width: 100%;
-            transition: width 1s linear, background-color 0.3s;
+            transition: width 1s linear, background-color 0.6s ease-in-out;
         }
 
         .timeout-progress-bar.warning {
@@ -373,6 +542,10 @@
 
         .timeout-progress-bar.danger {
             background: var(--danger);
+        }
+
+        .timeout-progress-bar.success {
+            background: var(--success);
         }
 
         /* Section: Annotation */
@@ -603,6 +776,22 @@
         }
 
         /* Section: Responsive */
+        @media (max-width: 1200px) {
+            .layout {
+                grid-template-columns: 220px 1fr 280px;
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .layout {
+                grid-template-columns: 1fr 280px;
+            }
+
+            .interaction-list {
+                display: none;
+            }
+        }
+
         @media (max-width: 900px) {
             .layout {
                 grid-template-columns: 1fr;
@@ -695,7 +884,24 @@
     </header>
 
     <div class="layout">
-        <!-- Main Content (Left) -->
+        <!-- Interaction List (Left Sidebar) -->
+        <div class="interaction-list">
+            <div class="card">
+                <div class="card-header">Interactions</div>
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all" onclick="filterInteractions('all')">All</button>
+                    <button class="filter-tab" data-filter="active"
+                        onclick="filterInteractions('active')">Active</button>
+                    <button class="filter-tab" data-filter="completed"
+                        onclick="filterInteractions('completed')">Completed</button>
+                </div>
+                <div id="interactionListContent">
+                    <div class="interaction-empty">Loading interactions...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content (Center) -->
         <div class="main-column">
             <h1>${title}</h1>
             <p class="prompt">${prompt}</p>
@@ -1050,6 +1256,25 @@
                 const cancelBtn = document.getElementById('cancelButton');
                 if (submitBtn) submitBtn.disabled = true;
                 if (cancelBtn) cancelBtn.disabled = true;
+
+                // Show success progress bar animation when submitted (not timeout)
+                const bar = document.getElementById('timeoutProgressBar');
+                const container = document.getElementById('timeoutContainer');
+                const timeoutText = document.getElementById('timeoutText');
+                if (bar && container) {
+                    if (!actionKey.startsWith('timeout')) {
+                        // Success state: full green bar
+                        bar.classList.remove('warning', 'danger');
+                        bar.classList.add('success');
+                        bar.style.width = '100%';
+                        container.style.display = 'block';
+                        if (timeoutText) timeoutText.innerText = 'Completed';
+                    } else {
+                        // Timeout state: hide progress bar
+                        container.style.display = 'none';
+                        if (timeoutText) timeoutText.innerText = 'Timeout';
+                    }
+                }
             }
 
             function requestNotificationPermission() {
@@ -1599,6 +1824,8 @@
             }
 
             function updateTimeoutFromServer(remainingSeconds, totalSeconds) {
+                // Don't update timeout for completed sessions
+                if (hasFinalResult) return;
                 if (!Number.isFinite(Number(remainingSeconds))) return;
                 const remaining = Math.max(0, Math.round(Number(remainingSeconds)));
                 const total = Number.isFinite(Number(totalSeconds)) && totalSeconds > 0 ? Math.round(Number(totalSeconds)) : null;
@@ -1645,11 +1872,17 @@
                 }
             }
 
-            // Initialize using the current timeout input (fallback to template default)
-            startTimeout(parseInt(document.getElementById('timeoutInput')?.value || '${timeout_value}', 10));
+            // Initialize timeout display
+            // For pending sessions: do NOT start countdown here; wait for WebSocket sync message
+            // to receive the actual remaining time from the server
+            // For completed sessions: applyFinalizedState() (called above) handles the display
+            // Note: For pending sessions, the WebSocket onmessage handler will call
+            // updateTimeoutFromServer() when receiving the 'sync' message, which will
+            // start the countdown with the correct remaining time from server
 
             // When the user changes the timeout, restart the countdown using that value
             document.getElementById('timeoutInput').addEventListener('change', (e) => {
+                if (hasFinalResult) return;  // Don't update timeout for completed sessions
                 const v = parseInt(e.target.value, 10);
                 startTimeout(v);
                 sendUpdateTimeout(v);
@@ -1663,6 +1896,138 @@
                     updateFocusVisual();
                 }
             }, 100);
+
+            // Section: Interaction List
+            let interactionListWs = null;
+            let interactionListData = [];
+            let currentFilter = 'all';
+            let wsRetryCount = 0;
+            const maxWsRetries = 3;
+
+            function connectInteractionListWs() {
+                const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+                const wsUrl = protocol + '://' + window.location.host + '/ws/interactions';
+
+                if (interactionListWs) {
+                    interactionListWs.close();
+                }
+
+                try {
+                    interactionListWs = new WebSocket(wsUrl);
+                } catch (e) {
+                    console.error('[InteractionList] WebSocket creation error:', e);
+                    wsRetryCount++;
+                    if (wsRetryCount < maxWsRetries) {
+                        setTimeout(connectInteractionListWs, 3000);
+                    }
+                    return;
+                }
+
+                interactionListWs.onopen = () => {
+                    // Connection established - initial list will be sent by server
+                    console.log('[InteractionList] WebSocket connected');
+                    wsRetryCount = 0;  // Reset retry count on success
+                };
+
+                interactionListWs.onerror = (e) => {
+                    console.error('[InteractionList] WebSocket error:', e);
+                };
+
+                interactionListWs.onclose = (e) => {
+                    console.log('[InteractionList] WebSocket closed, code:', e.code);
+                    wsRetryCount++;
+                    // Only retry if not exceeded max retries
+                    if (wsRetryCount < maxWsRetries) {
+                        setTimeout(connectInteractionListWs, 3000);
+                    } else {
+                        // Fall back to polling REST API
+                        console.log('[InteractionList] Max retries exceeded, falling back to polling');
+                        startPolling();
+                    }
+                };
+
+                interactionListWs.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('[InteractionList] Received:', data.type);
+                        if (data.type === 'list') {
+                            interactionListData = data.interactions || [];
+                            renderInteractionList();
+                        } else if (data.type === 'ping') {
+                            interactionListWs.send(JSON.stringify({ type: 'pong' }));
+                        }
+                    } catch (e) {
+                        console.error('[InteractionList] Parse error:', e);
+                    }
+                };
+            }
+
+            let pollingInterval = null;
+            function startPolling() {
+                if (pollingInterval) return;
+                pollingInterval = setInterval(fetchInteractionListFallback, 5000);
+            }
+
+            function filterInteractions(filter) {
+                currentFilter = filter;
+                // Update filter tab active state
+                document.querySelectorAll('.filter-tab').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.filter === filter);
+                });
+                renderInteractionList();
+            }
+
+            function renderInteractionList() {
+                const container = document.getElementById('interactionListContent');
+                if (!container) return;
+
+                let filtered = interactionListData;
+                if (currentFilter === 'active') {
+                    filtered = interactionListData.filter(i => i.status === 'pending');
+                } else if (currentFilter === 'completed') {
+                    filtered = interactionListData.filter(i => i.status !== 'pending');
+                }
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div class="interaction-empty">No interactions</div>';
+                    return;
+                }
+
+                container.innerHTML = filtered.map(item => {
+                    const isCurrent = item.session_id === choiceId;
+                    const statusBadge = '<span class="interaction-badge badge-' + item.status + '">' + item.status.replace('_', ' ') + '</span>';
+                    const transportBadge = '<span class="interaction-badge badge-' + item.transport + '">' + item.transport + '</span>';
+                    const href = item.url || '#';
+                    const clickHandler = item.url ? 'onclick="window.location.href=\'' + item.url + '\'"' : '';
+
+                    return '<div class="interaction-item' + (isCurrent ? ' current' : '') + '" ' + clickHandler + '>' +
+                        '<div class="interaction-item-header">' +
+                        '<span class="interaction-item-title">' + (item.title || 'Untitled') + '</span>' +
+                        statusBadge + transportBadge +
+                        '</div>' +
+                        '<div class="interaction-item-meta">' + item.started_at + '</div>' +
+                        '</div>';
+                }).join('');
+            }
+
+            // Fallback: fetch interaction list via REST API
+            async function fetchInteractionListFallback() {
+                try {
+                    const response = await fetch('/api/interactions');
+                    if (response.ok) {
+                        const data = await response.json();
+                        interactionListData = data.interactions || [];
+                        renderInteractionList();
+                    }
+                } catch (e) {
+                    console.error('[InteractionList] Fallback fetch error:', e);
+                }
+            }
+
+            // Initialize interaction list WebSocket with fallback
+            connectInteractionListWs();
+            // Also fetch via REST as immediate fallback
+            fetchInteractionListFallback();
         </script>
 </body>
 
