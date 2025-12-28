@@ -929,11 +929,6 @@
                 return placeholderVisible;
             }
 
-            function validateSelection() {
-                // Min/Max constraints removed — always accept selection (no limits)
-                return null;
-            }
-
             function connectWebSocket() {
                 const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
                 const wsUrl = protocol + '://' + window.location.host + '/ws/' + choiceId;
@@ -1191,13 +1186,11 @@
 
             function updateSubmitBtn() {
                 const singleSubmit = isSingleSubmit();
-                const err = validateSelection();
-                document.getElementById('error').innerText = err || '';
+                document.getElementById('error').innerText = '';
                 const btn = document.getElementById('submitBatchBtn');
 
-                // Disable if validation fails OR if in single-submit mode (where clicking options submits immediately)
                 const isAutoSubmitActive = singleSubmit && promptType !== 'multi';
-                btn.disabled = !!err || isAutoSubmitActive;
+                btn.disabled = isAutoSubmitActive;
             }
 
             // Section: Keyboard Navigation
@@ -1402,8 +1395,6 @@
             }
 
             function submitBatch(statusType = 'manual') {
-                const err = validateSelection();
-                if (err) { document.getElementById('error').innerText = err; return; }
                 const payload = {
                     action_status: 'selected',
                     selected_indices: Array.from(selectedIndices),
