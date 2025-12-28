@@ -8,14 +8,18 @@ from typing import Callable, List, Optional
 import questionary
 
 from ..models import (
+    LANG_EN,
+    LANG_ZH,
     ProvideChoiceConfig,
     ProvideChoiceOption,
     ProvideChoiceRequest,
     ProvideChoiceResponse,
     TRANSPORT_TERMINAL,
     TRANSPORT_WEB,
+    VALID_LANGUAGES,
     ValidationError,
 )
+from ..i18n import get_text
 from ..response import cancelled_response, normalize_response, timeout_response
 from .ui import _build_choices, _build_config_choices, _summary_line
 
@@ -40,8 +44,9 @@ def _run_prompt_sync(
     req: ProvideChoiceRequest,
     config: Optional[ProvideChoiceConfig] = None,
 ) -> ProvideChoiceResponse:
+    lang = config.language if config else LANG_EN
     visible_options = list(req.options)
-    choices = _build_choices(visible_options)
+    choices = _build_choices(visible_options, lang=lang)
     option_annotations: dict[str, str] = {}
     global_annotation: Optional[str] = None
     annotation_enabled = True
@@ -64,9 +69,9 @@ def _run_prompt_sync(
 
             if annotation_enabled:
                 try:
-                    instruction = "Add note..." if placeholder_visible else ""
+                    instruction = get_text("terminal.annotation_prompt", lang) if placeholder_visible else ""
                     opt_note = questionary.text(
-                        f"Note for '{answer}' (optional)",
+                        f"{get_text('label.annotation', lang)} '{answer}'",
                         default="",
                         instruction=instruction,
                     ).unsafe_ask()
@@ -75,9 +80,9 @@ def _run_prompt_sync(
                 if opt_note:
                     option_annotations[answer] = opt_note
                 try:
-                    global_instruction = "Optional note" if placeholder_visible else ""
+                    global_instruction = get_text("terminal.global_annotation_prompt", lang) if placeholder_visible else ""
                     global_annotation = questionary.text(
-                        "Global annotation (optional)",
+                        get_text("label.global_annotation", lang),
                         default="",
                         instruction=global_instruction,
                     ).unsafe_ask()
@@ -96,10 +101,11 @@ def _run_prompt_sync(
             )
 
         if req.selection_mode == "multi" or (req.selection_mode == "single" and not req.single_submit_mode):
+            recommended_label = get_text("label.recommended", lang)
             if config and config.use_default_option:
                 choices = [
                     questionary.Choice(
-                        title=f"{opt.id} (推荐)" if opt.recommended else opt.id,
+                        title=f"{opt.id} ({recommended_label})" if opt.recommended else opt.id,
                         value=opt.id,
                         checked=opt.recommended
                     )
@@ -112,9 +118,9 @@ def _run_prompt_sync(
             if annotation_enabled:
                 for opt_id in answer:
                     try:
-                        instruction = "Add note..." if placeholder_visible else ""
+                        instruction = get_text("terminal.annotation_prompt", lang) if placeholder_visible else ""
                         opt_note = questionary.text(
-                            f"Note for '{opt_id}' (optional)",
+                            f"{get_text('label.annotation', lang)} '{opt_id}'",
                             default="",
                             instruction=instruction,
                         ).unsafe_ask()
@@ -126,9 +132,9 @@ def _run_prompt_sync(
                     if opt_note:
                         option_annotations[opt_id] = opt_note
                 try:
-                    global_instruction = "Optional note" if placeholder_visible else ""
+                    global_instruction = get_text("terminal.global_annotation_prompt", lang) if placeholder_visible else ""
                     global_annotation = questionary.text(
-                        "Global annotation (optional)",
+                        get_text("label.global_annotation", lang),
                         default="",
                         instruction=global_instruction,
                     ).unsafe_ask()
@@ -180,18 +186,40 @@ async def prompt_configuration(
     allow_web: bool,
 ) -> Optional[ProvideChoiceConfig]:
     def _prompt_sync() -> Optional[ProvideChoiceConfig]:
-        transports = [questionary.Choice(title="Terminal", value=TRANSPORT_TERMINAL)]
+        lang = defaults.language
+
+        # Language selection
+        lang_choices = [
+            questionary.Choice(title=get_text("settings.language_en", lang), value=LANG_EN),
+            questionary.Choice(title=get_text("settings.language_zh", lang), value=LANG_ZH),
+        ]
+        try:
+            chosen_lang = questionary.select(
+                get_text("settings.language", lang),
+                choices=lang_choices,
+                default=lang if lang in VALID_LANGUAGES else LANG_EN,
+            ).unsafe_ask()
+            if chosen_lang is None:
+                return None
+            lang = chosen_lang  # Use selected language for remaining prompts
+        except (KeyboardInterrupt, ValueError):
+            return None
+
+        # Transport selection
+        transports = [questionary.Choice(title=get_text("settings.transport_terminal", lang), value=TRANSPORT_TERMINAL)]
         if allow_web:
-            transports.append(questionary.Choice(title="Web", value=TRANSPORT_WEB))
+            transports.append(questionary.Choice(title=get_text("settings.transport_web", lang), value=TRANSPORT_WEB))
         try:
             chosen_transport = questionary.select(
-                "Transport", choices=transports, default=defaults.transport if defaults.transport in {c.value for c in transports} else TRANSPORT_TERMINAL
+                get_text("settings.transport", lang),
+                choices=transports,
+                default=defaults.transport if defaults.transport in {c.value for c in transports} else TRANSPORT_TERMINAL
             ).unsafe_ask()
             if chosen_transport is None:
                 return None
 
             timeout_input = questionary.text(
-                "Timeout (seconds)", default=str(defaults.timeout_seconds)
+                get_text("settings.timeout", lang), default=str(defaults.timeout_seconds)
             ).unsafe_ask()
             if timeout_input is None:
                 return None
@@ -201,19 +229,19 @@ async def prompt_configuration(
                 timeout_val = defaults.timeout_seconds
 
             single_submit_choice = questionary.confirm(
-                "Single submit mode (auto-submit on selection)", default=defaults.single_submit_mode
+                get_text("settings.single_submit", lang), default=defaults.single_submit_mode
             ).unsafe_ask()
             if single_submit_choice is None:
                 return None
 
             use_default_option = questionary.confirm(
-                "采用推荐选项 (自动勾选标记为推荐的选项)", default=defaults.use_default_option
+                get_text("settings.timeout_default", lang), default=defaults.use_default_option
             ).unsafe_ask()
             if use_default_option is None:
                 return None
 
             timeout_action = questionary.select(
-                "Timeout Action",
+                get_text("settings.timeout", lang),
                 choices=[
                     questionary.Choice(title="Auto-submit selected", value="submit"),
                     questionary.Choice(title="Auto-cancel", value="cancel"),
@@ -224,16 +252,18 @@ async def prompt_configuration(
             if timeout_action is None:
                 return None
 
-            timeout_default_enabled = questionary.confirm("Enable default selection on timeout?", default=defaults.timeout_default_enabled).unsafe_ask()
+            timeout_default_enabled = questionary.confirm(
+                get_text("settings.timeout_default", lang), default=defaults.timeout_default_enabled
+            ).unsafe_ask()
             timeout_default_idx = defaults.timeout_default_index
             if timeout_default_enabled:
-                choices = _build_config_choices(req.options, list(range(len(req.options))))
+                choices = _build_config_choices(req.options, list(range(len(req.options))), lang=lang)
                 default_val = None
                 if timeout_default_idx is not None and 0 <= timeout_default_idx < len(choices):
                     default_val = choices[timeout_default_idx]
 
                 timeout_default_idx = questionary.select(
-                    "Default option for timeout",
+                    get_text("settings.timeout_default", lang),
                     choices=choices,
                     default=default_val
                 ).unsafe_ask()
@@ -246,6 +276,7 @@ async def prompt_configuration(
                 timeout_default_index=timeout_default_idx if timeout_default_idx is not None else 0,
                 use_default_option=bool(use_default_option),
                 timeout_action=timeout_action,
+                language=lang,
             )
         except (KeyboardInterrupt, ValueError):
             return None

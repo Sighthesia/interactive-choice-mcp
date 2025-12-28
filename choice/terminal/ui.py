@@ -5,7 +5,8 @@ from typing import Iterable, List
 
 import questionary
 
-from ..models import ProvideChoiceOption, ProvideChoiceResponse
+from ..i18n import get_text
+from ..models import ProvideChoiceOption, ProvideChoiceResponse, LANG_EN
 
 __all__ = [
     "_build_choices",
@@ -14,20 +15,22 @@ __all__ = [
 ]
 
 
-def _build_choices(options: Iterable[ProvideChoiceOption]) -> List[questionary.Choice]:
+def _build_choices(options: Iterable[ProvideChoiceOption], lang: str = LANG_EN) -> List[questionary.Choice]:
+    recommended_label = get_text("label.recommended", lang)
     return [
         questionary.Choice(
-            title=f"{opt.id} (推荐)" if opt.recommended else opt.id,
+            title=f"{opt.id} ({recommended_label})" if opt.recommended else opt.id,
             value=opt.id
         )
         for opt in options
     ]
 
 
-def _build_config_choices(options: Iterable[ProvideChoiceOption], defaults: List[int]) -> List[questionary.Choice]:
+def _build_config_choices(options: Iterable[ProvideChoiceOption], defaults: List[int], lang: str = LANG_EN) -> List[questionary.Choice]:
+    recommended_label = get_text("label.recommended", lang)
     return [
         questionary.Choice(
-            title=f"{opt.id} (推荐)" if opt.recommended else opt.id,
+            title=f"{opt.id} ({recommended_label})" if opt.recommended else opt.id,
             value=idx,
             checked=idx in defaults
         )

@@ -54,6 +54,9 @@ export CHOICE_LOG_LEVEL=DEBUG
 
 # 日志文件路径（可选）
 export CHOICE_LOG_FILE=~/.local/share/interactive-choice-mcp/server.log
+
+# 界面语言 (en/zh)，优先级高于持久化配置
+export CHOICE_LANG=zh
 ```
 
 **在代码中使用日志：**
@@ -123,3 +126,4 @@ session_logger.info("User submitted selection")  # 输出: [abc123de] User submi
 - [choice/storage.py](choice/storage.py): 配置持久化实现。
 - [choice/interaction_store.py](choice/interaction_store.py): Session 历史持久化。
 - [choice/logging.py](choice/logging.py): 日志配置与工具。
+- [choice/i18n.py](choice/i18n.py): 国际化文案资源（en/zh）。

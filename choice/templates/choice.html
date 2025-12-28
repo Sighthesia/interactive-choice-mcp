@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="${lang}">
 
 <head>
     <meta charset="utf-8" />
@@ -864,16 +864,18 @@
         <div class="spacer"></div>
 
         <div class="status-item">
-            Time Left: <span id="timeoutText" class="timeout-text">--:--</span>
+            <span data-i18n="label.timeout_remaining">Time Left</span>: <span id="timeoutText"
+                class="timeout-text">--:--</span>
         </div>
 
         <div class="status-item">
-            Invoked: <span>${invocation_time}</span>
+            <span data-i18n="label.started_at">Invoked</span>: <span>${invocation_time}</span>
         </div>
 
         <div class="status-item">
             <div id="connectionDot" class="status-dot"></div>
-            Status: <span id="statusText">Connected</span>
+            <span data-i18n="label.status">Status</span>: <span id="statusText"
+                data-i18n="status.connected">Connected</span>
         </div>
 
         <!-- Progress Bar integrated at bottom of header -->
@@ -887,13 +889,14 @@
         <!-- Interaction List (Left Sidebar) -->
         <div class="interaction-list">
             <div class="card">
-                <div class="card-header">Interactions</div>
+                <div class="card-header" data-i18n="list.title">Interactions</div>
                 <div class="filter-tabs">
-                    <button class="filter-tab active" data-filter="all" onclick="filterInteractions('all')">All</button>
-                    <button class="filter-tab" data-filter="active"
-                        onclick="filterInteractions('active')">Active</button>
-                    <button class="filter-tab" data-filter="completed"
-                        onclick="filterInteractions('completed')">Completed</button>
+                    <button class="filter-tab active" data-filter="all" onclick="filterInteractions('all')"
+                        data-i18n="list.all">All</button>
+                    <button class="filter-tab" data-filter="active" onclick="filterInteractions('active')"
+                        data-i18n="list.active">Active</button>
+                    <button class="filter-tab" data-filter="completed" onclick="filterInteractions('completed')"
+                        data-i18n="list.completed">Completed</button>
                 </div>
                 <div id="interactionListContent">
                     <div class="interaction-empty">Loading interactions...</div>
@@ -914,25 +917,27 @@
 
             <!-- Annotation Section -->
             <div id="annotationSection" class="card annotation-section">
-                <div class="card-header">Global Annotation</div>
-                <textarea id="globalAnnotation"
-                    placeholder="Optional note when provided options don't fully meet your needs"></textarea>
+                <div class="card-header" data-i18n="label.global_annotation">Global Annotation</div>
+                <textarea id="globalAnnotation" placeholder="Optional note"></textarea>
             </div>
 
             <!-- Keyboard Navigation Hint -->
             <div class="keyboard-hint">
-                <span><kbd>↑</kbd><kbd>↓</kbd>/<kbd>k</kbd><kbd>j</kbd> Navigate</span>
-                <span><kbd>Enter</kbd> Toggle selection</span>
-                <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Submit/Cancel with annotation</span>
-                <span><kbd>Shift</kbd>+<kbd>A</kbd> Focus annotation</span>
-                <span><kbd>Esc</kbd> Unfocus Textarea</span>
+                <span><kbd>↑</kbd><kbd>↓</kbd>/<kbd>k</kbd><kbd>j</kbd> <span
+                        data-i18n="hint.navigate">Navigate</span></span>
+                <span><kbd>Enter</kbd> <span data-i18n="hint.select">Select</span></span>
+                <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> <span data-i18n="hint.submit">Submit</span></span>
+                <span><kbd>Shift</kbd>+<kbd>A</kbd> <span data-i18n="hint.annotation">Annotation</span></span>
+                <span><kbd>Esc</kbd> <span data-i18n="hint.cancel">Cancel</span></span>
             </div>
 
             <!-- Actions -->
             <div class="actions">
-                <button id="submitBatchBtn" class="btn btn-primary" onclick="submitBatch()">Submit
+                <button id="submitBatchBtn" class="btn btn-primary" onclick="submitBatch()"
+                    data-i18n="action.submit">Submit
                     Selection</button>
-                <button id="cancelButton" class="btn btn-danger" onclick="submitCancel()">Cancel</button>
+                <button id="cancelButton" class="btn btn-danger" onclick="submitCancel()"
+                    data-i18n="action.cancel">Cancel</button>
             </div>
 
 
@@ -943,73 +948,95 @@
         <!-- Sidebar (Right) - Configuration Panel -->
         <div class="sidebar">
             <div class="card">
-                <div class="card-header config-toggle" onclick="toggleConfig()" id="configToggle">Configuration</div>
+                <div class="card-header config-toggle" onclick="toggleConfig()" id="configToggle"
+                    data-i18n="web.configuration">Configuration</div>
                 <div class="config-content" id="configContent">
                     <div class="config-grid">
-                        <div class="config-section-title">Web Portal Settings</div>
+                        <div class="config-section-title" data-i18n="web.portal_settings">Web Portal Settings</div>
 
                         <div class="config-item">
-                            <label class="config-label">Web Theme
-                                <select id="themeSelect" style="margin-left: auto;">
-                                    <option value="light">Light</option>
-                                    <option value="dark">Dark</option>
-                                    <option value="system">System</option>
+                            <label class="config-label" id="label-language">
+                                <span data-i18n="settings.language">Language</span>
+                                <select id="languageSelect" style="margin-left: auto;">
+                                    <option value="en" data-i18n="settings.language_en">English</option>
+                                    <option value="zh" data-i18n="settings.language_zh">中文</option>
                                 </select>
                             </label>
-                            <div class="config-desc">Switch between light, dark, or system theme.</div>
+                            <div class="config-desc" data-i18n="desc.language">Switch interface language.</div>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <span data-i18n="web.theme">Theme</span>
+                                <select id="themeSelect" style="margin-left: auto;">
+                                    <option value="light" data-i18n="web.theme_light">Light</option>
+                                    <option value="dark" data-i18n="web.theme_dark">Dark</option>
+                                    <option value="system" data-i18n="web.theme_system">System</option>
+                                </select>
+                            </label>
+                            <div class="config-desc" data-i18n="desc.theme">Switch between light, dark, or system theme.
+                            </div>
                         </div>
 
                         <div class="config-item" id="item-singleSubmitMode">
                             <label class="config-label">
                                 <input id="singleSubmitMode" type="checkbox" ${single_submit_checked} />
-                                Auto Submit on Single Selection Mode
+                                <span data-i18n="settings.single_submit">Auto Submit on Single Selection Mode</span>
                             </label>
-                            <div class="config-desc">
+                            <div class="config-desc" data-i18n="desc.single_submit">
                                 Automatically submit the selection as soon as an option is clicked
-                                <span class="config-tip">提示：开启时，请确认后再勾选选项</span>
                             </div>
                         </div>
 
                         <div class="config-item" id="item-useDefaultOption">
                             <label class="config-label">
                                 <input id="useDefaultOption" type="checkbox" />
-                                采用建议选项
+                                <span data-i18n="settings.timeout_default">Use recommended option</span>
                             </label>
-                            <div class="config-desc">
-                                自动勾选 AI 建议的选项
+                            <div class="config-desc" data-i18n="desc.timeout_default">
+                                Auto-select AI recommended options
                             </div>
                         </div>
 
 
 
-                        <div class="config-section-title">Global Settings</div>
+                        <div class="config-section-title" data-i18n="web.global_settings">Global Settings</div>
 
                         <div class="config-item">
-                            <label class="config-label">Transport
+                            <label class="config-label">
+                                <span data-i18n="settings.transport">Transport</span>
                                 <select id="transportSelect" style="margin-left: auto;">
                                     ${transport_options}
                                 </select>
                             </label>
-                            <div class="config-desc">The communication protocol used by the MCP server.</div>
+                            <div class="config-desc" data-i18n="desc.transport">The communication protocol used by the
+                                MCP server.</div>
                         </div>
 
                         <div class="config-item">
-                            <label class="config-label">Timeout (s)
+                            <label class="config-label">
+                                <span data-i18n="settings.timeout">Timeout (s)</span>
                                 <input id="timeoutInput" type="number" min="1" value="${timeout_value}"
                                     style="width:70px; margin-left: auto;" />
                             </label>
-                            <div class="config-desc">Time limit for making a choice before auto-action.</div>
+                            <div class="config-desc" data-i18n="desc.timeout">Time limit for making a choice before
+                                auto-action.</div>
                         </div>
 
                         <div class="config-item">
-                            <label class="config-label">Timeout Action
+                            <label class="config-label">
+                                <span data-i18n="settings.timeout_action">Timeout Action</span>
                                 <select id="timeoutActionSelect" style="margin-left: auto;">
-                                    <option value="submit">Auto-submit selected</option>
-                                    <option value="cancel">Auto-cancel</option>
-                                    <option value="reinvoke">Request re-invocation</option>
+                                    <option value="submit" data-i18n="settings.timeout_action_submit">Auto-submit
+                                        selected</option>
+                                    <option value="cancel" data-i18n="settings.timeout_action_cancel">Auto-cancel
+                                    </option>
+                                    <option value="reinvoke" data-i18n="settings.timeout_action_reinvoke">Request
+                                        re-invocation</option>
                                 </select>
                             </label>
-                            <div class="config-desc">Action to take when the timeout is reached.</div>
+                            <div class="config-desc" data-i18n="desc.timeout_action">Action to take when the timeout is
+                                reached.</div>
                         </div>
                     </div>
                 </div>
@@ -1019,11 +1046,85 @@
         <script type="application/json" id="mcp-defaults">${defaults_json}</script>
         <script type="application/json" id="mcp-options">${options_json}</script>
         <script type="application/json" id="mcp-session-state">${session_state_json}</script>
+        <script type="application/json" id="mcp-i18n">${i18n_json}</script>
         <script>
             const choiceId = '${choice_id}';
             const defaults = JSON.parse(document.getElementById('mcp-defaults').textContent);
             const options = JSON.parse(document.getElementById('mcp-options').textContent);
             const parsedSessionState = JSON.parse(document.getElementById('mcp-session-state').textContent || '{}');
+            const i18nTexts = JSON.parse(document.getElementById('mcp-i18n').textContent || '{}');
+            let currentLang = defaults.language || 'en';
+
+            // i18n helper function - gets text for current language
+            function t(key) {
+                const entry = i18nTexts[key];
+                if (entry && typeof entry === 'object') {
+                    return entry[currentLang] || entry['en'] || key;
+                }
+                return key;
+            }
+
+            // Section: Language Management
+            const languageSelect = document.getElementById('languageSelect');
+
+            function applyLanguage(lang) {
+                currentLang = lang;
+                if (languageSelect) languageSelect.value = lang;
+                localStorage.setItem('mcp-language', lang);
+                // Update static UI texts (dynamic elements are handled in render functions)
+                updateUITexts();
+            }
+
+            function updateUITexts() {
+                // Update all elements with data-i18n attribute
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    const text = t(key);
+                    if (text !== key) {
+                        // Handle different element types
+                        const tagName = el.tagName.toLowerCase();
+                        if (tagName === 'option') {
+                            // For option elements, set text directly
+                            el.textContent = text;
+                        } else if (tagName === 'input' && el.type === 'text') {
+                            // For text inputs, this shouldn't happen but handle it
+                            el.placeholder = text;
+                        } else if (el.querySelector('select, input')) {
+                            // Preserve child elements (like select) by only updating text nodes
+                            const childNodes = Array.from(el.childNodes);
+                            const textNode = childNodes.find(n => n.nodeType === Node.TEXT_NODE);
+                            if (textNode) {
+                                textNode.textContent = text + ' ';
+                            }
+                        } else {
+                            // For other elements, set text content directly
+                            el.textContent = text;
+                        }
+                    }
+                });
+
+                // Update annotation placeholder
+                const globalAnnotation = document.getElementById('globalAnnotation');
+                if (globalAnnotation) globalAnnotation.placeholder = t('terminal.global_annotation_prompt');
+
+                // Update interaction loading text
+                const interactionEmpty = document.querySelector('.interaction-empty');
+                if (interactionEmpty && interactionEmpty.textContent.includes('Loading')) {
+                    interactionEmpty.textContent = t('list.loading');
+                }
+
+                // Update status text based on connection state
+                const statusText = document.getElementById('statusText');
+                const connectionDot = document.getElementById('connectionDot');
+                if (statusText && connectionDot) {
+                    if (connectionDot.classList.contains('connected')) {
+                        statusText.textContent = t('status.connected');
+                    } else if (connectionDot.classList.contains('disconnected')) {
+                        statusText.textContent = t('status.disconnected');
+                    }
+                }
+            }
+
             let sessionState = parsedSessionState && typeof parsedSessionState === 'object' ? parsedSessionState : {};
             const promptType = '${prompt_type}';
             let placeholderVisible = defaults.placeholder_visibility !== false;
@@ -1081,6 +1182,10 @@
             const savedTheme = localStorage.getItem('mcp-theme') || 'system';
             applyTheme(savedTheme);
 
+            // Initialize language
+            const savedLang = localStorage.getItem('mcp-language') || defaults.language || 'en';
+            applyLanguage(savedLang);
+
             // Initialize timeout action
             const timeoutActionSelect = document.getElementById('timeoutActionSelect');
             if (timeoutActionSelect) {
@@ -1089,6 +1194,12 @@
 
             // Listen for manual changes
             themeSelect.addEventListener('change', (e) => applyTheme(e.target.value));
+            if (languageSelect) {
+                languageSelect.addEventListener('change', (e) => {
+                    applyLanguage(e.target.value);
+                    renderOptions(); // Re-render options with new language
+                });
+            }
 
             // Listen for system theme changes
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
@@ -1357,13 +1468,14 @@
 
                     const content = document.createElement('div');
                     content.className = 'option-content';
-                    const labelText = opt.recommended ? opt.id + ' (推荐选项)' : opt.id;
+                    const recommendedLabel = t('label.recommended');
+                    const labelText = opt.recommended ? opt.id + ' (' + recommendedLabel + ')' : opt.id;
                     content.innerHTML = '<div class="option-label">' + labelText + '</div><div class="option-desc">' + opt.description + '</div>';
                     block.appendChild(content);
 
                     const noteInput = document.createElement('input');
                     noteInput.type = 'text';
-                    noteInput.placeholder = 'Add note...';
+                    noteInput.placeholder = t('label.annotation');
                     noteInput.className = 'option-note';
                     noteInput.value = optionAnnotations[opt.id] || '';
                     noteInput.addEventListener('input', () => { optionAnnotations[opt.id] = noteInput.value; updateCancelBtn(); });

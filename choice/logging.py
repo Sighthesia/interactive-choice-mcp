@@ -21,12 +21,15 @@ __all__ = [
     "LOG_LEVEL_ENV",
     "LOG_FILE_ENV",
     "LOG_FORMAT_ENV",
+    "LANG_ENV",
+    "get_language_from_env",
 ]
 
 # Section: Environment Variable Names
 LOG_LEVEL_ENV = "CHOICE_LOG_LEVEL"
 LOG_FILE_ENV = "CHOICE_LOG_FILE"
 LOG_FORMAT_ENV = "CHOICE_LOG_FORMAT"
+LANG_ENV = "CHOICE_LANG"
 
 # Section: Default Configuration
 _DEFAULT_LOG_LEVEL = "INFO"
@@ -185,3 +188,24 @@ def get_session_logger(name: str, session_id: str) -> SessionLoggerAdapter:
     """
     base_logger = get_logger(name)
     return SessionLoggerAdapter(base_logger, session_id)
+
+
+# Section: Language Environment Helper
+def get_language_from_env() -> str | None:
+    """Read language preference from CHOICE_LANG environment variable.
+
+    Returns:
+        'en' or 'zh' if valid, None if not set or invalid (logs warning).
+    """
+    from .models import LANG_EN, VALID_LANGUAGES
+
+    lang_env = os.environ.get(LANG_ENV)
+    if lang_env is None:
+        return None
+    lang_env = lang_env.strip().lower()
+    if lang_env in VALID_LANGUAGES:
+        return lang_env
+    # Invalid value: log warning and return None (caller should fallback)
+    logger = get_logger(__name__)
+    logger.warning(f"Invalid CHOICE_LANG value '{lang_env}', falling back to English")
+    return None
