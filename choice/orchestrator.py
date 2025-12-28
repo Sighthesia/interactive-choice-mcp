@@ -4,8 +4,9 @@ import asyncio
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from .logging import get_logger
+from .logging import get_logger, get_language_from_env
 from .models import (
+    LANG_EN,
     ProvideChoiceConfig,
     ProvideChoiceRequest,
     ProvideChoiceResponse,
@@ -156,6 +157,16 @@ class ChoiceOrchestrator:
         timeout_default_enabled_pref = saved.timeout_default_enabled if saved else req.timeout_default_enabled
         use_default_option_pref = saved.use_default_option if saved else req.use_default_option
         timeout_action_pref = saved.timeout_action if saved else req.timeout_action
+
+        # Language: env > saved > default (en)
+        env_lang = get_language_from_env()
+        if env_lang is not None:
+            language_pref = env_lang
+        elif saved is not None:
+            language_pref = saved.language
+        else:
+            language_pref = LANG_EN
+
         return ProvideChoiceConfig(
             transport=transport_pref,
             timeout_seconds=timeout_pref,
@@ -164,6 +175,7 @@ class ChoiceOrchestrator:
             timeout_default_enabled=timeout_default_enabled_pref,
             use_default_option=use_default_option_pref,
             timeout_action=timeout_action_pref,
+            language=language_pref,
         )
 
 

@@ -9,6 +9,8 @@ from .models import (
     ProvideChoiceConfig,
     TRANSPORT_TERMINAL,
     VALID_TRANSPORTS,
+    LANG_EN,
+    VALID_LANGUAGES,
 )
 
 
@@ -79,6 +81,11 @@ class ConfigStore:
                 except Exception:
                     max_sessions = 100
 
+            # Language setting
+            language = raw.get("language")
+            if language not in VALID_LANGUAGES:
+                language = LANG_EN
+
             return ProvideChoiceConfig(
                 transport=transport,
                 timeout_seconds=timeout_seconds,
@@ -90,6 +97,7 @@ class ConfigStore:
                 persistence_enabled=persistence_enabled,
                 retention_days=retention_days,
                 max_sessions=max_sessions,
+                language=language,
             )
         except Exception:
             return None
@@ -107,6 +115,7 @@ class ConfigStore:
             "persistence_enabled": config.persistence_enabled,
             "retention_days": config.retention_days,
             "max_sessions": config.max_sessions,
+            "language": config.language,
         }
 
         try:
