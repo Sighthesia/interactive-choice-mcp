@@ -1198,6 +1198,7 @@
                 languageSelect.addEventListener('change', (e) => {
                     applyLanguage(e.target.value);
                     renderOptions(); // Re-render options with new language
+                    debouncedSaveSettings(); // Persist language setting
                 });
             }
 
@@ -1228,6 +1229,59 @@
                 toggle.classList.toggle('expanded');
                 content.classList.toggle('show');
             }
+
+            // Section: Global Settings Persistence
+            let saveSettingsTimer = null;
+
+            async function saveGlobalSettings() {
+                const config = {
+                    transport: document.getElementById('transportSelect')?.value || 'web',
+                    timeout_seconds: parseInt(document.getElementById('timeoutInput')?.value || '60', 10),
+                    single_submit_mode: document.getElementById('singleSubmitMode')?.checked || false,
+                    use_default_option: document.getElementById('useDefaultOption')?.checked || false,
+                    timeout_action: document.getElementById('timeoutActionSelect')?.value || 'submit',
+                    language: currentLang,
+                };
+                console.log('[Settings] Saving config:', config);
+                try {
+                    const res = await fetch('/api/config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(config),
+                    });
+                    if (!res.ok) {
+                        console.error('[Settings] Failed to save settings:', await res.text());
+                    } else {
+                        console.log('[Settings] Config saved successfully');
+                    }
+                } catch (e) {
+                    console.error('[Settings] Failed to save settings:', e);
+                }
+            }
+
+            function debouncedSaveSettings() {
+                console.log('[Settings] debouncedSaveSettings called');
+                if (saveSettingsTimer) clearTimeout(saveSettingsTimer);
+                saveSettingsTimer = setTimeout(saveGlobalSettings, 500);
+            }
+
+            // Add listeners to global settings controls (only for persistence, highlights handled elsewhere)
+            const transportEl = document.getElementById('transportSelect');
+            const singleSubmitEl = document.getElementById('singleSubmitMode');
+            const useDefaultEl = document.getElementById('useDefaultOption');
+            const timeoutActionEl = document.getElementById('timeoutActionSelect');
+
+            console.log('[Settings] Adding listeners. Elements found:', {
+                transport: !!transportEl,
+                singleSubmit: !!singleSubmitEl,
+                useDefault: !!useDefaultEl,
+                timeoutAction: !!timeoutActionEl
+            });
+
+            if (transportEl) transportEl.addEventListener('change', debouncedSaveSettings);
+            if (singleSubmitEl) singleSubmitEl.addEventListener('change', debouncedSaveSettings);
+            if (useDefaultEl) useDefaultEl.addEventListener('change', debouncedSaveSettings);
+            if (timeoutActionEl) timeoutActionEl.addEventListener('change', debouncedSaveSettings);
 
             // Section: Helpers
             function isSingleSubmit() {
@@ -1992,13 +2046,8 @@
             // updateTimeoutFromServer() when receiving the 'sync' message, which will
             // start the countdown with the correct remaining time from server
 
-            // When the user changes the timeout, restart the countdown using that value
-            document.getElementById('timeoutInput').addEventListener('change', (e) => {
-                if (hasFinalResult) return;  // Don't update timeout for completed sessions
-                const v = parseInt(e.target.value, 10);
-                startTimeout(v);
-                sendUpdateTimeout(v);
-            });
+            // When the user changes the timeout input, only persist to global config
+            document.getElementById('timeoutInput').addEventListener('change', debouncedSaveSettings);
 
             // Auto-focus options for keyboard navigation
             setTimeout(() => {

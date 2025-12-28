@@ -25,6 +25,7 @@ from ..models import (
     ProvideChoiceRequest,
     ProvideChoiceResponse,
     VALID_TRANSPORTS,
+    VALID_LANGUAGES,
     ValidationError,
     TRANSPORT_WEB,
 )
@@ -110,10 +111,29 @@ class WebChoiceServer:
             session = self.sessions.get(incoming_id)
             if not session:
                 raise HTTPException(status_code=404)
+            
+            # Merge session defaults with latest global config for UI display
+            # This ensures UI always shows the latest saved settings
+            from ..storage import ConfigStore
+            latest_config = ConfigStore().load()
+            display_defaults = session.effective_defaults()
+            if latest_config:
+                # Use latest global settings for display, but keep session-specific values
+                display_defaults = ProvideChoiceConfig(
+                    transport=latest_config.transport,
+                    timeout_seconds=latest_config.timeout_seconds,
+                    single_submit_mode=latest_config.single_submit_mode,
+                    timeout_default_enabled=latest_config.timeout_default_enabled,
+                    timeout_default_index=display_defaults.timeout_default_index,  # Keep session value
+                    use_default_option=latest_config.use_default_option,
+                    timeout_action=latest_config.timeout_action,
+                    language=latest_config.language,
+                )
+            
             html = _render_html(
                 req=session.req,
                 choice_id=session.choice_id,
-                defaults=session.effective_defaults(),
+                defaults=display_defaults,
                 allow_terminal=session.allow_terminal,
                 session_state=session.to_template_state(),
                 invocation_time=session.invocation_time,
@@ -261,6 +281,51 @@ class WebChoiceServer:
             except Exception as exc:
                 _logger.exception(f"Session {incoming_id[:8]} internal error: {exc}")
                 raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(exc)}") from exc
+
+        # Section: Global Config Endpoint
+        @app.post("/api/config")
+        async def update_global_config(payload: Dict[str, object]):  # noqa: ANN201
+            """Save global configuration settings.
+
+            This endpoint persists settings like transport, timeout, language, etc.
+            without requiring an active session.
+            """
+            from ..storage import ConfigStore
+            from ..models import ProvideChoiceRequest, ProvideChoiceOption, DEFAULT_TIMEOUT_SECONDS, TRANSPORT_TERMINAL
+
+            # Create a dummy request for config parsing (only needed for option count validation)
+            dummy_req = ProvideChoiceRequest(
+                title="",
+                prompt="",
+                selection_mode="single",
+                options=[ProvideChoiceOption(id="dummy", description="")],
+                timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
+            )
+
+            try:
+                store = ConfigStore()
+                current_config = store.load() or ProvideChoiceConfig(
+                    transport=TRANSPORT_TERMINAL,
+                    timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
+                )
+                parsed_config = _parse_config_payload(current_config, payload, dummy_req)
+                store.save(parsed_config)
+                _logger.info(f"Global config saved: transport={parsed_config.transport}, timeout={parsed_config.timeout_seconds}")
+                return JSONResponse({
+                    "status": "ok",
+                    "config": {
+                        "transport": parsed_config.transport,
+                        "timeout_seconds": parsed_config.timeout_seconds,
+                        "single_submit_mode": parsed_config.single_submit_mode,
+                        "timeout_default_enabled": parsed_config.timeout_default_enabled,
+                        "use_default_option": parsed_config.use_default_option,
+                        "timeout_action": parsed_config.timeout_action,
+                        "language": parsed_config.language,
+                    },
+                })
+            except Exception as exc:
+                _logger.exception(f"Failed to save global config: {exc}")
+                raise HTTPException(status_code=500, detail=f"Failed to save config: {str(exc)}") from exc
 
         # Section: Terminal Hand-off Endpoints
         @app.get("/terminal/{session_id}")
@@ -694,6 +759,12 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
     if isinstance(timeout_action_raw, str):
         timeout_action = timeout_action_raw
 
+    # Parse language field
+    language_raw = payload.get("language")
+    language = defaults.language
+    if isinstance(language_raw, str) and language_raw in VALID_LANGUAGES:
+        language = language_raw
+
     return ProvideChoiceConfig(
         transport=transport,
         timeout_seconds=timeout_val,
@@ -702,6 +773,7 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
         timeout_default_index=timeout_default_idx,
         use_default_option=use_default_option,
         timeout_action=timeout_action,
+        language=language,
     )
 
 
