@@ -13,30 +13,35 @@ import time
 import uuid
 import webbrowser
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, cast
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from ..logging import get_logger, get_session_logger
+from ..interaction_store import PersistedSession
 from ..models import (
+    ProvideChoiceOption,
     ProvideChoiceConfig,
     ProvideChoiceRequest,
     ProvideChoiceResponse,
+    InteractionStatus,
     VALID_TRANSPORTS,
     VALID_LANGUAGES,
     ValidationError,
+    DEFAULT_TIMEOUT_SECONDS,
     TRANSPORT_WEB,
 )
 from ..response import cancelled_response as cancelled_response_fn, normalize_response, timeout_response
 from ..validation import apply_configuration as apply_configuration_fn
-from .session import ChoiceSession, _deadline_from_seconds
+from .session import ChoiceSession, _deadline_from_seconds, _remaining_seconds
 from .templates import _render_dashboard, _render_html
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..terminal.session import TerminalSession
+    from ..interaction_store import PersistedSession
 
 __all__ = [
     "WebChoiceServer",
@@ -82,7 +87,7 @@ def _find_free_port(host: str, port: int) -> int:
 
 
 # Section: Constants
-_MAX_RECENT_COMPLETED = 5  # Maximum number of recent completed interactions to keep
+_MAX_RECENT_COMPLETED = 10  # Maximum number of completed interactions to surface in the sidebar
 
 
 class WebChoiceServer:
@@ -109,34 +114,90 @@ class WebChoiceServer:
         @app.get("/choice/{incoming_id}")
         async def choice_page(incoming_id: str):  # noqa: ANN201
             session = self.sessions.get(incoming_id)
+            persisted_session: PersistedSession | None = None
             if not session:
-                raise HTTPException(status_code=404)
-            
-            # Merge session defaults with latest global config for UI display
-            # This ensures UI always shows the latest saved settings
-            from ..storage import ConfigStore
-            latest_config = ConfigStore().load()
-            display_defaults = session.effective_defaults()
-            if latest_config:
-                # Use latest global settings for display, but keep session-specific values
-                display_defaults = ProvideChoiceConfig(
-                    transport=latest_config.transport,
-                    timeout_seconds=latest_config.timeout_seconds,
-                    single_submit_mode=latest_config.single_submit_mode,
-                    timeout_default_enabled=latest_config.timeout_default_enabled,
-                    timeout_default_index=display_defaults.timeout_default_index,  # Keep session value
-                    use_default_option=latest_config.use_default_option,
-                    timeout_action=latest_config.timeout_action,
-                    language=latest_config.language,
+                from ..interaction_store import get_interaction_store
+
+                store = get_interaction_store()
+                persisted_session = store.get_by_id(incoming_id)
+                if (
+                    not persisted_session
+                    or not persisted_session.result
+                    or persisted_session.transport != TRANSPORT_WEB
+                ):
+                    raise HTTPException(status_code=404)
+                assert persisted_session is not None
+                persisted_session = cast(PersistedSession, persisted_session)
+
+            if session:
+                req = session.req
+                allow_terminal = session.allow_terminal
+                invocation_time = session.invocation_time
+                # Merge session defaults with latest global config for UI display
+                # This ensures UI always shows the latest saved settings
+                from ..storage import ConfigStore
+                latest_config = ConfigStore().load()
+                display_defaults = session.effective_defaults()
+                if latest_config:
+                    # Use latest global settings for display, but keep session-specific values
+                    display_defaults = ProvideChoiceConfig(
+                        transport=latest_config.transport,
+                        timeout_seconds=latest_config.timeout_seconds,
+                        single_submit_mode=latest_config.single_submit_mode,
+                        timeout_default_enabled=latest_config.timeout_default_enabled,
+                        timeout_default_index=display_defaults.timeout_default_index,  # Keep session value
+                        use_default_option=latest_config.use_default_option,
+                        timeout_action=latest_config.timeout_action,
+                        language=latest_config.language,
+                    )
+                session_state = session.to_template_state()
+                choice_id = session.choice_id
+            else:
+                persisted = cast(PersistedSession, persisted_session)
+                timeout_value = persisted.timeout_seconds or DEFAULT_TIMEOUT_SECONDS
+                options = [
+                    ProvideChoiceOption(
+                        id=str(opt.get("id", "")),
+                        description=str(opt.get("description", "")),
+                        recommended=bool(opt.get("recommended", False)),
+                    )
+                    for opt in (persisted.options or [])
+                ]
+                req = ProvideChoiceRequest(
+                    title=persisted.title,
+                    prompt=persisted.prompt,
+                    selection_mode=persisted.selection_mode,
+                    options=options,
+                    timeout_seconds=timeout_value,
                 )
-            
+                display_defaults = ProvideChoiceConfig(
+                    transport=TRANSPORT_WEB,
+                    timeout_seconds=timeout_value,
+                )
+                if isinstance(persisted.result, dict):
+                    selection = persisted.result.get("selection", {})
+                    action_status = str(persisted.result.get("action_status", "submitted"))
+                else:
+                    selection = {}
+                    action_status = "submitted"
+                session_state = {
+                    "status": InteractionStatus.from_action_status(action_status).value,
+                    "action_status": action_status,
+                    "selected_indices": selection.get("selected_indices", []),
+                    "option_annotations": selection.get("option_annotations", {}),
+                    "global_annotation": selection.get("global_annotation"),
+                }
+                allow_terminal = False
+                invocation_time = persisted.started_at
+                choice_id = persisted.session_id
+
             html = _render_html(
-                req=session.req,
-                choice_id=session.choice_id,
+                req=req,
+                choice_id=choice_id,
                 defaults=display_defaults,
-                allow_terminal=session.allow_terminal,
-                session_state=session.to_template_state(),
-                invocation_time=session.invocation_time,
+                allow_terminal=allow_terminal,
+                session_state=session_state,
+                invocation_time=invocation_time,
             )
             return HTMLResponse(
                 content=html,
@@ -161,6 +222,8 @@ class WebChoiceServer:
                 "selected_indices": status_payload.get("selected_indices"),
                 "option_annotations": status_payload.get("option_annotations"),
                 "global_annotation": status_payload.get("global_annotation"),
+                "remaining_seconds": _remaining_seconds(session.deadline),
+                "timeout_seconds": session.config_used.timeout_seconds,
             })
             await session.broadcast_sync()
             try:
@@ -529,6 +592,7 @@ class WebChoiceServer:
         _logger.info(f"Starting web server on http://{self.host}:{self.port}")
         config = uvicorn.Config(self.app, host=self.host, port=self.port, log_level="error")
         self._server = uvicorn.Server(config)
+        assert self._server is not None
         self._server_task = asyncio.create_task(self._server.serve())
         if self._cleanup_task is None or self._cleanup_task.done():
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
@@ -594,9 +658,12 @@ class WebChoiceServer:
 
         entries: list[InteractionEntry] = []
 
-        # Collect web sessions
+        # Collect web sessions (always use current host/port relative URL)
         for session in self.sessions.values():
-            entries.append(session.to_interaction_entry())
+            entry = session.to_interaction_entry()
+            if entry.transport == TRANSPORT_WEB:
+                entry.url = f"/choice/{entry.session_id}"
+            entries.append(entry)
 
         # Collect terminal sessions
         terminal_store = get_terminal_session_store()
@@ -611,7 +678,15 @@ class WebChoiceServer:
         # Get persisted historical sessions (exclude those already in memory)
         store = get_interaction_store()
         persisted = store.get_recent(limit=_MAX_RECENT_COMPLETED)
-        historical = [e for e in persisted if e.session_id not in in_memory_ids]
+        historical: list[InteractionEntry] = []
+        for entry in persisted:
+            if entry.session_id in in_memory_ids:
+                continue
+            if entry.transport == TRANSPORT_WEB:
+                entry.url = f"/choice/{entry.session_id}"
+            else:
+                entry.url = None
+            historical.append(entry)
 
         # Combine completed sessions from both sources
         all_completed = in_memory_completed + historical

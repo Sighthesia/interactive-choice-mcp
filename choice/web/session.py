@@ -140,6 +140,8 @@ class ChoiceSession:
             status = InteractionStatus.from_action_status(self.final_result.action_status)
         else:
             status = InteractionStatus.PENDING
+        remaining = _remaining_seconds(self.deadline) if status == InteractionStatus.PENDING else None
+        timeout_total = self.config_used.timeout_seconds if status == InteractionStatus.PENDING else None
         return InteractionEntry(
             session_id=self.choice_id,
             title=self.req.title,
@@ -147,6 +149,8 @@ class ChoiceSession:
             status=status,
             started_at=self.invocation_time,
             url=self.url,
+            remaining_seconds=remaining,
+            timeout_seconds=timeout_total,
         )
 
     def is_expired(self, now: float) -> bool:
