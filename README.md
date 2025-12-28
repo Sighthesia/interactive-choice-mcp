@@ -81,6 +81,38 @@
 }
 ```
 
+### 环境变量
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `CHOICE_WEB_HOST` | `127.0.0.1` | Web 服务器绑定地址。设置为 `0.0.0.0` 可允许外部访问 |
+| `CHOICE_WEB_PORT` | `17863` | Web 服务器端口。如果端口被占用会自动选择空闲端口 |
+| `CHOICE_LOG_LEVEL` | `INFO` | 日志级别：`DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| `CHOICE_LOG_FILE` | (无) | 日志文件路径。不设置则只输出到 stderr |
+
+**完整环境变量配置示例：**
+```json
+{
+  "mcpServers": {
+    "interactive-choice": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/path/to/interactive-choice-mcp",
+        "run",
+        "server.py"
+      ],
+      "env": {
+        "CHOICE_WEB_HOST": "0.0.0.0",
+        "CHOICE_WEB_PORT": "18000",
+        "CHOICE_LOG_LEVEL": "DEBUG",
+        "CHOICE_LOG_FILE": "~/.local/share/interactive-choice-mcp/server.log"
+      }
+    }
+  }
+}
+```
+
 ### 工具定义：`provide_choice`
 
 AI 代理可以调用此工具来请求用户输入。
