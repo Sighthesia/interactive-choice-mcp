@@ -30,7 +30,7 @@ The terminal UI SHALL display invocation time and timeout countdown, support `j`
 - **THEN** they can update persisted global/terminal UI settings and choose to switch this interaction to the web transport, which cancels the terminal session and starts a web session with the same request/options.
 
 ### Requirement: Web Bridge Flow
-The system SHALL provide a transient FastAPI-based web portal as a fallback or when explicitly requested, exposing a local URL (e.g., `http://localhost:<port>/choice/<id>`), opening the browser when possible, collecting the choice via WebSocket or long-poll, and shutting down after completion. **The system SHALL use WebSocket to synchronize the remaining timeout duration between the server and the client in real-time, SHALL support browser notifications for timeout alerts, and SHALL provide a dashboard to list and re-enter active interactions.**
+The system SHALL provide a transient FastAPI-based web portal as a fallback or when explicitly requested, exposing a local URL (e.g., `http://localhost:<port>/choice/<id>`), opening the browser when possible, collecting the choice via WebSocket or long-poll, and shutting down after completion. **The system SHALL use WebSocket to synchronize the remaining timeout duration between the server and the client in real-time, SHALL support browser notifications for timeout alerts, and SHALL render a left-side interaction list (temporarily replacing the standalone dashboard) that surfaces active interactions plus the five most recent completed ones with their status (pending, submitted, auto-submitted, cancelled, timeout) and transport type (web, terminal), supports filters such as active vs completed, and supports multiple concurrent agent-triggered interactions without cross-contamination.**
 
 #### Scenario: WebSocket synchronization succeeds
 - **WHEN** the web portal is loaded and a WebSocket connection is established
@@ -46,7 +46,7 @@ The system SHALL provide a transient FastAPI-based web portal as a fallback or w
 
 #### Scenario: Interaction list shows status and type
 - **WHEN** the choice page renders
-- **THEN** the left-side list displays each active interaction and the five most recent completed interactions with badges for status (pending, submitted, auto-submitted, cancelled, timeout) and transport type (web or terminal), including started time so users can pick the correct session.
+- **THEN** the left-side list displays each active interaction and the five most recent completed interactions with badges for status (pending, submitted, auto-submitted, cancelled, timeout) and transport type (web or terminal), including started time or relative age so users can pick the correct session.
 
 #### Scenario: Filtering interactions
 - **WHEN** a user switches the interaction list filter (e.g., active vs completed)
@@ -55,6 +55,14 @@ The system SHALL provide a transient FastAPI-based web portal as a fallback or w
 #### Scenario: Concurrent web sessions are isolated
 - **WHEN** multiple agents or tool calls create more than one web interaction concurrently
 - **THEN** each session appears as a distinct entry in the left-side list, status updates for one session do not overwrite others, and selecting an entry routes to that session while preserving its timeout and state without leaking data across sessions.
+
+### Requirement: REQ-INTERACTION-LIST Interaction List Includes History
+The interaction list endpoint MUST include persisted historical sessions.
+
+#### Scenario: Historical sessions in list
+- **Given**: Persisted sessions exist in storage
+- **When**: Client requests interaction list
+- **Then**: Response includes both active and historical sessions (limited to configured count)
 
 ### Requirement: Timeout and Cancel Handling
 The system SHALL enforce a bounded wait with a configurable timeout (default 5 minutes) for user input across transports, SHALL honor cancellations with cancel always visible/enabled (no toggle to hide it), and SHALL return `timeout` or `cancelled` action statuses without executing further actions. **In the web transport, the timeout deadline SHALL be dynamically adjustable, and the server SHALL maintain the authoritative expiration time.**
@@ -109,4 +117,36 @@ The system SHALL present interaction settings before prompting that let users sw
 - Given a consuming module imports `choice.models.parse_request`,
 - When the implementation is moved to `choice/validation.py` and `choice/models.py` exposes a proxy,
 - Then the existing import path continues to work and tests verify identical behavior.
+
+### Requirement: REQ-PERSIST-01 Session Persistence
+The system MUST persist completed sessions to local storage.
+
+#### Scenario: Session saved after completion
+- **Given**: A web or terminal session is completed
+- **When**: The session result is finalized
+- **Then**: The session data is written to disk
+
+### Requirement: REQ-PERSIST-02 Historical Session Loading
+The system MUST load historical sessions on server startup.
+
+#### Scenario: Server restart preserves history
+- **Given**: Completed sessions exist in storage
+- **When**: The server starts
+- **Then**: Historical sessions appear in the interaction list
+
+### Requirement: REQ-PERSIST-03 Retention Policy
+The system MUST automatically clean up sessions based on retention policy.
+
+#### Scenario: Expired sessions removed
+- **Given**: Sessions older than retention period exist
+- **When**: Cleanup runs (on startup or periodically)
+- **Then**: Expired sessions are removed from storage
+
+### Requirement: REQ-PERSIST-04 Session Count Limit
+The system MUST enforce a maximum session count limit.
+
+#### Scenario: Oldest sessions removed when limit exceeded
+- **Given**: Number of stored sessions equals max limit
+- **When**: A new session is saved
+- **Then**: The oldest session is removed to make room
 
