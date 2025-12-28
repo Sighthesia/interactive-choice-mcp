@@ -45,7 +45,8 @@ class PersistedSession:
     result: Optional[dict]  # ProvideChoiceResponse as dict
     started_at: str  # ISO 8601
     completed_at: Optional[str]  # ISO 8601
-    url: Optional[str]
+    timeout_seconds: Optional[int] = None
+    url: Optional[str] = None
 
     def to_interaction_entry(self) -> InteractionEntry:
         """Convert to an InteractionEntry for the sidebar list."""
@@ -77,6 +78,7 @@ class PersistedSession:
             "result": self.result,
             "started_at": self.started_at,
             "completed_at": self.completed_at,
+            "timeout_seconds": self.timeout_seconds,
             "url": self.url,
         }
 
@@ -93,6 +95,7 @@ class PersistedSession:
             result=data.get("result"),
             started_at=data["started_at"],
             completed_at=data.get("completed_at"),
+            timeout_seconds=data.get("timeout_seconds"),
             url=data.get("url"),
         )
 
@@ -211,6 +214,14 @@ class InteractionStore:
                 },
             }
 
+        # Use relative URL to avoid stale host/port when rendering historical entries
+        stored_url = None
+        stored_timeout = req.timeout_seconds if hasattr(req, "timeout_seconds") else None
+        if transport == "web":
+            stored_url = f"/choice/{session_id}"
+        elif url:
+            stored_url = url
+
         session = PersistedSession(
             session_id=session_id,
             title=req.title,
@@ -221,7 +232,8 @@ class InteractionStore:
             result=result_dict,
             started_at=started_at,
             completed_at=completed_at,
-            url=url,
+            timeout_seconds=stored_timeout,
+            url=stored_url,
         )
 
         # Remove existing entry with same ID (update case)

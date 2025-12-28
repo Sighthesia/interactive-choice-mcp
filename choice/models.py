@@ -130,10 +130,12 @@ class InteractionEntry:
     status: InteractionStatus
     started_at: str  # ISO 8601 formatted datetime string
     url: Optional[str] = None
+    remaining_seconds: Optional[float] = None
+    timeout_seconds: Optional[int] = None
 
     def to_dict(self) -> dict:
         """Convert to a JSON-serializable dictionary."""
-        return {
+        payload = {
             "session_id": self.session_id,
             "title": self.title,
             "transport": self.transport,
@@ -141,6 +143,11 @@ class InteractionEntry:
             "started_at": self.started_at,
             "url": self.url,
         }
+        if self.remaining_seconds is not None:
+            payload["remaining_seconds"] = self.remaining_seconds
+        if self.timeout_seconds is not None:
+            payload["timeout_seconds"] = self.timeout_seconds
+        return payload
 
 
 VALID_SELECTION_MODES = {"single", "multi"}
