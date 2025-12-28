@@ -18,7 +18,7 @@ from .terminal import is_terminal_available, run_terminal_choice
 from .terminal import prompt_configuration as prompt_terminal_configuration
 from .validation import apply_configuration, parse_request
 from .response import cancelled_response, timeout_response
-from .web import run_web_choice
+from .web import run_web_choice, create_terminal_handoff_session, poll_terminal_session_result
 
 _logger = get_logger(__name__)
 
@@ -32,6 +32,7 @@ class ChoiceOrchestrator:
     1. Validating the incoming request.
     2. Determining the best available transport (Terminal vs Web).
     3. Executing the interaction on the chosen transport.
+    4. Supporting terminal hand-off for non-blocking MCP invocations.
     """
     def __init__(self, *, config_path: Optional[Path] = None) -> None:
         self._store = ConfigStore(path=config_path)
@@ -52,14 +53,39 @@ class ChoiceOrchestrator:
         timeout_default_enabled: Optional[bool] = None,
         use_default_option: Optional[bool] = None,
         timeout_action: Optional[str] = None,
+        # Terminal hand-off support
+        session_id: Optional[str] = None,
     ) -> ProvideChoiceResponse:
         """
         Process a choice request from start to finish.
         
         Validates inputs, selects transport, and awaits user action.
+        
+        When `session_id` is provided, polls for the result of an existing
+        terminal hand-off session instead of creating a new interaction.
         """
         _logger.info(f"Handling choice request: title='{title}', mode={selection_mode}, options={len(options)}")
 
+        # Section: Session Polling
+        # If session_id is provided, poll for result of existing terminal session.
+        # The poll function blocks for up to 30s waiting for the result,
+        # reducing the need for frequent polling by the AI agent.
+        if session_id is not None:
+            result = await poll_terminal_session_result(session_id, wait_seconds=30)
+            if result is not None:
+                return result
+            # Session not found (expired or invalid)
+            from .models import ProvideChoiceSelection
+            return ProvideChoiceResponse(
+                action_status="cancelled",
+                selection=ProvideChoiceSelection(
+                    selected_indices=[],
+                    transport=TRANSPORT_TERMINAL,
+                    summary=f"Session {session_id} not found or expired. Please create a new session.",
+                ),
+            )
+
+        # Section: Request Validation
         # Step 1: Validate and parse the request payload.
         req: ProvideChoiceRequest = parse_request(
             title=title,
@@ -77,12 +103,9 @@ class ChoiceOrchestrator:
         _logger.debug(f"Request parsed successfully")
 
         config_defaults = self._build_default_config(req)
-        # If terminal is unavailable, force web transport.
-        if config_defaults.transport == TRANSPORT_TERMINAL and not is_terminal_available():
-            _logger.info("Terminal unavailable, forcing web transport")
-            config_defaults.transport = TRANSPORT_WEB
 
-        # Step 2: Collect configuration surface based on transport availability.
+        # If the caller prefers terminal transport and a local terminal is available,
+        # use the in-process interactive configuration flow (preserves previous behaviour).
         if config_defaults.transport == TRANSPORT_TERMINAL and is_terminal_available():
             _logger.debug("Using terminal transport")
             config = await prompt_terminal_configuration(req, defaults=config_defaults, allow_web=True)
@@ -107,6 +130,13 @@ class ChoiceOrchestrator:
             self._last_config = config
             _logger.info(f"Choice completed via terminal: action={response.action_status}")
             return response
+
+        # If terminal transport is requested but a local terminal isn't available,
+        # create a terminal hand-off session so the agent can launch the terminal UI externally.
+        if config_defaults.transport == TRANSPORT_TERMINAL:
+            self._store.save(config_defaults)
+            self._last_config = config_defaults
+            return await create_terminal_handoff_session(req, config_defaults)
 
         _logger.debug("Using web transport")
         response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=False)
@@ -164,7 +194,9 @@ async def safe_handle(orchestrator: ChoiceOrchestrator, **kwargs) -> ProvideChoi
         _logger.exception(f"Unexpected error during orchestration: {exc}")
         # We try to parse the request to get the req object for timeout_response
         try:
-            req = parse_request(**kwargs)
+            # Filter out session_id as it's not part of parse_request
+            parse_kwargs = {k: v for k, v in kwargs.items() if k != "session_id"}
+            req = parse_request(**parse_kwargs)
             return timeout_response(req=req, transport=kwargs.get("transport") or TRANSPORT_TERMINAL, url=None)
         except Exception:
             # If even parsing fails, we can't use timeout_response properly, return cancelled

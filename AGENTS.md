@@ -74,12 +74,6 @@ session_logger.info("User submitted selection")  # 输出: [abc123de] User submi
 2. 设置 `CHOICE_LOG_FILE` 持久化日志用于事后分析
 3. 日志文件支持自动轮转（10MB，保留 5 份）
 
-### MCP Inspector
-使用 MCP Inspector 进行交互式调试：
-```bash
-uv run mcp dev server.py
-```
-
 ## 📏 编码约定 (Conventions)
 - **逻辑分段**: 使用 `// Section: Section Name` 注释来分隔文件中的逻辑块。
 - **模型定义**: 必须在 [choice/models.py](choice/models.py) 中使用 `@dataclass` 定义新模型。
@@ -93,6 +87,18 @@ uv run mcp dev server.py
 ## 🔗 集成要点 (Integration)
 - **FastMCP**: 使用 `@mcp.tool()` 注册工具。
 - **Web Bridge**: Web 模式是短寿命的，任务完成后应确保服务器关闭。
+- **Terminal Hand-off**: 
+  - 当 `provide_choice` 以终端传输方式调用时，工具立即返回 `action_status: pending_terminal_launch`
+  - 响应包含 `terminal_command` 字段，这是一个可直接执行的 CLI 命令
+  - 代理应在终端执行该命令以打开交互式 UI
+  - 随后使用返回的 `session_id` 再次调用 `provide_choice` 以轮询最终结果
+  - **轮询阻塞**：轮询调用会阻塞等待最多 30 秒，减少频繁轮询的需要
+  - 注意：会话为单次使用并受 `timeout_seconds` 控制
+- **终端客户端参数**:
+  - `--session` / `-s`: 会话 ID（必需）
+  - `--url` / `-u`: 服务器 URL（必需）
+  - `--annotate` / `-a`: 启用注释功能
+  - `--quiet` / `-q`: 静默模式（不显示选项描述)
 - **OpenSpec**: 修改架构或引入重大变更前，必须参考或更新 [openspec/](openspec/) 中的提案。
 
 ## 📂 关键文件参考

@@ -7,7 +7,7 @@
 ## ✨ 特性
 
 - **双模式交互**：
-  - **终端模式 (Terminal)**：使用 ANSI 交互式菜单（基于 `questionary`），支持键盘导航。
+  - **终端模式 (Terminal Hand-off)**：工具返回一个启动命令，AI 代理在终端中执行该命令以打开交互式 UI（基于 `questionary`）。
   - **Web 模式 (Web Bridge)**：自动启动临时本地 Web 服务器，允许用户在浏览器中进行选择（适用于不支持终端交互的环境）。
 - **多种选择类型**：
   - `single`: 单选。
@@ -91,22 +91,72 @@ AI 代理可以调用此工具来请求用户输入。
 - `prompt` (string): 向用户展示的提示信息，应包含上下文。
 - `selection_mode` (string): 选择模式 (`single`, `multi`)。
 - `options` (array): 选项列表，每个选项包含 `id`、`description`、`recommended` (至少一个需要为 `true`)。
-- `transport` (string, optional): 强制指定传输方式 (`terminal` 或 `web`)。
-- `timeout_seconds` (integer, optional): 超时时间（秒）。
+- `session_id` (string, optional): 用于轮询已创建的终端会话的结果。
 
+### Terminal Hand-off 流程
+
+当工具返回 `action_status: pending_terminal_launch` 时：
+
+1. 从响应的 `terminal_command` 字段获取 CLI 命令
+2. AI 代理在终端中执行该命令以打开交互式 UI
+3. 用户在终端 UI 中完成选择
+4. AI 代理使用 `session_id` 再次调用 `provide_choice` 来获取最终结果
+   - **注意**：轮询会阻塞等待最多 30 秒，减少频繁轮询的需要
+
+示例响应：
+```json
+{
+  "action_status": "pending_terminal_launch",
+  "terminal_command": "uv run python -m choice.terminal.client --session abc123 --url http://127.0.0.1:17863",
+  "session_id": "abc123",
+  "url": "http://127.0.0.1:17863/terminal/abc123",
+  "instructions": "1. Run the terminal_command in a terminal\n2. Wait for user to complete the interaction\n3. Call provide_choice again with session_id='abc123' to get the result"
+}
+```
+
+### 终端客户端选项
+
+```bash
+# 基本用法
+uv run python -m choice.terminal.client --session <id> --url <url>
+
+# 启用注释功能（允许用户为选择添加备注）
+uv run python -m choice.terminal.client --session <id> --url <url> --annotate
+
+# 静默模式（不显示选项描述预览）
+uv run python -m choice.terminal.client --session <id> --url <url> --quiet
+```
+
+终端 UI 特性：
+- 清晰的标题、提示和超时显示
+- 选项描述预览
+- 键盘导航提示（↑/↓ 导航，Enter 确认，Space 多选切换，Ctrl+C 取消）
+- 默认跳过注释步骤（使用 `--annotate` 启用）
+
+注意：终端会话为**单次使用**（完成后会清理），如果没有客户端在 `timeout_seconds` 时间内附着并提交结果，会话将自动过期并在轮询时返回 `timeout` 响应。
 ## 🛠️ 开发
 
 ### 项目结构
 
 ```
 interactive-choice-mcp/
-├── server.py              # MCP 服务器入口
+├── server.py                  # MCP 服务器入口
 ├── choice/
-│   ├── orchestrator.py    # 调度器：决定使用终端还是 Web
-│   ├── models.py          # 数据模型与验证
-│   ├── terminal.py        # 终端交互实现 (questionary)
-│   └── web.py             # Web 交互实现 (FastAPI)
-└── openspec/              # 项目规范文档
+│   ├── orchestrator.py        # 调度器：决定使用终端还是 Web
+│   ├── models.py              # 数据模型与验证
+│   ├── response.py            # 响应归一化
+│   ├── storage.py             # 配置持久化
+│   ├── validation.py          # 请求验证
+│   ├── terminal/
+│   │   ├── runner.py          # 终端交互实现
+│   │   ├── session.py         # 终端会话管理
+│   │   ├── client.py          # 终端客户端 CLI
+│   │   └── ui.py              # 终端 UI 构建
+│   └── web/
+│       ├── server.py          # Web 服务器实现
+│       ├── session.py         # Web 会话管理
+│       └── templates.py       # HTML 模板
+└── openspec/                  # 项目规范文档
 ```
 ### 运行测试
 使用 pytest 运行测试套件，请先确保安装了 pytest ：
