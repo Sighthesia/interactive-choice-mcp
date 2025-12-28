@@ -36,7 +36,7 @@ from ..models import (
 from ..response import cancelled_response as cancelled_response_fn, normalize_response, timeout_response
 from ..validation import apply_configuration as apply_configuration_fn
 from .session import ChoiceSession, _deadline_from_seconds, _remaining_seconds
-from .templates import _render_dashboard, _render_html
+from .templates import _render_html
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -105,12 +105,6 @@ class WebChoiceServer:
 
     def _register_routes(self) -> None:
         app = self.app
-
-        @app.get("/")
-        async def dashboard() -> HTMLResponse:  # noqa: ANN201
-            html = _render_dashboard(self.sessions.values())
-            return HTMLResponse(html)
-
         @app.get("/choice/{incoming_id}")
         async def choice_page(incoming_id: str):  # noqa: ANN201
             session = self.sessions.get(incoming_id)
@@ -384,6 +378,14 @@ class WebChoiceServer:
                         "use_default_option": parsed_config.use_default_option,
                         "timeout_action": parsed_config.timeout_action,
                         "language": parsed_config.language,
+                        "notify_new": parsed_config.notify_new,
+                        "notify_upcoming": parsed_config.notify_upcoming,
+                        "upcoming_threshold": parsed_config.upcoming_threshold,
+                        "notify_timeout": parsed_config.notify_timeout,
+                        "notify_if_foreground": parsed_config.notify_if_foreground,
+                        "notify_if_focused": parsed_config.notify_if_focused,
+                        "notify_if_background": parsed_config.notify_if_background,
+                        "notify_sound": parsed_config.notify_sound,
                     },
                 })
             except Exception as exc:
@@ -840,6 +842,43 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
     if isinstance(language_raw, str) and language_raw in VALID_LANGUAGES:
         language = language_raw
 
+    # Parse notification fields
+    notify_new = payload.get("notify_new")
+    if not isinstance(notify_new, bool):
+        notify_new = defaults.notify_new
+
+    notify_upcoming = payload.get("notify_upcoming")
+    if not isinstance(notify_upcoming, bool):
+        notify_upcoming = defaults.notify_upcoming
+
+    upcoming_threshold_raw = payload.get("upcoming_threshold")
+    upcoming_threshold = defaults.upcoming_threshold
+    if isinstance(upcoming_threshold_raw, (int, float, str)):
+        try:
+            upcoming_threshold = int(upcoming_threshold_raw)
+        except Exception:
+            upcoming_threshold = defaults.upcoming_threshold
+
+    notify_timeout = payload.get("notify_timeout")
+    if not isinstance(notify_timeout, bool):
+        notify_timeout = defaults.notify_timeout
+
+    notify_if_foreground = payload.get("notify_if_foreground")
+    if not isinstance(notify_if_foreground, bool):
+        notify_if_foreground = defaults.notify_if_foreground
+
+    notify_if_focused = payload.get("notify_if_focused")
+    if not isinstance(notify_if_focused, bool):
+        notify_if_focused = defaults.notify_if_focused
+
+    notify_if_background = payload.get("notify_if_background")
+    if not isinstance(notify_if_background, bool):
+        notify_if_background = defaults.notify_if_background
+
+    notify_sound = payload.get("notify_sound")
+    if not isinstance(notify_sound, bool):
+        notify_sound = defaults.notify_sound
+
     return ProvideChoiceConfig(
         transport=transport,
         timeout_seconds=timeout_val,
@@ -849,6 +888,14 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
         use_default_option=use_default_option,
         timeout_action=timeout_action,
         language=language,
+        notify_new=notify_new,
+        notify_upcoming=notify_upcoming,
+        upcoming_threshold=upcoming_threshold,
+        notify_timeout=notify_timeout,
+        notify_if_foreground=notify_if_foreground,
+        notify_if_focused=notify_if_focused,
+        notify_if_background=notify_if_background,
+        notify_sound=notify_sound,
     )
 
 

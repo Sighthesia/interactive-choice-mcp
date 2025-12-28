@@ -17,35 +17,14 @@ if TYPE_CHECKING:
 
 __all__ = [
     "_load_template",
-    "_load_dashboard_template",
     "_render_html",
-    "_render_dashboard",
 ]
 
-
 _TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates"
-
 
 def _load_template() -> Template:
     template_path = _TEMPLATE_DIR / "choice.html"
     return Template(template_path.read_text(encoding="utf-8"))
-
-
-def _load_dashboard_template() -> Template:
-    template_path = _TEMPLATE_DIR / "dashboard.html"
-    return Template(template_path.read_text(encoding="utf-8"))
-
-
-def _render_dashboard(sessions: Iterable["ChoiceSession"]) -> str:
-    """Render the dashboard page.
-
-    The dashboard now uses WebSocket for real-time updates, so we just return
-    the static template without pre-rendering the session list.
-    """
-    template = _load_dashboard_template()
-    # Dashboard is now fully dynamic via WebSocket, no server-side rendering needed
-    return template.template
-
 
 def _build_i18n_payload() -> dict[str, dict[str, str]]:
     """Build a dict of all i18n texts for all languages.
@@ -54,7 +33,6 @@ def _build_i18n_payload() -> dict[str, dict[str, str]]:
     This allows the frontend to switch languages without reloading.
     """
     return {key: texts.copy() for key, texts in TEXTS.items()}
-
 
 def _render_html(
     req: "ProvideChoiceRequest",
@@ -80,6 +58,14 @@ def _render_html(
         "use_default_option": defaults.use_default_option,
         "timeout_action": defaults.timeout_action,
         "language": lang,
+        "notify_new": defaults.notify_new,
+        "notify_upcoming": defaults.notify_upcoming,
+        "upcoming_threshold": defaults.upcoming_threshold,
+        "notify_timeout": defaults.notify_timeout,
+        "notify_if_foreground": defaults.notify_if_foreground,
+        "notify_if_focused": defaults.notify_if_focused,
+        "notify_if_background": defaults.notify_if_background,
+        "notify_sound": defaults.notify_sound,
     }
 
     transport_options = [

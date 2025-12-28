@@ -94,6 +94,16 @@ class ProvideChoiceConfig:
     # Language setting (en/zh)
     language: str = "en"
 
+    # Notification settings
+    notify_new: bool = True
+    notify_upcoming: bool = True
+    upcoming_threshold: int = 60
+    notify_timeout: bool = True
+    notify_if_foreground: bool = True
+    notify_if_focused: bool = True
+    notify_if_background: bool = True
+    notify_sound: bool = True
+
 
 @dataclass
 class ProvideChoiceSelection:

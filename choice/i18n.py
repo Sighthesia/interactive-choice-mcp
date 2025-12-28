@@ -68,6 +68,46 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Settings saved",
         "zh": "设置已保存",
     },
+    "settings.notifications": {
+        "en": "Notifications",
+        "zh": "通知设置",
+    },
+    "settings.notify_new": {
+        "en": "New interaction",
+        "zh": "新交互进程通知",
+    },
+    "settings.notify_upcoming": {
+        "en": "Upcoming timeout",
+        "zh": "即将超时通知",
+    },
+    "settings.upcoming_threshold": {
+        "en": "Threshold (s)",
+        "zh": "剩余时间 (秒)",
+    },
+    "settings.notify_timeout": {
+        "en": "Timeout reached",
+        "zh": "超时通知",
+    },
+    "settings.notify_conditions": {
+        "en": "Trigger Conditions",
+        "zh": "通知触发条件",
+    },
+    "settings.notify_if_foreground": {
+        "en": "Browser in foreground",
+        "zh": "浏览器处于前台时",
+    },
+    "settings.notify_if_focused": {
+        "en": "Tab focused",
+        "zh": "焦点在交互标签页时",
+    },
+    "settings.notify_if_background": {
+        "en": "Browser in background",
+        "zh": "浏览器不处于前台时",
+    },
+    "settings.notify_sound": {
+        "en": "Notification sound",
+        "zh": "通知音效",
+    },
 
     # Section: Actions
     "action.submit": {

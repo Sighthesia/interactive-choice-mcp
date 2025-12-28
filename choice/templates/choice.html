@@ -160,10 +160,11 @@
         /* Section: Three-Column Layout */
         .layout {
             display: grid;
-            grid-template-columns: 260px 1fr 320px;
+            grid-template-columns: minmax(220px, 20%) 1fr minmax(260px, 20%);
             gap: 24px;
-            max-width: 1400px;
-            margin: 0 auto;
+            width: calc(100% - 32px);
+            max-width: none;
+            margin: 0 16px;
         }
 
         .main-column {
@@ -181,6 +182,13 @@
             position: sticky;
             top: 24px;
             align-self: start;
+        }
+
+        .interaction-list .card {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 120px);
+            /* stretch to near full viewport minus header/margins */
         }
 
         .interaction-list .card-header {
@@ -217,7 +225,8 @@
         }
 
         #interactionListContent {
-            max-height: calc(100vh - 220px);
+            flex: 1 1 auto;
+            max-height: none;
             overflow-y: auto;
             padding-right: 4px;
         }
@@ -760,9 +769,17 @@
 
         .config-content {
             margin-top: 12px;
-            max-height: 360px;
+            /* Allow config content to grow and fill sidebar card */
+            flex: 1 1 auto;
+            max-height: none;
             overflow-y: auto;
             padding-right: 4px;
+        }
+
+        .sidebar .card {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 120px);
         }
 
         /* Section: Config Items */
@@ -1088,6 +1105,66 @@
                             <div class="config-desc" data-i18n="desc.timeout_action">Action to take when the timeout is
                                 reached.</div>
                         </div>
+
+                        <div class="config-section-title" data-i18n="settings.notifications">Notifications</div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyNew" />
+                                <span data-i18n="settings.notify_new">New interaction</span>
+                            </label>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyUpcoming" />
+                                <span data-i18n="settings.notify_upcoming">Upcoming timeout</span>
+                            </label>
+                            <div class="config-sub-item"
+                                style="margin-top: 8px; margin-left: 24px; display: flex; align-items: center; gap: 8px; font-size: 0.875rem;">
+                                <span data-i18n="settings.upcoming_threshold">Threshold (s)</span>
+                                <input type="number" id="upcomingThreshold" min="1"
+                                    style="width: 70px; margin-left: auto;" />
+                            </div>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyTimeout" />
+                                <span data-i18n="settings.notify_timeout">Timeout reached</span>
+                            </label>
+                        </div>
+
+                        <div class="config-section-title" data-i18n="settings.notify_conditions">Trigger Conditions
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyIfForeground" />
+                                <span data-i18n="settings.notify_if_foreground">Browser in foreground</span>
+                            </label>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyIfFocused" />
+                                <span data-i18n="settings.notify_if_focused">Tab focused</span>
+                            </label>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyIfBackground" />
+                                <span data-i18n="settings.notify_if_background">Browser in background</span>
+                            </label>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifySound" />
+                                <span data-i18n="settings.notify_sound">Notification sound</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1242,6 +1319,16 @@
                 timeoutActionSelect.value = defaults.timeout_action || 'submit';
             }
 
+            // Initialize notification settings
+            if (document.getElementById('notifyNew')) document.getElementById('notifyNew').checked = defaults.notify_new ?? true;
+            if (document.getElementById('notifyUpcoming')) document.getElementById('notifyUpcoming').checked = defaults.notify_upcoming ?? true;
+            if (document.getElementById('upcomingThreshold')) document.getElementById('upcomingThreshold').value = defaults.upcoming_threshold ?? 60;
+            if (document.getElementById('notifyTimeout')) document.getElementById('notifyTimeout').checked = defaults.notify_timeout ?? true;
+            if (document.getElementById('notifyIfForeground')) document.getElementById('notifyIfForeground').checked = defaults.notify_if_foreground ?? true;
+            if (document.getElementById('notifyIfFocused')) document.getElementById('notifyIfFocused').checked = defaults.notify_if_focused ?? true;
+            if (document.getElementById('notifyIfBackground')) document.getElementById('notifyIfBackground').checked = defaults.notify_if_background ?? true;
+            if (document.getElementById('notifySound')) document.getElementById('notifySound').checked = defaults.notify_sound ?? true;
+
             // Listen for manual changes
             themeSelect.addEventListener('change', (e) => applyTheme(e.target.value));
             if (languageSelect) {
@@ -1291,6 +1378,14 @@
                     use_default_option: document.getElementById('useDefaultOption')?.checked || false,
                     timeout_action: document.getElementById('timeoutActionSelect')?.value || 'submit',
                     language: currentLang,
+                    notify_new: document.getElementById('notifyNew')?.checked ?? true,
+                    notify_upcoming: document.getElementById('notifyUpcoming')?.checked ?? true,
+                    upcoming_threshold: parseInt(document.getElementById('upcomingThreshold')?.value || '60', 10),
+                    notify_timeout: document.getElementById('notifyTimeout')?.checked ?? true,
+                    notify_if_foreground: document.getElementById('notifyIfForeground')?.checked ?? true,
+                    notify_if_focused: document.getElementById('notifyIfFocused')?.checked ?? true,
+                    notify_if_background: document.getElementById('notifyIfBackground')?.checked ?? true,
+                    notify_sound: document.getElementById('notifySound')?.checked ?? true,
                 };
                 console.log('[Settings] Saving config:', config);
                 try {
@@ -1332,6 +1427,12 @@
             if (singleSubmitEl) singleSubmitEl.addEventListener('change', debouncedSaveSettings);
             if (useDefaultEl) useDefaultEl.addEventListener('change', debouncedSaveSettings);
             if (timeoutActionEl) timeoutActionEl.addEventListener('change', debouncedSaveSettings);
+
+            ['notifyNew', 'notifyUpcoming', 'upcomingThreshold', 'notifyTimeout',
+                'notifyIfForeground', 'notifyIfFocused', 'notifyIfBackground', 'notifySound'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.addEventListener('change', debouncedSaveSettings);
+                });
 
             // Section: Helpers
             function isSingleSubmit() {

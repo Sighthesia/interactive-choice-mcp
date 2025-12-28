@@ -86,6 +86,22 @@ class ConfigStore:
             if language not in VALID_LANGUAGES:
                 language = LANG_EN
 
+            # Notification settings
+            notify_new = bool(raw.get("notify_new", True))
+            notify_upcoming = bool(raw.get("notify_upcoming", True))
+            upcoming_threshold = 60
+            raw_threshold = raw.get("upcoming_threshold")
+            if isinstance(raw_threshold, (int, float, str)):
+                try:
+                    upcoming_threshold = max(1, int(raw_threshold))
+                except Exception:
+                    upcoming_threshold = 60
+            notify_timeout = bool(raw.get("notify_timeout", True))
+            notify_if_foreground = bool(raw.get("notify_if_foreground", True))
+            notify_if_focused = bool(raw.get("notify_if_focused", True))
+            notify_if_background = bool(raw.get("notify_if_background", True))
+            notify_sound = bool(raw.get("notify_sound", True))
+
             return ProvideChoiceConfig(
                 transport=transport,
                 timeout_seconds=timeout_seconds,
@@ -98,6 +114,14 @@ class ConfigStore:
                 retention_days=retention_days,
                 max_sessions=max_sessions,
                 language=language,
+                notify_new=notify_new,
+                notify_upcoming=notify_upcoming,
+                upcoming_threshold=upcoming_threshold,
+                notify_timeout=notify_timeout,
+                notify_if_foreground=notify_if_foreground,
+                notify_if_focused=notify_if_focused,
+                notify_if_background=notify_if_background,
+                notify_sound=notify_sound,
             )
         except Exception:
             return None
@@ -116,6 +140,14 @@ class ConfigStore:
             "retention_days": config.retention_days,
             "max_sessions": config.max_sessions,
             "language": config.language,
+            "notify_new": config.notify_new,
+            "notify_upcoming": config.notify_upcoming,
+            "upcoming_threshold": config.upcoming_threshold,
+            "notify_timeout": config.notify_timeout,
+            "notify_if_foreground": config.notify_if_foreground,
+            "notify_if_focused": config.notify_if_focused,
+            "notify_if_background": config.notify_if_background,
+            "notify_sound": config.notify_sound,
         }
 
         try:
