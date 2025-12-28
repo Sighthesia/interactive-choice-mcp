@@ -1326,6 +1326,9 @@
                         statusText.textContent = t('status.disconnected');
                     }
                 }
+
+                // Keep button labels in sync with current language & mode
+                updateSubmitBtn();
             }
 
             let sessionState = parsedSessionState && typeof parsedSessionState === 'object' ? parsedSessionState : {};
@@ -1833,6 +1836,11 @@
 
                 const isAutoSubmitActive = singleSubmit && promptType !== 'multi';
                 btn.disabled = isAutoSubmitActive;
+
+                // Update localized text based on whether auto-submit is active
+                if (btn) {
+                    btn.innerText = isAutoSubmitActive ? t('action.submit_auto_single') : t('action.submit');
+                }
             }
 
             // Section: Keyboard Navigation
@@ -2112,6 +2120,7 @@
             document.getElementById('singleSubmitMode').onchange = () => {
                 renderOptions();
                 updateConfigHighlights();
+                updateSubmitBtn();
             };
             const useDefaultToggle = document.getElementById('useDefaultOption');
             if (useDefaultToggle) {
