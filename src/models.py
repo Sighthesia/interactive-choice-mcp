@@ -164,6 +164,7 @@ VALID_SELECTION_MODES = {"single", "multi"}
 VALID_ACTIONS = {
     "selected",
     "cancelled",
+    "cancel_with_annotation",
     # Timeout variants differentiate auto submission vs. cancelled with no default
     "timeout",
     "timeout_auto_submitted",
