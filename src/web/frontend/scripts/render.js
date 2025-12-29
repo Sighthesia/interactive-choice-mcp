@@ -362,3 +362,122 @@ function initializeRender() {
         }
     }, 100);
 }
+
+// Section: Full UI Refresh (for in-page navigation)
+function refreshFullUI() {
+    debugLog('Render', 'refreshFullUI called');
+    const state = window.mcpState;
+    const data = window.mcpData;
+    const sessionState = data.sessionState || {};
+
+    // Update page header
+    const titleEl = document.querySelector('.prompt-title');
+    if (titleEl) titleEl.textContent = data.promptTitle || '';
+
+    const promptEl = document.querySelector('.prompt-text');
+    if (promptEl) promptEl.textContent = data.promptText || '';
+
+    const timeEl = document.querySelector('.prompt-time');
+    if (timeEl) timeEl.textContent = data.invocationTime || '';
+
+    // Reset state
+    state.selectedIndices = new Set(sessionState.selected_indices || []);
+    state.optionAnnotations = sessionState.option_annotations || {};
+    state.focusedIndex = 0;
+    state.hasFinalResult = !!(sessionState.status && sessionState.status !== 'pending');
+    state.sessionState = sessionState;
+    state.submitting = false;
+
+    // Update global annotation
+    const globalAnnotation = document.getElementById('globalAnnotation');
+    if (globalAnnotation) {
+        globalAnnotation.value = sessionState.global_annotation || '';
+        globalAnnotation.disabled = state.hasFinalResult;
+
+        // Update annotation section styling based on content
+        const annotationSection = globalAnnotation.closest('.annotation-section');
+        if (annotationSection) {
+            const hasContent = !!(sessionState.global_annotation && sessionState.global_annotation.trim());
+            annotationSection.classList.toggle('has-content', hasContent);
+        }
+    }
+
+    // Clear any finalized state classes first
+    document.body.classList.remove('submitted');
+    document.querySelectorAll('.option').forEach(el => {
+        el.classList.remove('finalized');
+    });
+    document.querySelectorAll('.card').forEach(card => {
+        card.classList.remove('session-finalized');
+    });
+
+    // Hide status message
+    const statusEl = document.getElementById('status');
+    if (statusEl) {
+        statusEl.style.display = 'none';
+        statusEl.className = 'status';
+        statusEl.innerText = '';
+    }
+
+    // Reset timeout display
+    const timeoutContainer = document.getElementById('timeoutContainer');
+    const timeoutBar = document.getElementById('timeoutProgressBar');
+    const timeoutText = document.getElementById('timeoutText');
+    if (timeoutContainer) {
+        if (state.hasFinalResult) {
+            timeoutContainer.style.display = 'none';
+        } else {
+            timeoutContainer.style.display = 'block';
+        }
+    }
+    if (timeoutBar) {
+        timeoutBar.classList.remove('success', 'warning', 'danger');
+        timeoutBar.style.width = '100%';
+    }
+    if (timeoutText) {
+        timeoutText.innerText = '';
+    }
+
+    // Reset notification flags to prevent duplicate notifications
+    state.notifiedThreshold = true;  // Set to true to prevent threshold notification
+    state.notifiedTimeout = true;    // Set to true to prevent timeout notification
+    state.timeoutExpired = state.hasFinalResult;  // Mark as expired if finalized
+
+    // Stop any existing timeout timer
+    if (typeof stopTimeout === 'function') {
+        stopTimeout();
+    }
+
+    // Re-render options
+    renderOptions();
+
+    // Apply finalized state if needed
+    if (state.hasFinalResult) {
+        applyFinalizedState(sessionState);
+    } else {
+        // Re-enable form controls
+        const submitBtn = document.getElementById('submitBatchBtn');
+        const cancelBtn = document.getElementById('cancelButton');
+        if (submitBtn) submitBtn.disabled = false;
+        if (cancelBtn) cancelBtn.disabled = false;
+
+        // Update submit button text based on mode
+        updateSubmitBtn();
+        updateCancelBtn();
+
+        // Update connection status
+        if (typeof updateConnectionStatus === 'function') {
+            updateConnectionStatus(t('status.connected'), '');
+        }
+
+        // Restart timeout if there's remaining time
+        if (typeof data.remainingSeconds === 'number' && data.remainingSeconds > 0) {
+            if (typeof startTimeout === 'function') {
+                startTimeout(data.remainingSeconds);
+            }
+        }
+    }
+
+    syncAnnotationVisibility();
+    debugLog('Render', 'refreshFullUI complete');
+}

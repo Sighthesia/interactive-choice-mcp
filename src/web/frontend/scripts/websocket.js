@@ -179,6 +179,52 @@ function applyFinalizedState(stateData) {
     }
 }
 
+// Section: WebSocket Reconnection (for in-page navigation)
+function reconnectWebSocket(newSessionId) {
+    debugLog('WebSocket', 'Reconnecting for session:', newSessionId);
+    const state = window.mcpState;
+
+    // Clear any pending reconnect timer
+    if (state.wsReconnectTimer) {
+        clearTimeout(state.wsReconnectTimer);
+        state.wsReconnectTimer = null;
+    }
+
+    // Close existing connection
+    if (state.ws) {
+        state.ws.close();
+        state.ws = null;
+    }
+
+    // Reset state for new session
+    state.wsConnected = false;
+    state.hasFinalResult = false;
+    state.submitting = false;
+
+    // Connect to new session
+    connectWebSocket();
+}
+
+function disconnectWebSocket() {
+    debugLog('WebSocket', 'Disconnecting WebSocket for persisted session');
+    const state = window.mcpState;
+
+    // Clear any pending reconnect timer
+    if (state.wsReconnectTimer) {
+        clearTimeout(state.wsReconnectTimer);
+        state.wsReconnectTimer = null;
+    }
+
+    // Close existing connection
+    if (state.ws) {
+        state.ws.close();
+        state.ws = null;
+    }
+
+    state.wsConnected = false;
+    updateConnectionStatus(t('status.completed'), '');
+}
+
 // Section: Initialize WebSocket
 function initializeWebSocket() {
     debugLog('WebSocket', 'Initializing...');

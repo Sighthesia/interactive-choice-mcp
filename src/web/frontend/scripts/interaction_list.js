@@ -170,8 +170,8 @@ function renderInteractionList() {
         const isCurrent = item.session_id === choiceId;
         const statusBadge = '<span class="interaction-badge badge-' + item.status + '">' + item.status.replace('_', ' ') + '</span>';
         const transportBadge = '<span class="interaction-badge badge-' + item.transport + '">' + item.transport + '</span>';
-        const href = item.url || '#';
-        const clickHandler = item.url ? 'onclick="window.location.href=\'' + item.url + '\'"' : '';
+        // Use data attribute for click handling instead of inline onclick with URL
+        const clickAttr = item.url ? 'data-session-id="' + item.session_id + '"' : '';
         const timeoutHint = item.status === 'pending' && typeof item.remaining_seconds === 'number'
             ? ' · timeout ~' + Math.ceil(item.remaining_seconds) + 's'
             : '';
@@ -183,7 +183,7 @@ function renderInteractionList() {
             progressBar = '<div class="interaction-progress"><div class="interaction-progress-bar ' + barClass + '" style="width:' + pct + '%"></div></div>';
         }
 
-        return '<div class="interaction-item' + (isCurrent ? ' current' : '') + '" ' + clickHandler + '>' +
+        return '<div class="interaction-item' + (isCurrent ? ' current' : '') + '" ' + clickAttr + '>' +
             '<div class="interaction-item-header">' +
             '<span class="interaction-item-title">' + (item.title || 'Untitled') + '</span>' +
             statusBadge + transportBadge +
@@ -192,6 +192,106 @@ function renderInteractionList() {
             progressBar +
             '</div>';
     }).join('');
+
+    // Add click handlers for in-page navigation
+    container.querySelectorAll('.interaction-item[data-session-id]').forEach(el => {
+        el.addEventListener('click', () => {
+            const sessionId = el.dataset.sessionId;
+            if (sessionId && sessionId !== window.mcpData.choiceId) {
+                navigateToInteraction(sessionId);
+            }
+        });
+    });
+}
+
+// Section: In-Page Navigation
+async function navigateToInteraction(sessionId) {
+    debugLog('InteractionList', 'Navigating to interaction:', sessionId);
+
+    // Start transition animation
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.classList.add('transitioning');
+    }
+
+    try {
+        const response = await fetch('/api/interaction/' + sessionId);
+        if (!response.ok) {
+            console.error('[InteractionList] Failed to load interaction:', response.status);
+            // Fallback to full page navigation
+            window.location.href = '/choice/' + sessionId;
+            return;
+        }
+        const data = await response.json();
+        debugLog('InteractionList', 'Loaded interaction data:', data.choice_id);
+
+        // Update window.mcpData with new interaction data
+        updateMcpData(data);
+
+        // Re-render the full UI
+        if (typeof refreshFullUI === 'function') {
+            refreshFullUI();
+        } else if (typeof renderOptions === 'function') {
+            renderOptions();
+        }
+
+        // Update URL without reload
+        window.history.pushState({ sessionId: sessionId }, '', '/choice/' + sessionId);
+
+        // Re-render interaction list to update current highlight
+        renderInteractionList();
+
+        // Re-establish WebSocket connection for the new session if it's active
+        if (data.type === 'active' && typeof reconnectWebSocket === 'function') {
+            reconnectWebSocket(sessionId);
+        } else if (typeof disconnectWebSocket === 'function') {
+            disconnectWebSocket();
+        }
+
+        debugLog('InteractionList', 'Navigation complete');
+    } catch (e) {
+        console.error('[InteractionList] Navigation error:', e);
+        // Fallback to full page navigation
+        window.location.href = '/choice/' + sessionId;
+    } finally {
+        // End transition animation
+        if (mainContent) {
+            // Small delay to allow the new content to be rendered before removing the class
+            setTimeout(() => {
+                mainContent.classList.remove('transitioning');
+            }, 50);
+        }
+    }
+}
+
+function updateMcpData(data) {
+    // Update core data
+    window.mcpData.choiceId = data.choice_id;
+    window.mcpData.promptTitle = data.title;
+    window.mcpData.promptText = data.prompt;
+    window.mcpData.selectionMode = data.selection_mode;
+    window.mcpData.options = data.options;
+    window.mcpData.allowTerminal = data.allow_terminal;
+    window.mcpData.invocationTime = data.invocation_time;
+
+    // Update session state
+    window.mcpData.sessionState = data.session_state;
+
+    // Update config
+    if (data.config) {
+        window.mcpData.defaults = window.mcpData.defaults || {};
+        Object.assign(window.mcpData.defaults, data.config);
+    }
+
+    // Update timeout info
+    if (typeof data.remaining_seconds === 'number') {
+        window.mcpData.remainingSeconds = data.remaining_seconds;
+    } else {
+        window.mcpData.remainingSeconds = null;
+    }
+
+    // Update document title
+    document.title = data.title + ' - Interactive Choice';
 }
 
 // Section: Initialize
@@ -199,4 +299,11 @@ function initializeInteractionList() {
     debugLog('InteractionList', 'Initializing...');
     connectInteractionListWs();
     fetchInteractionListFallback();
+
+    // Handle browser back/forward navigation
+    window.addEventListener('popstate', (event) => {
+        if (event.state && event.state.sessionId) {
+            navigateToInteraction(event.state.sessionId);
+        }
+    });
 }

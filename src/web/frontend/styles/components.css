@@ -23,6 +23,16 @@
     border-bottom: 1px solid var(--border);
 }
 
+/* Section: Page Transition */
+.main-content {
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.main-content.transitioning {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
 /* Section: Form Elements */
 .config-grid {
     display: grid;
@@ -291,25 +301,39 @@ input[type="checkbox"] {
 }
 
 .status.success {
-    background: var(--success-bg);
-    color: var(--success-text);
+    background: var(--status-submitted-bg);
+    color: var(--status-submitted-text);
+    border: 1px solid var(--status-submitted-border);
 }
 
 .status.error {
     background: var(--error-bg);
     color: var(--error-text);
+    border: 1px solid var(--error-border);
 }
 
 .status.manual {
-    color: var(--success-text);
-    background: var(--success-bg);
-    border: 1px solid var(--success-border);
+    background: var(--status-submitted-bg);
+    color: var(--status-submitted-text);
+    border: 1px solid var(--status-submitted-border);
 }
 
 .status.timeout {
-    color: var(--error-text);
-    background: var(--error-bg);
-    border: 1px solid var(--error-border);
+    background: var(--status-timeout-bg);
+    color: var(--status-timeout-text);
+    border: 1px solid var(--status-timeout-border);
+}
+
+.status.cancelled {
+    background: var(--status-cancelled-bg);
+    color: var(--status-cancelled-text);
+    border: 1px solid var(--status-cancelled-border);
+}
+
+.status.auto_submitted {
+    background: var(--status-auto-bg);
+    color: var(--status-auto-text);
+    border: 1px solid var(--status-auto-border);
 }
 
 /* Section: Submitted States */
@@ -435,53 +459,28 @@ body.submitted .status {
 }
 
 .badge-pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.dark .badge-pending {
-    background: #78350f;
-    color: #fde68a;
+    background: var(--status-pending-bg);
+    color: var(--status-pending-text);
 }
 
 .badge-submitted {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.dark .badge-submitted {
-    background: #14532d;
-    color: #86efac;
+    background: var(--status-submitted-bg);
+    color: var(--status-submitted-text);
 }
 
 .badge-auto_submitted {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.dark .badge-auto_submitted {
-    background: #1e3a8a;
-    color: #93c5fd;
+    background: var(--status-auto-bg);
+    color: var(--status-auto-text);
 }
 
 .badge-cancelled {
-    background: #f3f4f6;
-    color: #4b5563;
-}
-
-.dark .badge-cancelled {
-    background: #374151;
-    color: #d1d5db;
+    background: var(--status-cancelled-bg);
+    color: var(--status-cancelled-text);
 }
 
 .badge-timeout {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.dark .badge-timeout {
-    background: #7f1d1d;
-    color: #fca5a5;
+    background: var(--status-timeout-bg);
+    color: var(--status-timeout-text);
 }
 
 .badge-web {
