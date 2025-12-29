@@ -212,8 +212,11 @@ def _handle_cancel(base_url: str, session_id: str) -> int:
     global_annotation = _prompt_global_annotation()
     _submit_cancelled(base_url, session_id, global_annotation)
     print("\n\033[33m⚠ Cancelled\033[0m")
-    global_note = global_annotation if global_annotation else ""
-    print(f"[CANCELLED] global={global_note}")
+    # Output a structured marker - only include global_annotation if non-empty
+    if global_annotation:
+        print(f"[CANCELLED] global_annotation={global_annotation}")
+    else:
+        print("[CANCELLED]")
     return 0
 
 
@@ -364,9 +367,13 @@ Keyboard shortcuts:
             if global_annotation:
                 print(f"  Global note: {global_annotation}")
             # Output a structured marker that the agent can parse
-            annotations_json = json.dumps(option_annotations) if option_annotations else "{}"
-            global_note = global_annotation if global_annotation else ""
-            print(f"[SELECTION_COMPLETE] selected={','.join(selected)} annotations={annotations_json} global={global_note}")
+            # Only include non-empty fields
+            marker_parts = [f"selected={','.join(selected)}"]
+            if option_annotations:
+                marker_parts.append(f"annotations={json.dumps(option_annotations)}")
+            if global_annotation:
+                marker_parts.append(f"global_annotation={global_annotation}")
+            print(f"[SELECTION_COMPLETE] {' '.join(marker_parts)}")
             print()
             return 0
 

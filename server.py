@@ -41,10 +41,12 @@ async def provide_choice(
 		
 		Step 1: Run the `terminal_command` in terminal
 		Step 2: Parse terminal output for result markers:
-		   - [SELECTION_COMPLETE] selected=A,B annotations={} global=note
+		   - [SELECTION_COMPLETE] selected=A,B [annotations={...}] [global_annotation=note]
 		     → User made selection in terminal, use the parsed values
-		   - [CANCELLED] global=note
+		     → annotations and global_annotation only appear if non-empty
+		   - [CANCELLED] [global_annotation=note]
 		     → User cancelled in terminal
+		     → global_annotation only appears if non-empty
 		   - [SWITCH_TO_WEB] session_id=xxx
 		     → User switched to web, call poll_selection(session_id) to wait
 
@@ -97,15 +99,15 @@ async def provide_choice(
 
 
 @mcp.tool()
-async def poll_selection(session_id: str, wait_seconds: int = 30) -> dict[str, object]:
+async def poll_selection(session_id: str) -> dict[str, object]:
 	"""Poll for the result of a pending interaction session.
 
-	This tool is used after `provide_choice` returns `pending_terminal_launch` status.
-	It blocks until the user completes the interaction or the timeout is reached.
+	This tool is used after `provide_choice` returns `pending_terminal_launch` status,
+	and the terminal outputs [SWITCH_TO_WEB] marker.
+	It blocks until the user completes the interaction or the session timeout is reached.
 
 	Args:
 		session_id: The session ID returned by provide_choice
-		wait_seconds: Maximum seconds to wait for result (default 30, max 120)
 
 	Returns:
 		The selection result with same format as provide_choice:
@@ -118,10 +120,7 @@ async def poll_selection(session_id: str, wait_seconds: int = 30) -> dict[str, o
 		- action_status: "cancelled"
 		- error: Error description
 	"""
-	# Clamp wait_seconds to reasonable bounds
-	wait_seconds = max(1, min(120, wait_seconds))
-
-	result = await poll_session_result(session_id, wait_seconds=wait_seconds)
+	result = await poll_session_result(session_id)
 	
 	if result is None:
 		return {

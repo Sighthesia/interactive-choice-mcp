@@ -1238,24 +1238,26 @@ async def create_terminal_handoff_session(
     )
 
 
-async def poll_session_result(session_id: str, wait_seconds: int = 30) -> Optional[ProvideChoiceResponse]:
+async def poll_session_result(session_id: str) -> Optional[ProvideChoiceResponse]:
     """Poll for the result of any session (web or terminal) with blocking wait.
     
     This is the unified polling function that checks both web and terminal sessions.
     It implements a smart polling mechanism that:
     1. Returns immediately if the result is already available
-    2. Waits up to `wait_seconds` for the result if still pending
+    2. Waits up to 30 seconds for the result if still pending
     3. Returns None only if session not found in both stores
     4. Returns timeout response if session expired
     
     Args:
         session_id: The session ID to poll (from either web or terminal)
-        wait_seconds: Maximum seconds to wait for result (default 30)
         
     Returns:
         The ProvideChoiceResponse if available, or None if session not found
     """
     from ..core.response import timeout_response
+
+    # Internal wait time - fixed at 30s for consistent behavior
+    wait_seconds = 30
 
     # First, check web sessions
     server = await _get_server()
