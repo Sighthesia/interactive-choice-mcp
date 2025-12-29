@@ -228,6 +228,10 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Unable to reach MCP server. Please reconnect and retry.",
         "zh": "无法连接到 MCP 服务器。请重新连接并重试。",
     },
+    "status_message.interrupted": {
+        "en": "⚠️ Session interrupted: Connection lost unexpectedly.",
+        "zh": "⚠️ 进程意外中断：连接已丢失。",
+    },
 
     # Section: Messages
     "msg.select_option": {
@@ -437,16 +441,24 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "已完成",
     },
     "label.status": {
-        "en": "Status",
-        "zh": "状态",
+        "en": "Session Status",
+        "zh": "进程状态",
     },
     "status.connected": {
-        "en": "Connected",
-        "zh": "已连接",
+        "en": "In Progress",
+        "zh": "进行中",
     },
     "status.disconnected": {
         "en": "Disconnected",
         "zh": "已断开",
+    },
+    "status.session_completed": {
+        "en": "Completed",
+        "zh": "已完成",
+    },
+    "status.interrupted": {
+        "en": "Interrupted",
+        "zh": "意外中断",
     },
     "status.connecting": {
         "en": "Connecting...",
