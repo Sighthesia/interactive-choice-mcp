@@ -13,11 +13,13 @@ Package Structure:
 Logging Configuration:
     Set the following environment variables to configure logging:
     - CHOICE_LOG_LEVEL: Log level (DEBUG, INFO, WARNING, ERROR). Default: INFO
-    - CHOICE_LOG_FILE: Path to log file. If not set, logs go to stderr only.
+        - CHOICE_LOG_FILE: Path to log file. Default: .mcp-data/server.log in the
+            current working directory. Set this to override the default.
     - CHOICE_LOG_FORMAT: Custom log format string.
 
 Example:
     export CHOICE_LOG_LEVEL=DEBUG
+    # To override default (.mcp-data/server.log), set CHOICE_LOG_FILE explicitly
     export CHOICE_LOG_FILE=~/.local/share/interactive-choice-mcp/server.log
 """
 # Re-export from subpackages for convenience and backward compatibility

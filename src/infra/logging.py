@@ -60,11 +60,18 @@ def _get_log_level() -> int:
 
 
 def _get_log_file() -> Optional[Path]:
-    """Resolve log file path from environment variable."""
+    """Resolve log file path from environment variable.
+
+    If `CHOICE_LOG_FILE` is not set, default to `.mcp-data/server.log`
+    located in the current working directory.
+    """
     path_str = os.environ.get(LOG_FILE_ENV)
-    if not path_str:
-        return None
-    return Path(path_str).expanduser().resolve()
+    if path_str:
+        return Path(path_str).expanduser().resolve()
+
+    # Default log file location is .mcp-data/server.log in cwd
+    default_file = Path(".mcp-data") / "server.log"
+    return default_file.expanduser().resolve()
 
 
 def _get_log_format() -> str:
