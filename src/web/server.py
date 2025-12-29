@@ -613,6 +613,109 @@ class WebChoiceServer:
                 "interactions": [i.to_dict() for i in interactions],
             })
 
+        @app.get("/api/interaction/{interaction_id}")
+        async def get_interaction_detail(interaction_id: str):  # noqa: ANN201
+            """Get detailed information for a specific interaction (for in-page navigation)."""
+            # Try active session first
+            session = self.sessions.get(interaction_id)
+            if session:
+                from ..storage import ConfigStore
+                latest_config = ConfigStore().load()
+                display_defaults = session.effective_defaults()
+                if latest_config:
+                    display_defaults = ProvideChoiceConfig(
+                        transport=latest_config.transport,
+                        timeout_seconds=latest_config.timeout_seconds,
+                        single_submit_mode=latest_config.single_submit_mode,
+                        timeout_default_enabled=latest_config.timeout_default_enabled,
+                        timeout_default_index=display_defaults.timeout_default_index,
+                        use_default_option=latest_config.use_default_option,
+                        timeout_action=latest_config.timeout_action,
+                        language=latest_config.language,
+                        notify_new=latest_config.notify_new,
+                        notify_upcoming=latest_config.notify_upcoming,
+                        upcoming_threshold=latest_config.upcoming_threshold,
+                        notify_timeout=latest_config.notify_timeout,
+                        notify_if_foreground=latest_config.notify_if_foreground,
+                        notify_if_focused=latest_config.notify_if_focused,
+                        notify_if_background=latest_config.notify_if_background,
+                        notify_sound=latest_config.notify_sound,
+                    )
+                return JSONResponse({
+                    "type": "active",
+                    "choice_id": session.choice_id,
+                    "title": session.req.title,
+                    "prompt": session.req.prompt,
+                    "selection_mode": session.req.selection_mode,
+                    "options": [
+                        {"id": o.id, "description": o.description, "recommended": o.recommended}
+                        for o in session.req.options
+                    ],
+                    "allow_terminal": session.allow_terminal,
+                    "invocation_time": session.invocation_time,
+                    "session_state": session.to_template_state(),
+                    "config": {
+                        "transport": display_defaults.transport,
+                        "timeout_seconds": display_defaults.timeout_seconds,
+                        "single_submit_mode": display_defaults.single_submit_mode,
+                        "timeout_default_enabled": display_defaults.timeout_default_enabled,
+                        "timeout_default_index": display_defaults.timeout_default_index,
+                        "use_default_option": display_defaults.use_default_option,
+                        "timeout_action": display_defaults.timeout_action,
+                        "language": display_defaults.language,
+                    },
+                    "remaining_seconds": _remaining_seconds(session.deadline),
+                })
+
+            # Try persisted session
+            from ..interaction_store import get_interaction_store
+            store = get_interaction_store()
+            persisted = store.get_by_id(interaction_id)
+            if not persisted or not persisted.result or persisted.transport != TRANSPORT_WEB:
+                raise HTTPException(status_code=404)
+
+            from ..storage import ConfigStore
+            latest_config = ConfigStore().load()
+            if latest_config:
+                config_dict = {
+                    "transport": latest_config.transport,
+                    "timeout_seconds": latest_config.timeout_seconds,
+                    "single_submit_mode": latest_config.single_submit_mode,
+                    "timeout_default_enabled": latest_config.timeout_default_enabled,
+                    "timeout_default_index": latest_config.timeout_default_index,
+                    "use_default_option": latest_config.use_default_option,
+                    "timeout_action": latest_config.timeout_action,
+                    "language": latest_config.language,
+                }
+            else:
+                config_dict = {
+                    "transport": TRANSPORT_WEB,
+                    "timeout_seconds": persisted.timeout_seconds or DEFAULT_TIMEOUT_SECONDS,
+                }
+
+            selection = persisted.result.get("selection", {}) if isinstance(persisted.result, dict) else {}
+            action_status = str(persisted.result.get("action_status", "submitted")) if isinstance(persisted.result, dict) else "submitted"
+
+            return JSONResponse({
+                "type": "persisted",
+                "choice_id": persisted.session_id,
+                "title": persisted.title,
+                "prompt": persisted.prompt,
+                "selection_mode": persisted.selection_mode,
+                "options": persisted.options or [],
+                "allow_terminal": False,
+                "invocation_time": persisted.started_at,
+                "session_state": {
+                    "status": InteractionStatus.from_action_status(action_status).value,
+                    "action_status": action_status,
+                    "selected_indices": selection.get("selected_indices", []),
+                    "option_annotations": selection.get("option_annotations", {}),
+                    "global_annotation": selection.get("global_annotation"),
+                },
+                "config": config_dict,
+                "remaining_seconds": None,
+            })
+
         @app.websocket("/ws/interactions")
         async def interaction_list_ws(websocket: WebSocket) -> None:
             """WebSocket for real-time interaction list updates."""
