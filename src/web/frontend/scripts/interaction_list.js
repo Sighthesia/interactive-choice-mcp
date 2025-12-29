@@ -186,8 +186,8 @@ function renderInteractionList() {
             progressBar = '<div class="interaction-progress"><div class="interaction-progress-bar ' + barClass + '" style="width:' + pct + '%"></div></div>';
         }
 
-        // Add disabled class for terminal-only sessions to indicate non-interactive state
-        const disabledClass = isTerminalOnly ? ' disabled' : '';
+        // Add disabled class for non-clickable sessions
+        const disabledClass = !isClickable ? ' disabled' : '';
 
         return '<div class="interaction-item' + (isCurrent ? ' current' : '') + disabledClass + '" ' + clickAttr + '>' +
             '<div class="interaction-item-header">' +
