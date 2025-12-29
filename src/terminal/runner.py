@@ -7,7 +7,7 @@ from typing import Callable, List, Optional
 
 import questionary
 
-from ..models import (
+from ..core.models import (
     LANG_EN,
     LANG_ZH,
     ProvideChoiceConfig,
@@ -19,8 +19,8 @@ from ..models import (
     VALID_LANGUAGES,
     ValidationError,
 )
-from ..i18n import get_text
-from ..response import cancelled_response, normalize_response, timeout_response
+from ..infra.i18n import get_text
+from ..core.response import cancelled_response, normalize_response, timeout_response
 from .ui import _build_choices, _build_config_choices, _summary_line
 
 __all__ = [

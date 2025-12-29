@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..models import ProvideChoiceConfig, ProvideChoiceRequest, ProvideChoiceResponse
+    from ..core.models import ProvideChoiceConfig, ProvideChoiceRequest, ProvideChoiceResponse
 
 __all__ = [
     "TerminalSession",

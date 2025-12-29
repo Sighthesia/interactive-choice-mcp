@@ -2,6 +2,14 @@
 
 This package provides the core functionality for the interactive-choice-mcp server.
 
+Package Structure:
+    src/
+    ├── core/          - Core business logic (models, orchestrator, validation, response)
+    ├── infra/         - Infrastructure (logging, storage, i18n)
+    ├── store/         - Session persistence
+    ├── terminal/      - Terminal transport implementation
+    └── web/           - Web transport implementation
+
 Logging Configuration:
     Set the following environment variables to configure logging:
     - CHOICE_LOG_LEVEL: Log level (DEBUG, INFO, WARNING, ERROR). Default: INFO
@@ -12,7 +20,8 @@ Example:
     export CHOICE_LOG_LEVEL=DEBUG
     export CHOICE_LOG_FILE=~/.local/share/interactive-choice-mcp/server.log
 """
-from .logging import configure_logging, get_logger
+# Re-export from subpackages for convenience and backward compatibility
+from .infra import configure_logging, get_logger
 
 # Initialize logging when the package is imported
 configure_logging()

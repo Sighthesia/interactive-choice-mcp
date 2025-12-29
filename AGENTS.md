@@ -22,13 +22,43 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 ## 🏗️ 架构概览 (Big Picture)
 本项目是一个 MCP 服务器，核心功能是通过 `provide_choice` 工具收集用户决策。
 
-- **核心调度 (Orchestration)**: [choice/orchestrator.py](choice/orchestrator.py) 中的 `ChoiceOrchestrator` 是大脑，负责验证请求、选择传输方式（终端或 Web）以及持久化用户配置。
+### 目录结构
+```
+src/
+├── core/           # 核心业务逻辑
+│   ├── models.py      # 数据模型定义
+│   ├── orchestrator.py # 会话调度协调器
+│   ├── validation.py  # 请求校验
+│   └── response.py    # 响应归一化
+├── infra/          # 基础设施服务
+│   ├── logging.py     # 日志配置
+│   ├── storage.py     # 配置持久化
+│   └── i18n.py        # 国际化文案
+├── store/          # 数据存储
+│   └── interaction_store.py  # Session 历史持久化
+├── terminal/       # 终端传输层
+│   ├── runner.py      # 终端交互运行器
+│   ├── client.py      # CLI 客户端
+│   ├── session.py     # 会话管理
+│   └── ui.py          # questionary UI
+└── web/            # Web 传输层
+    ├── server.py      # FastAPI 服务器
+    ├── session.py     # WebSocket 会话
+    ├── templates.py   # HTML 模板生成
+    └── frontend/      # 前端资源（JS/CSS）
+```
+
+### 模块职责
+- **核心调度 (Orchestration)**: [src/core/orchestrator.py](src/core/orchestrator.py) 中的 `ChoiceOrchestrator` 是大脑，负责验证请求、选择传输方式（终端或 Web）以及持久化用户配置。
 - **传输层 (Transports)**:
-  - **Terminal**: [choice/terminal/runner.py](choice/terminal/runner.py) + [choice/terminal/ui.py](choice/terminal/ui.py) 使用 `questionary` 实现 ANSI 交互。
-  - **Web**: [choice/web/server.py](choice/web/server.py) + [choice/web/session.py](choice/web/session.py) + [choice/web/templates.py](choice/web/templates.py) 使用 `FastAPI` 启动临时服务器。
-- **数据模型**: [choice/models.py](choice/models.py) 定义核心数据结构；验证与配置应用在 [choice/validation.py](choice/validation.py)，响应归一化在 [choice/response.py](choice/response.py)。
-- **持久化**: [choice/storage.py](choice/storage.py) 将用户偏好保存至 `~/.interactive_choice_config.json`。
-- **日志系统**: [choice/logging.py](choice/logging.py) 提供统一的日志配置与工具。
+  - **Terminal**: [src/terminal/runner.py](src/terminal/runner.py) + [src/terminal/ui.py](src/terminal/ui.py) 使用 `questionary` 实现 ANSI 交互。
+  - **Web**: [src/web/server.py](src/web/server.py) + [src/web/session.py](src/web/session.py) + [src/web/templates.py](src/web/templates.py) 使用 `FastAPI` 启动临时服务器。
+- **数据模型**: [src/core/models.py](src/core/models.py) 定义核心数据结构；验证与配置应用在 [src/core/validation.py](src/core/validation.py)，响应归一化在 [src/core/response.py](src/core/response.py)。
+- **持久化**: [src/infra/storage.py](src/infra/storage.py) 将用户偏好保存至 `~/.interactive_choice_config.json`。
+- **日志系统**: [src/infra/logging.py](src/infra/logging.py) 提供统一的日志配置与工具。
+
+### 向后兼容
+根目录下的 shim 文件（如 `src/models.py`、`src/logging.py`）提供向后兼容，重新导出新模块的内容。新代码应直接使用 `src.core`、`src.infra`、`src.store` 子包。
 
 ## 🛠️ 关键工作流 (Workflows)
 - **环境同步**: `uv sync`
@@ -39,7 +69,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 ## 🐛 调试指南 (Debugging)
 
 ### 日志配置
-服务器使用 [choice/logging.py](choice/logging.py) 模块提供统一的日志功能。
+服务器使用 [src/infra/logging.py](src/infra/logging.py) 模块提供统一的日志功能。
 
 **环境变量配置：**
 ```bash
@@ -61,7 +91,7 @@ export CHOICE_LANG=zh
 
 **在代码中使用日志：**
 ```python
-from choice.logging import get_logger, get_session_logger
+from src.infra import get_logger, get_session_logger
 
 # 获取模块级 logger
 logger = get_logger(__name__)
@@ -86,13 +116,13 @@ session_logger.info("User submitted selection")  # 输出: [abc123de] User submi
 
 ## 📏 编码约定 (Conventions)
 - **逻辑分段**: 使用 `// Section: Section Name` 注释来分隔文件中的逻辑块。
-- **模型定义**: 必须在 [choice/models.py](choice/models.py) 中使用 `@dataclass` 定义新模型。
+- **模型定义**: 必须在 [src/core/models.py](src/core/models.py) 中使用 `@dataclass` 定义新模型。
 - **类型提示**: 强制使用严格的类型提示（Type Hints）。
 - **错误处理**: 
   - 工具入口应使用 `safe_handle` 包装，确保始终返回有效的 MCP 响应。
   - 优先返回 `cancelled_response` 或 `timeout_response` 而非抛出未捕获异常。
 - **ID 语义**: `ProvideChoiceOption.id` 既是唯一标识也是显示标签。`selected_indices` 存储的是这些 ID 字符串，而非数字索引。
-- **日志记录**: 在关键操作点使用 `choice.logging` 模块记录日志，便于问题排查。
+- **日志记录**: 在关键操作点使用 `src.infra` 模块记录日志，便于问题排查。
 - **持久化**: 完成的 session 自动保存到 `~/.local/share/interactive-choice-mcp/sessions/`。
 
 ## 🔗 集成要点 (Integration)
@@ -119,11 +149,11 @@ session_logger.info("User submitted selection")  # 输出: [abc123de] User submi
 
 ## 📂 关键文件参考
 - [server.py](server.py): MCP 入口与工具定义。
-- [choice/orchestrator.py](choice/orchestrator.py): 核心调度逻辑。
-- [choice/models.py](choice/models.py): 协议数据模型。
-- [choice/validation.py](choice/validation.py): 请求校验与配置应用。
-- [choice/response.py](choice/response.py): 响应归一化与超时处理。
-- [choice/storage.py](choice/storage.py): 配置持久化实现。
-- [choice/interaction_store.py](choice/interaction_store.py): Session 历史持久化。
-- [choice/logging.py](choice/logging.py): 日志配置与工具。
-- [choice/i18n.py](choice/i18n.py): 国际化文案资源（en/zh）。
+- [src/core/orchestrator.py](src/core/orchestrator.py): 核心调度逻辑。
+- [src/core/models.py](src/core/models.py): 协议数据模型。
+- [src/core/validation.py](src/core/validation.py): 请求校验与配置应用。
+- [src/core/response.py](src/core/response.py): 响应归一化与超时处理。
+- [src/infra/storage.py](src/infra/storage.py): 配置持久化实现。
+- [src/store/interaction_store.py](src/store/interaction_store.py): Session 历史持久化。
+- [src/infra/logging.py](src/infra/logging.py): 日志配置与工具。
+- [src/infra/i18n.py](src/infra/i18n.py): 国际化文案资源（en/zh）。

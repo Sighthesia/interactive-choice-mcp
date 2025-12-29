@@ -7,13 +7,13 @@ from pathlib import Path
 from string import Template
 from typing import TYPE_CHECKING
 
-from ..i18n import get_text, TEXTS
-from ..models import TRANSPORT_WEB, LANG_EN
+from ..infra.i18n import get_text, TEXTS
+from ..core.models import TRANSPORT_WEB, LANG_EN
 from .bundler import get_asset_bundle
 
 if TYPE_CHECKING:
     from .session import ChoiceSession
-    from ..models import ProvideChoiceConfig, ProvideChoiceRequest
+    from ..core.models import ProvideChoiceConfig, ProvideChoiceRequest
 
 __all__ = [
     "_load_template",

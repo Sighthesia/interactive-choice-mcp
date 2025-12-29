@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, Optional, Set, TYPE_CHECKING
 
-from ..models import (
+from ..core.models import (
     InteractionEntry,
     InteractionStatus,
     ProvideChoiceConfig,
@@ -16,7 +16,7 @@ from ..models import (
     ProvideChoiceResponse,
     TRANSPORT_WEB,
 )
-from ..response import timeout_response
+from ..core.response import timeout_response
 
 if TYPE_CHECKING:
     from fastapi import WebSocket

@@ -17,7 +17,7 @@ def test_orchestrator_terminal_handoff_returns_pending(monkeypatch, tmp_path):
             launch_command="uv run python -m src.terminal.client --session test123 --url http://127.0.0.1:17863",
         )
 
-    monkeypatch.setattr("src.orchestrator.create_terminal_handoff_session", fake_handoff)
+    monkeypatch.setattr("src.core.orchestrator.create_terminal_handoff_session", fake_handoff)
 
     result = asyncio.run(
         orch.handle(
@@ -47,7 +47,7 @@ def test_orchestrator_session_polling_returns_result(monkeypatch, tmp_path):
             transport=models.TRANSPORT_WEB,
         )
 
-    monkeypatch.setattr("src.orchestrator.poll_terminal_session_result", fake_poll)
+    monkeypatch.setattr("src.core.orchestrator.poll_terminal_session_result", fake_poll)
 
     result = asyncio.run(
         orch.handle(
@@ -71,7 +71,7 @@ def test_orchestrator_session_polling_pending(monkeypatch, tmp_path):
         # Return None to simulate session not found or expired
         return None
 
-    monkeypatch.setattr("src.orchestrator.poll_terminal_session_result", fake_poll)
+    monkeypatch.setattr("src.core.orchestrator.poll_terminal_session_result", fake_poll)
 
     result = asyncio.run(
         orch.handle(
@@ -112,7 +112,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
             defaults,
         )
 
-    monkeypatch.setattr("src.orchestrator.run_web_choice", fake_web)
+    monkeypatch.setattr("src.core.orchestrator.run_web_choice", fake_web)
 
     result = asyncio.run(
         orch.handle(
@@ -130,7 +130,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
 # Section: Error Handling Tests
 def test_safe_handle_reports_validation_error(monkeypatch, tmp_path):
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
-    monkeypatch.setattr("src.orchestrator.is_terminal_available", lambda: False)
+    monkeypatch.setattr("src.core.orchestrator.is_terminal_available", lambda: False)
 
     result = asyncio.run(
         safe_handle(

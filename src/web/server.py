@@ -19,9 +19,9 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from ..logging import get_logger, get_session_logger
-from ..interaction_store import PersistedSession
-from ..models import (
+from ..infra import get_logger, get_session_logger
+from ..store import PersistedSession
+from ..core.models import (
     ProvideChoiceOption,
     ProvideChoiceConfig,
     ProvideChoiceRequest,
@@ -33,15 +33,15 @@ from ..models import (
     DEFAULT_TIMEOUT_SECONDS,
     TRANSPORT_WEB,
 )
-from ..response import cancelled_response as cancelled_response_fn, normalize_response, timeout_response
-from ..validation import apply_configuration as apply_configuration_fn
+from ..core.response import cancelled_response as cancelled_response_fn, normalize_response, timeout_response
+from ..core.validation import apply_configuration as apply_configuration_fn
 from .session import ChoiceSession, _deadline_from_seconds, _remaining_seconds
 from .templates import _render_html
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..terminal.session import TerminalSession
-    from ..interaction_store import PersistedSession
+    from ..store import PersistedSession
 
 __all__ = [
     "WebChoiceServer",
@@ -147,7 +147,7 @@ class WebChoiceServer:
             session = self.sessions.get(incoming_id)
             persisted_session: PersistedSession | None = None
             if not session:
-                from ..interaction_store import get_interaction_store
+                from ..store.interaction_store import get_interaction_store
 
                 store = get_interaction_store()
                 persisted_session = store.get_by_id(incoming_id)
@@ -166,7 +166,7 @@ class WebChoiceServer:
                 invocation_time = session.invocation_time
                 # Merge session defaults with latest global config for UI display
                 # This ensures UI always shows the latest saved settings
-                from ..storage import ConfigStore
+                from ..infra import ConfigStore
                 latest_config = ConfigStore().load()
                 display_defaults = session.effective_defaults()
                 if latest_config:
@@ -209,7 +209,7 @@ class WebChoiceServer:
                     options=options,
                     timeout_seconds=timeout_value,
                 )
-                from ..storage import ConfigStore
+                from ..infra import ConfigStore
                 latest_config = ConfigStore().load()
                 if latest_config:
                     display_defaults = latest_config
@@ -412,7 +412,7 @@ class WebChoiceServer:
             This endpoint persists settings like transport, timeout, language, etc.
             without requiring an active session.
             """
-            from ..storage import ConfigStore
+            from ..infra import ConfigStore
             from ..models import ProvideChoiceRequest, ProvideChoiceOption, DEFAULT_TIMEOUT_SECONDS, TRANSPORT_TERMINAL
 
             # Create a dummy request for config parsing (only needed for option count validation)
@@ -520,7 +520,7 @@ class WebChoiceServer:
                 parsed_config = _parse_config_payload(session.config, config_payload, session.req)
                 session.config = parsed_config
                 try:
-                    from ..storage import ConfigStore
+                    from ..infra import ConfigStore
                     ConfigStore().save(parsed_config)
                 except Exception:
                     pass
@@ -541,7 +541,7 @@ class WebChoiceServer:
                 parsed_config = _parse_config_payload(session.config, config_payload, session.req)
                 session.config = parsed_config
                 try:
-                    from ..storage import ConfigStore
+                    from ..infra import ConfigStore
                     ConfigStore().save(parsed_config)
                 except Exception:
                     pass
@@ -619,7 +619,7 @@ class WebChoiceServer:
             # Try active session first
             session = self.sessions.get(interaction_id)
             if session:
-                from ..storage import ConfigStore
+                from ..infra import ConfigStore
                 latest_config = ConfigStore().load()
                 display_defaults = session.effective_defaults()
                 if latest_config:
@@ -668,13 +668,13 @@ class WebChoiceServer:
                 })
 
             # Try persisted session
-            from ..interaction_store import get_interaction_store
+            from ..store.interaction_store import get_interaction_store
             store = get_interaction_store()
             persisted = store.get_by_id(interaction_id)
             if not persisted or not persisted.result or persisted.transport != TRANSPORT_WEB:
                 raise HTTPException(status_code=404)
 
-            from ..storage import ConfigStore
+            from ..infra import ConfigStore
             latest_config = ConfigStore().load()
             if latest_config:
                 config_dict = {
@@ -755,7 +755,7 @@ class WebChoiceServer:
         if self._server_task and not self._server_task.done():
             return
         # Initialize interaction store and cleanup expired sessions
-        from ..interaction_store import get_interaction_store
+        from ..store.interaction_store import get_interaction_store
         store = get_interaction_store()
         store.load()
         cleaned = store.cleanup()
@@ -827,7 +827,7 @@ class WebChoiceServer:
         """
         from ..models import InteractionEntry, InteractionStatus
         from ..terminal.session import get_terminal_session_store
-        from ..interaction_store import get_interaction_store
+        from ..store.interaction_store import get_interaction_store
 
         entries: list[InteractionEntry] = []
 
@@ -878,7 +878,7 @@ class WebChoiceServer:
 
     def save_session_to_store(self, session: ChoiceSession) -> None:
         """Save a completed session to the persistent store."""
-        from ..interaction_store import get_interaction_store
+        from ..store.interaction_store import get_interaction_store
         from datetime import datetime
 
         if not session.final_result:
@@ -898,7 +898,7 @@ class WebChoiceServer:
 
     def _save_terminal_session(self, session: "TerminalSession") -> None:
         """Save a completed terminal session to the persistent store."""
-        from ..interaction_store import get_interaction_store
+        from ..store.interaction_store import get_interaction_store
         from ..models import TRANSPORT_TERMINAL
 
         if not session.result:

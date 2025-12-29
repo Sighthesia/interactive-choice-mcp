@@ -5,8 +5,8 @@ from typing import Iterable, List
 
 import questionary
 
-from ..i18n import get_text
-from ..models import ProvideChoiceOption, ProvideChoiceResponse, LANG_EN
+from ..infra.i18n import get_text
+from ..core.models import ProvideChoiceOption, ProvideChoiceResponse, LANG_EN
 
 __all__ = [
     "_build_choices",
