@@ -169,24 +169,28 @@ Web 界面自动显示最近的交互历史，支持查看详情和重新使用�
 
 ### 环境变量
 
-| 变量名 | 默认值 | 说明 |
-|--------|--------|------|
-| `CHOICE_WEB_HOST` | `127.0.0.1` | Web 服务器绑定地址 |
-| `CHOICE_WEB_PORT` | `17863` | Web 服务器端口（自动选择空闲端口） |
-| `CHOICE_LOG_LEVEL` | `INFO` | 日志级别：`DEBUG`, `INFO`, `WARNING`, `ERROR` |
-| `CHOICE_LOG_FILE` | 无 | 日志文件路径 |
-| `CHOICE_LANG` | `zh` | 界面语言：`en`, `zh` |
+| 变量名             | 默认值      | 说明                                          |
+| ------------------ | ----------- | --------------------------------------------- |
+| `CHOICE_WEB_HOST`  | `127.0.0.1` | Web 服务器绑定地址                            |
+| `CHOICE_WEB_PORT`  | `17863`     | Web 服务器端口（自动选择空闲端口）            |
+| `CHOICE_LOG_LEVEL` | `INFO`      | 日志级别：`DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| `CHOICE_LOG_FILE`  | 无          | 日志文件路径                                  |
+| `CHOICE_LANG`      | `zh`        | 界面语言：`en`, `zh`                          |
 
 ### 持久化配置
 
-用户偏好自动保存到 `~/.interactive_choice_config.json`：
+用户偏好自动保存到 `~/.mcp-data/interactive_choice/config.json`：
 
 ```json
 {
   "transport": "web",
   "language": "zh",
-  "web_port": 17863,
-  "timeout_seconds": 600
+  "timeout_seconds": 600,
+  "single_submit_mode": true,
+  "use_default_option": false,
+  "timeout_action": "submit",
+  "notify_new": true,
+  "notify_timeout": true
 }
 ```
 
@@ -194,17 +198,19 @@ Web 界面自动显示最近的交互历史，支持查看详情和重新使用�
 
 ```
 interactive-choice-mcp/
-├── server.py              # MCP 服务器入口
+├── server.py              # MCP 服务器入口（provide_choice, poll_selection）
+├── main.py                # CLI 入口
 ├── src/
 │   ├── core/              # 核心业务逻辑
-│   │   ├── models.py      # 数据模型定义
+│   │   ├── models.py      # 数据模型、验证、状态枚举
 │   │   ├── orchestrator.py # 会话调度协调器
 │   │   ├── validation.py  # 请求校验
 │   │   └── response.py    # 响应归一化
 │   ├── infra/             # 基础设施服务
 │   │   ├── logging.py     # 日志配置
 │   │   ├── storage.py     # 配置持久化
-│   │   └── i18n.py        # 国际化文案
+│   │   ├── paths.py       # 路径解析
+│   │   └── i18n.py        # 国际化文案（en/zh）
 │   ├── store/             # 数据存储
 │   │   └── interaction_store.py # Session 历史持久化
 │   ├── terminal/          # 终端传输层
@@ -215,10 +221,21 @@ interactive-choice-mcp/
 │   └── web/               # Web 传输层
 │       ├── server.py      # FastAPI 服务器
 │       ├── session.py     # WebSocket 会话
+│       ├── bundler.py     # 前端资源打包
 │       ├── templates.py   # HTML 模板生成
-│       └── frontend/      # 前端资源（JS/CSS）
+│       └── frontend/      # 前端资源
+│           ├── scripts/   # JavaScript 模块
+│           ├── styles/    # CSS 样式
+│           └── templates/ # HTML 模板
 ├── tests/                 # 测试套件
-└── openspec/             # 项目规范文档
+│   ├── unit/              # 单元测试
+│   │   ├── core/          # 核心模块测试
+│   │   ├── infra/         # 基础设施测试
+│   │   ├── store/         # 存储模块测试
+│   │   ├── terminal/      # 终端模块测试
+│   │   └── web/           # Web 模块测试
+│   └── integration/       # 集成测试
+└── openspec/              # 项目规范文档
 ```
 
 ### 核心模块
@@ -232,13 +249,16 @@ interactive-choice-mcp/
 
 ```bash
 # 运行完整测试套件
-uv run pytest
+uv run pytest tests/ -v
 
-# 运行特定测试
-uv run pytest tests/test_orchestrator.py
+# 运行单元测试
+uv run pytest tests/unit/ -v
 
-# 详细输出
-uv run pytest -v
+# 运行特定模块测试
+uv run pytest tests/unit/core/ -v
+
+# 运行集成测试
+uv run pytest tests/integration/ -v
 
 # 查看覆盖率
 uv run pytest --cov=src --cov-report=html
