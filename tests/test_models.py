@@ -2,9 +2,9 @@ import os
 
 import pytest
 
-from src import models
-from src import validation as v
-from src import response as r
+from src.core import models
+from src.core import validation as v
+from src.core import response as r
 
 
 def test_parse_request_defaults():

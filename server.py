@@ -1,6 +1,6 @@
 from mcp.server.fastmcp import FastMCP
 
-from src.orchestrator import ChoiceOrchestrator, safe_handle
+from src.core.orchestrator import ChoiceOrchestrator, safe_handle
 
 # Section: Initialization
 # Initialize the FastMCP server instance and the choice orchestrator.

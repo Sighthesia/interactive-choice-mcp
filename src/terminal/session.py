@@ -70,7 +70,7 @@ class TerminalSession:
 
     def to_interaction_entry(self) -> "InteractionEntry":
         """Convert this session to an InteractionEntry for the sidebar list."""
-        from ..models import InteractionEntry, InteractionStatus, TRANSPORT_TERMINAL
+        from ..core.models import InteractionEntry, InteractionStatus, TRANSPORT_TERMINAL
         if self.result:
             status = InteractionStatus.from_action_status(self.result.action_status)
         else:

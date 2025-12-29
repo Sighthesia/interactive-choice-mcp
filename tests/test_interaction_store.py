@@ -8,13 +8,13 @@ from pathlib import Path
 
 import pytest
 
-from src.interaction_store import (
+from src.store.interaction_store import (
     InteractionStore,
     PersistedSession,
     DEFAULT_RETENTION_DAYS,
     DEFAULT_MAX_SESSIONS,
 )
-from src.models import (
+from src.core.models import (
     InteractionStatus,
     ProvideChoiceOption,
     ProvideChoiceRequest,

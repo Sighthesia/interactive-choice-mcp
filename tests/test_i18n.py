@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
-from src.i18n import get_text, TEXTS
-from src.logging import get_language_from_env, LANG_ENV
+from src.infra.i18n import get_text, TEXTS
+from src.infra.logging import get_language_from_env, LANG_ENV
 
 
 class TestGetText:

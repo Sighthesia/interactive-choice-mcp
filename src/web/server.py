@@ -413,7 +413,7 @@ class WebChoiceServer:
             without requiring an active session.
             """
             from ..infra import ConfigStore
-            from ..models import ProvideChoiceRequest, ProvideChoiceOption, DEFAULT_TIMEOUT_SECONDS, TRANSPORT_TERMINAL
+            from ..core.models import ProvideChoiceRequest, ProvideChoiceOption, DEFAULT_TIMEOUT_SECONDS, TRANSPORT_TERMINAL
 
             # Create a dummy request for config parsing (only needed for option count validation)
             dummy_req = ProvideChoiceRequest(
@@ -825,7 +825,7 @@ class WebChoiceServer:
         into a unified list, sorted by status (active first) and then by start time
         (newest first).
         """
-        from ..models import InteractionEntry, InteractionStatus
+        from ..core.models import InteractionEntry, InteractionStatus
         from ..terminal.session import get_terminal_session_store
         from ..store.interaction_store import get_interaction_store
 
@@ -899,7 +899,7 @@ class WebChoiceServer:
     def _save_terminal_session(self, session: "TerminalSession") -> None:
         """Save a completed terminal session to the persistent store."""
         from ..store.interaction_store import get_interaction_store
-        from ..models import TRANSPORT_TERMINAL
+        from ..core.models import TRANSPORT_TERMINAL
 
         if not session.result:
             return

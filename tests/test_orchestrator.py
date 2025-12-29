@@ -1,8 +1,8 @@
 import asyncio
 import pytest
-from src.orchestrator import ChoiceOrchestrator, safe_handle
-from src import models
-from src import response as r
+from src.core.orchestrator import ChoiceOrchestrator, safe_handle
+from src.core import models
+from src.core import response as r
 
 
 # Section: Terminal Hand-off Tests
@@ -94,7 +94,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
     
     # Pre-set config to web transport
-    from src.storage import ConfigStore
+    from src.infra.storage import ConfigStore
     store = ConfigStore(path=tmp_path / "cfg.json")
     store.save(models.ProvideChoiceConfig(
         transport=models.TRANSPORT_WEB,

@@ -1,7 +1,7 @@
 """Tests for the interaction list functionality."""
 import pytest
 
-from src.models import InteractionEntry, InteractionStatus, TRANSPORT_WEB, TRANSPORT_TERMINAL
+from src.core.models import InteractionEntry, InteractionStatus, TRANSPORT_WEB, TRANSPORT_TERMINAL
 
 
 # Section: InteractionStatus Tests
@@ -97,7 +97,7 @@ class TestSessionToInteractionEntry:
         # Import here to avoid circular imports in test collection
         import asyncio
         from src.web.session import ChoiceSession
-        from src.models import ProvideChoiceRequest, ProvideChoiceConfig, ProvideChoiceOption
+        from src.core.models import ProvideChoiceRequest, ProvideChoiceConfig, ProvideChoiceOption
 
         req = ProvideChoiceRequest(
             title="Web Test",
@@ -136,7 +136,7 @@ class TestSessionToInteractionEntry:
     def test_terminal_session_to_interaction_entry(self):
         """Test TerminalSession.to_interaction_entry."""
         from src.terminal.session import TerminalSession
-        from src.models import ProvideChoiceRequest, ProvideChoiceConfig, ProvideChoiceOption
+        from src.core.models import ProvideChoiceRequest, ProvideChoiceConfig, ProvideChoiceOption
 
         req = ProvideChoiceRequest(
             title="Terminal Test",

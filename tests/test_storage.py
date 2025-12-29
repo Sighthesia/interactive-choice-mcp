@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from src.storage import ConfigStore
-from src import models
+from src.infra.storage import ConfigStore
+from src.core import models
 
 
 def test_load_returns_none_when_missing(tmp_path: Path):

@@ -179,7 +179,7 @@ class ChoiceSession:
         self.connections.clear()
 
     async def monitor_deadline(self) -> None:
-        from ..logging import get_session_logger
+        from ..infra.logging import get_session_logger
 
         logger = get_session_logger(__name__, self.choice_id)
         try:

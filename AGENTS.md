@@ -57,9 +57,6 @@ src/
 - **持久化**: [src/infra/storage.py](src/infra/storage.py) 将用户偏好保存至 `~/.interactive_choice_config.json`。
 - **日志系统**: [src/infra/logging.py](src/infra/logging.py) 提供统一的日志配置与工具。
 
-### 向后兼容
-根目录下的 shim 文件（如 `src/models.py`、`src/logging.py`）提供向后兼容，重新导出新模块的内容。新代码应直接使用 `src.core`、`src.infra`、`src.store` 子包。
-
 ## 🛠️ 关键工作流 (Workflows)
 - **环境同步**: `uv sync`
 - **运行服务器**: `uv run server.py`
