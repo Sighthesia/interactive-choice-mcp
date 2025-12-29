@@ -7,7 +7,15 @@ from src.core import response as r
 
 # Section: Terminal Hand-off Tests
 def test_orchestrator_terminal_handoff_returns_pending(monkeypatch, tmp_path):
-    """When terminal transport is requested but terminal is not available, orchestrator returns pending_terminal_launch."""
+    """When terminal transport is configured, orchestrator returns pending_terminal_launch."""
+    # Pre-set config to terminal transport
+    from src.infra.storage import ConfigStore
+    store = ConfigStore(path=tmp_path / "cfg.json")
+    store.save(models.ProvideChoiceConfig(
+        transport=models.TRANSPORT_TERMINAL,
+        timeout_seconds=300,
+    ))
+
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
 
     async def fake_handoff(req, config):
@@ -17,8 +25,6 @@ def test_orchestrator_terminal_handoff_returns_pending(monkeypatch, tmp_path):
             launch_command="uv run python -m src.terminal.client --session test123 --url http://127.0.0.1:17863",
         )
 
-    # Mock terminal as unavailable to trigger handoff flow
-    monkeypatch.setattr("src.core.orchestrator.is_terminal_available", lambda: False)
     monkeypatch.setattr("src.core.orchestrator.create_terminal_handoff_session", fake_handoff)
 
     result = asyncio.run(
@@ -130,9 +136,8 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
 
 
 # Section: Error Handling Tests
-def test_safe_handle_reports_validation_error(monkeypatch, tmp_path):
+def test_safe_handle_reports_validation_error(tmp_path):
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
-    monkeypatch.setattr("src.core.orchestrator.is_terminal_available", lambda: False)
 
     result = asyncio.run(
         safe_handle(

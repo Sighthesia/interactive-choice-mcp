@@ -22,9 +22,7 @@ from .models import (
     TRANSPORT_TERMINAL,
     TRANSPORT_WEB,
 )
-from ..terminal import is_terminal_available, run_terminal_choice
-from ..terminal import prompt_configuration as prompt_terminal_configuration
-from .validation import apply_configuration, parse_request
+from .validation import parse_request
 from .response import cancelled_response, timeout_response
 from ..web import run_web_choice, create_terminal_handoff_session, poll_terminal_session_result
 
@@ -112,40 +110,16 @@ class ChoiceOrchestrator:
 
         config_defaults = self._build_default_config(req)
 
-        # If the caller prefers terminal transport and a local terminal is available,
-        # use the in-process interactive configuration flow (preserves previous behaviour).
-        if config_defaults.transport == TRANSPORT_TERMINAL and is_terminal_available():
-            _logger.debug("Using terminal transport")
-            config = await prompt_terminal_configuration(req, defaults=config_defaults, allow_web=True)
-            if config is None:
-                # User aborted terminal configuration — fall back to web portal when possible
-                _logger.info("Terminal config aborted, falling back to web")
-                response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=True)
-                self._store.save(final_config)
-                self._last_config = final_config
-                _logger.info(f"Choice completed via web: action={response.action_status}")
-                return response
-            if config.transport == TRANSPORT_WEB:
-                _logger.info("User selected web transport from terminal config")
-                response, final_config = await run_web_choice(req, defaults=config, allow_terminal=True)
-                self._store.save(final_config)
-                self._last_config = final_config
-                _logger.info(f"Choice completed via web: action={response.action_status}")
-                return response
-            filtered_req = apply_configuration(req, config)
-            response = await run_terminal_choice(filtered_req, timeout_seconds=config.timeout_seconds, config=config)
-            self._store.save(config)
-            self._last_config = config
-            _logger.info(f"Choice completed via terminal: action={response.action_status}")
-            return response
-
-        # If terminal transport is requested but a local terminal isn't available,
-        # create a terminal hand-off session so the agent can launch the terminal UI externally.
+        # Section: Transport Selection
+        # If terminal transport is configured, create a terminal hand-off session.
+        # The AI agent will execute the terminal command to start the interaction.
         if config_defaults.transport == TRANSPORT_TERMINAL:
+            _logger.debug("Using terminal transport (handoff)")
             self._store.save(config_defaults)
             self._last_config = config_defaults
             return await create_terminal_handoff_session(req, config_defaults)
 
+        # Otherwise, use web transport (default)
         _logger.debug("Using web transport")
         response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=True)
         self._store.save(final_config)
@@ -155,8 +129,8 @@ class ChoiceOrchestrator:
 
     def _build_default_config(self, req: ProvideChoiceRequest) -> ProvideChoiceConfig:
         saved = self._last_config
-        # Transport preference: use saved config or default to terminal
-        transport_pref = saved.transport if saved else TRANSPORT_TERMINAL
+        # Transport preference: use saved config or default to web
+        transport_pref = saved.transport if saved else TRANSPORT_WEB
         timeout_pref = saved.timeout_seconds if saved else req.timeout_seconds
 
         # Extended settings: inherit from saved config or request defaults
