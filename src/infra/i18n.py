@@ -276,6 +276,10 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "No interactions",
         "zh": "暂无交互",
     },
+    "badge.terminal_only": {
+        "en": "Terminal Only",
+        "zh": "仅限终端",
+    },
 
     # Section: Terminal UI
     "terminal.settings_entry": {

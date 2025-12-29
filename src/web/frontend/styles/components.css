@@ -398,6 +398,16 @@ body.submitted .status {
     background: rgba(79, 70, 229, 0.05);
 }
 
+.interaction-item.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.interaction-item.disabled:hover {
+    border-color: var(--border);
+    background: var(--card-bg);
+}
+
 .interaction-progress {
     height: 6px;
     background: var(--border);
@@ -501,6 +511,16 @@ body.submitted .status {
 .dark .badge-terminal {
     background: #14532d;
     color: #86efac;
+}
+
+.badge-terminal-only {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.dark .badge-terminal-only {
+    background: #78350f;
+    color: #fcd34d;
 }
 
 /* Section: Config Items */

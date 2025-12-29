@@ -168,12 +168,18 @@ function renderInteractionList() {
 
     container.innerHTML = filtered.map(item => {
         const isCurrent = item.session_id === choiceId;
+        const isTerminal = item.transport === 'terminal';
         const statusBadge = '<span class="interaction-badge badge-' + item.status + '">' + item.status.replace('_', ' ') + '</span>';
         const transportBadge = '<span class="interaction-badge badge-' + item.transport + '">' + item.transport + '</span>';
-        // Use data attribute for click handling instead of inline onclick with URL
-        const clickAttr = item.url ? 'data-session-id="' + item.session_id + '"' : '';
+        // Terminal sessions are not clickable (no URL); only web sessions with URL are navigable
+        const isClickable = !isTerminal && item.url;
+        const clickAttr = isClickable ? 'data-session-id="' + item.session_id + '"' : '';
         const timeoutHint = item.status === 'pending' && typeof item.remaining_seconds === 'number'
             ? ' · timeout ~' + Math.ceil(item.remaining_seconds) + 's'
+            : '';
+        // Terminal-only label for pending terminal sessions
+        const terminalOnlyLabel = isTerminal && item.status === 'pending'
+            ? '<span class="interaction-badge badge-terminal-only">' + t('badge.terminal_only') + '</span>'
             : '';
 
         let progressBar = '';
@@ -183,10 +189,13 @@ function renderInteractionList() {
             progressBar = '<div class="interaction-progress"><div class="interaction-progress-bar ' + barClass + '" style="width:' + pct + '%"></div></div>';
         }
 
-        return '<div class="interaction-item' + (isCurrent ? ' current' : '') + '" ' + clickAttr + '>' +
+        // Add disabled class for terminal sessions to indicate non-interactive state
+        const disabledClass = isTerminal ? ' disabled' : '';
+
+        return '<div class="interaction-item' + (isCurrent ? ' current' : '') + disabledClass + '" ' + clickAttr + '>' +
             '<div class="interaction-item-header">' +
             '<span class="interaction-item-title">' + (item.title || 'Untitled') + '</span>' +
-            statusBadge + transportBadge +
+            statusBadge + transportBadge + terminalOnlyLabel +
             '</div>' +
             '<div class="interaction-item-meta">' + item.started_at + timeoutHint + '</div>' +
             progressBar +
