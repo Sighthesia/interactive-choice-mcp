@@ -32,6 +32,7 @@ from ..core.models import (
     ValidationError,
     DEFAULT_TIMEOUT_SECONDS,
     TRANSPORT_WEB,
+    TRANSPORT_TERMINAL_WEB,
 )
 from ..core.response import cancelled_response as cancelled_response_fn, normalize_response, timeout_response
 from ..core.validation import apply_configuration as apply_configuration_fn
@@ -965,7 +966,7 @@ class WebChoiceServer:
             _logger.debug(f"[get_interaction_list] Session {sid[:8]}: final_result={session.final_result is not None}, status={session.status}, transport={session.transport}")
             entry = session.to_interaction_entry()
             # Set relative URL based on transport type
-            if entry.transport == TRANSPORT_WEB:
+            if entry.transport in (TRANSPORT_WEB, TRANSPORT_TERMINAL_WEB):
                 entry.url = f"/choice/{entry.session_id}"
             else:
                 entry.url = None  # Terminal sessions are not clickable in web UI
@@ -990,7 +991,7 @@ class WebChoiceServer:
         for entry in persisted:
             if entry.session_id in in_memory_ids:
                 continue
-            if entry.transport == TRANSPORT_WEB:
+            if entry.transport in (TRANSPORT_WEB, TRANSPORT_TERMINAL_WEB):
                 entry.url = f"/choice/{entry.session_id}"
             else:
                 entry.url = None

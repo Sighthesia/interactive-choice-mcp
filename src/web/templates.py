@@ -125,13 +125,15 @@ def _render_html(
             label=get_text("settings.transport_web", lang),
         )
     ]
-    if allow_terminal:
-        transport_options.append(
-            "<option value='terminal' {sel}>{label}</option>".format(
-                sel="selected" if defaults.transport != TRANSPORT_WEB else "",
-                label=get_text("settings.transport_terminal", lang),
-            )
+    # Always show terminal option, but disable it if not allowed for this session
+    terminal_disabled = "disabled" if not allow_terminal else ""
+    transport_options.append(
+        "<option value='terminal' {sel} {disabled}>{label}</option>".format(
+            sel="selected" if defaults.transport != TRANSPORT_WEB else "",
+            disabled=terminal_disabled,
+            label=get_text("settings.transport_terminal", lang),
         )
+    )
 
     template = _load_template(use_modular=use_modular)
     
