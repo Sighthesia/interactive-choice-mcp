@@ -1,49 +1,56 @@
 # Interactive Choice MCP
 
-这是一个 MCP (Model Context Protocol) 服务器，提供了一个 `provide_choice` 工具，允许 AI 代理向用户请求结构化的决策输入。
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![FastMCP](https://img.shields.io/badge/FastMCP-2.14+-green.svg)](https://github.com/modelcontextprotocol/server-sdk-python)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-它旨在解决 AI 在面临多个分支、破坏性操作或配置缺失时“猜测”用户意图的问题，通过提供明确的选项让用户通过终端或浏览器进行选择。
+一个强大的 **Model Context Protocol (MCP)** 服务器，为 AI 代理提供结构化的人机交互决策能力。通过 `provide_choice` 工具，AI 可以在需要用户决策时暂停执行，提供清晰的选项界面，避免猜测用户意图。
 
-## ✨ 特性
+## ✨ 核心特性
 
-- **双模式交互**：
-  - **终端模式 (Terminal Hand-off)**：工具返回一个启动命令，AI 代理在终端中执行该命令以打开交互式 UI（基于 `questionary`）。
-  - **Web 模式 (Web Bridge)**：自动启动临时本地 Web 服务器，允许用户在浏览器中进行选择（适用于不支持终端交互的环境）。
-- **多种选择类型**：
-  - `single`: 单选。
-  - `multi`: 多选。
-- **健壮性设计**:
-  - 支持超时（Timeout）处理。
-  - 取消（Cancel）始终可用。
-  - 严格的输入验证。
+### 🎯 智能决策支持
+- **多选模式**：支持单选和多选，满足不同决策场景
+- **推荐选项**：AI 可以标记推荐选项，帮助用户快速决策
+- **超时处理**：内置超时机制，确保流程不会无限期阻塞
+- **取消支持**：用户随时可以取消操作，保持控制权
+
+### 🌐 双传输模式
+- **Web 模式**：自动启动本地 Web 服务器，提供现代化的浏览器界面
+- **终端模式**：通过 `questionary` 提供流畅的终端交互体验
+- **无缝切换**：支持从终端切换到 Web 界面，满足不同场景需求
+
+### 🔧 企业级特性
+- **配置持久化**：用户偏好自动保存，包括传输模式、语言设置等
+- **会话历史**：自动记录交互历史，支持查看和审计
+- **国际化支持**：内置中英文界面，可扩展更多语言
+- **结构化输出**：终端模式提供机器可解析的输出标记
 
 ## 📦 安装
 
-本项目由 FastMCP 构建，推荐使用 [uv](https://github.com/astral-sh/uv) 进行依赖管理。
+### 前置要求
+- Python 3.12 或更高版本
+- [uv](https://github.com/astral-sh/uv) 包管理器（推荐）
 
-1. **克隆并同步环境**：
-   ```bash
-   git clone https://github.com/Sighthesia/interactive-choice-mcp.git
-   ```
+### 快速开始
 
-    ```bash
-   cd interactive-choice-mcp
-   ```
+```bash
+# 克隆仓库
+git clone https://github.com/Sighthesia/interactive-choice-mcp.git
+cd interactive-choice-mcp
 
-   ```bash
-   uv sync
-   ```
+# 同步依赖
+uv sync
 
+# 验证安装
+uv run pytest
+```
 
-## 🚀 使用方法
+## 🚀 快速配置
 
-### 配置 MCP 客户端
+### 1. Claude Desktop 配置
 
-将此服务器添加到你的 MCP 客户端配置文件中（例如 Claude Desktop 的 `claude_desktop_config.json`）。
+编辑 Claude Desktop 配置文件（通常位于 `~/Library/Application Support/Claude/claude_desktop_config.json` 或 `%APPDATA%\Claude\claude_desktop_config.json`）：
 
-- 其中 `/path/to/interactive-choice-mcp` 应改为克隆仓库的实际位置（如 `~/interactive-choice-mcp`）。
-
-**基础配置：**
 ```json
 {
   "mcpServers": {
@@ -60,7 +67,10 @@
 }
 ```
 
-**启用调试日志的配置：**
+**提示**：将 `/path/to/interactive-choice-mcp` 替换为实际路径，如 `~/Projects/interactive-choice-mcp`。
+
+### 2. 启用调试模式（可选）
+
 ```json
 {
   "mcpServers": {
@@ -80,172 +90,220 @@
   }
 }
 ```
+
+## 📖 使用指南
+
+### 基础用法
+
+AI 代理可以在需要用户决策时调用 `provide_choice` 工具：
+
+```python
+# AI 代理代码示例
+result = provide_choice(
+    title="选择前端框架",
+    prompt="检测到多个可用的前端框架。请选择要使用的框架：",
+    selection_mode="single",
+    options=[
+        {
+            "id": "react",
+            "description": "React - Facebook 开发的流行 UI 库，组件化设计",
+            "recommended": True
+        },
+        {
+            "id": "vue",
+            "description": "Vue - 渐进式 JavaScript 框架，易于上手",
+            "recommended": False
+        },
+        {
+            "id": "angular",
+            "description": "Angular - Google 开发的企业级框架",
+            "recommended": False
+        }
+    ]
+)
+```
+
+### 工作流程
+
+#### Web 模式（默认）
+1. **自动启动**：工具自动启动本地 Web 服务器
+2. **浏览器交互**：用户在浏览器中查看选项并做出选择
+3. **结果返回**：工具阻塞等待用户完成，返回选择结果
+
+#### 终端模式
+1. **命令生成**：工具返回终端命令和会话 ID
+2. **终端执行**：AI 代理在终端中执行命令
+3. **交互选择**：用户在终端 UI 中完成选择
+4. **结果轮询**：AI 代理使用 `poll_selection` 工具获取结果
+
+```json
+// 终端模式响应示例
+{
+  "action_status": "pending_terminal_launch",
+  "terminal_command": "uv run python -m src.terminal.client --session abc123 --url http://127.0.0.1:17863",
+  "session_id": "abc123",
+  "instructions": "执行终端命令以启动交互界面"
+}
+```
+
+### 高级功能
+
+#### 1. 注释功能
+用户可以为选择添加备注：
+
+```bash
+uv run python -m src.terminal.client --session abc123 --url http://127.0.0.1:17863 --annotate
+```
+
+#### 2. 静默模式
+隐藏选项描述，仅显示 ID：
+
+```bash
+uv run python -m src.terminal.client --session abc123 --url http://127.0.0.1:17863 --quiet
+```
+
+#### 3. 会话历史
+Web 界面自动显示最近的交互历史，支持查看详情和重新使用配置。
+
+## ⚙️ 配置选项
 
 ### 环境变量
 
-| 变量名             | 默认值      | 说明                                                |
-| ------------------ | ----------- | --------------------------------------------------- |
-| `CHOICE_WEB_HOST`  | `127.0.0.1` | Web 服务器绑定地址。设置为 `0.0.0.0` 可允许外部访问 |
-| `CHOICE_WEB_PORT`  | `17863`     | Web 服务器端口。如果端口被占用会自动选择空闲端口    |
-| `CHOICE_LOG_LEVEL` | `INFO`      | 日志级别：`DEBUG`, `INFO`, `WARNING`, `ERROR`       |
-| `CHOICE_LOG_FILE`  | (无)        | 日志文件路径。不设置则只输出到 stderr               |
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `CHOICE_WEB_HOST` | `127.0.0.1` | Web 服务器绑定地址 |
+| `CHOICE_WEB_PORT` | `17863` | Web 服务器端口（自动选择空闲端口） |
+| `CHOICE_LOG_LEVEL` | `INFO` | 日志级别：`DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| `CHOICE_LOG_FILE` | 无 | 日志文件路径 |
+| `CHOICE_LANG` | `zh` | 界面语言：`en`, `zh` |
 
-**完整环境变量配置示例：**
+### 持久化配置
+
+用户偏好自动保存到 `~/.interactive_choice_config.json`：
+
 ```json
 {
-  "mcpServers": {
-    "interactive-choice": {
-      "command": "uv",
-      "args": [
-        "--directory",
-        "/path/to/interactive-choice-mcp",
-        "run",
-        "server.py"
-      ],
-      "env": {
-        "CHOICE_WEB_HOST": "0.0.0.0",
-        "CHOICE_WEB_PORT": "18000",
-        "CHOICE_LOG_LEVEL": "DEBUG",
-        "CHOICE_LOG_FILE": "~/.local/share/interactive-choice-mcp/server.log"
-      }
-    }
-  }
+  "transport": "web",
+  "language": "zh",
+  "web_port": 17863,
+  "timeout_seconds": 600
 }
 ```
 
-### 工具定义：`provide_choice`
-
-AI 代理可以调用此工具来请求用户输入。
-
-**参数：**
-
-- `title` (string): 选择界面的标题。
-- `prompt` (string): 向用户展示的提示信息，应包含上下文。
-- `selection_mode` (string): 选择模式 (`single`, `multi`)。
-- `options` (array): 选项列表，每个选项包含 `id`、`description`、`recommended` (至少一个需要为 `true`)。
-- `session_id` (string, optional): 用于轮询已创建的终端会话的结果。
-
-### Terminal Hand-off 流程
-
-当工具返回 `action_status: pending_terminal_launch` 时：
-
-1. 从响应的 `terminal_command` 字段获取 CLI 命令
-2. AI 代理在终端中执行该命令以打开交互式 UI
-3. 用户在终端 UI 中完成选择
-4. AI 代理使用 `session_id` 再次调用 `provide_choice` 来获取最终结果
-   - **注意**：轮询会阻塞等待最多 30 秒，减少频繁轮询的需要
-
-示例响应：
-```json
-{
-  "action_status": "pending_terminal_launch",
-  "terminal_command": "uv run python -m choice.terminal.client --session abc123 --url http://127.0.0.1:17863",
-  "session_id": "abc123",
-  "url": "http://127.0.0.1:17863/terminal/abc123",
-  "instructions": "1. Run the terminal_command in a terminal\n2. Wait for user to complete the interaction\n3. Call provide_choice again with session_id='abc123' to get the result"
-}
-```
-
-### 终端客户端选项
-
-```bash
-# 基本用法
-uv run python -m choice.terminal.client --session <id> --url <url>
-
-# 启用注释功能（允许用户为选择添加备注）
-uv run python -m choice.terminal.client --session <id> --url <url> --annotate
-
-# 静默模式（不显示选项描述预览）
-uv run python -m choice.terminal.client --session <id> --url <url> --quiet
-```
-
-终端 UI 特性：
-- 清晰的标题、提示和超时显示
-- 选项描述预览
-- 键盘导航提示（↑/↓ 导航，Enter 确认，Space 多选切换，Ctrl+C 取消）
-- 默认跳过注释步骤（使用 `--annotate` 启用）
-
-注意：终端会话为**单次使用**（完成后会清理），如果没有客户端在 `timeout_seconds` 时间内附着并提交结果，会话将自动过期并在轮询时返回 `timeout` 响应。
-## 🛠️ 开发
-
-### 项目结构
+## 🏗️ 架构设计
 
 ```
 interactive-choice-mcp/
-├── server.py                  # MCP 服务器入口
-├── choice/
-│   ├── orchestrator.py        # 调度器：决定使用终端还是 Web
-│   ├── models.py              # 数据模型与验证
-│   ├── response.py            # 响应归一化
-│   ├── storage.py             # 配置持久化
-│   ├── validation.py          # 请求验证
-│   ├── terminal/
-│   │   ├── runner.py          # 终端交互实现
-│   │   ├── session.py         # 终端会话管理
-│   │   ├── client.py          # 终端客户端 CLI
-│   │   └── ui.py              # 终端 UI 构建
-│   └── web/
-│       ├── server.py          # Web 服务器实现
-│       ├── session.py         # Web 会话管理
-│       └── templates.py       # HTML 模板
-└── openspec/                  # 项目规范文档
+├── server.py              # MCP 服务器入口
+├── src/
+│   ├── core/              # 核心业务逻辑
+│   │   ├── models.py      # 数据模型定义
+│   │   ├── orchestrator.py # 会话调度协调器
+│   │   ├── validation.py  # 请求校验
+│   │   └── response.py    # 响应归一化
+│   ├── infra/             # 基础设施服务
+│   │   ├── logging.py     # 日志配置
+│   │   ├── storage.py     # 配置持久化
+│   │   └── i18n.py        # 国际化文案
+│   ├── store/             # 数据存储
+│   │   └── interaction_store.py # Session 历史持久化
+│   ├── terminal/          # 终端传输层
+│   │   ├── runner.py      # 终端交互运行器
+│   │   ├── client.py      # CLI 客户端
+│   │   ├── session.py     # 会话管理
+│   │   └── ui.py          # questionary UI
+│   └── web/               # Web 传输层
+│       ├── server.py      # FastAPI 服务器
+│       ├── session.py     # WebSocket 会话
+│       ├── templates.py   # HTML 模板生成
+│       └── frontend/      # 前端资源（JS/CSS）
+├── tests/                 # 测试套件
+└── openspec/             # 项目规范文档
 ```
-### 运行测试
-使用 pytest 运行测试套件，请先确保安装了 pytest ：
+
+### 核心模块
+
+- **ChoiceOrchestrator**：中央调度器，负责验证请求、选择传输方式、协调会话生命周期
+- **ConfigStore**：配置持久化管理，支持环境变量覆盖
+- **ChoiceSession**：统一的会话模型，支持 Web 和终端两种传输方式
+- **InteractionStore**：会话历史存储，支持自动清理和审计
+
+## 🧪 测试
 
 ```bash
+# 运行完整测试套件
 uv run pytest
+
+# 运行特定测试
+uv run pytest tests/test_orchestrator.py
+
+# 详细输出
+uv run pytest -v
+
+# 查看覆盖率
+uv run pytest --cov=src --cov-report=html
 ```
 
-### 调试服务器
+## 🐛 调试
 
-运行此命令进入 MCP Inspector 进行调试：
+### 启用调试日志
+
+```bash
+export CHOICE_LOG_LEVEL=DEBUG
+export CHOICE_LOG_FILE=~/.local/share/interactive-choice-mcp/server.log
+```
+
+### 使用 MCP Inspector
 
 ```bash
 uv run mcp dev server.py
 ```
 
-### 日志配置
+### 日志示例
 
-服务器支持通过环境变量配置日志输出，便于调试和问题排查。
-
-**环境变量：**
-
-| 变量名              | 说明                                           | 默认值 |
-| ------------------- | ---------------------------------------------- | ------ |
-| `CHOICE_LOG_LEVEL`  | 日志级别 (`DEBUG`, `INFO`, `WARNING`, `ERROR`) | `INFO` |
-| `CHOICE_LOG_FILE`   | 日志文件路径（不设置则只输出到 stderr）        | 无     |
-| `CHOICE_LOG_FORMAT` | 自定义日志格式                                 | 见下方 |
-
-**默认日志格式：**
 ```
-%(asctime)s | %(levelname)-8s | %(name)-20s | %(message)s
+2024-12-29 10:00:00 | INFO     | choice.orchestrator  | Handling choice request
+2024-12-29 10:00:00 | INFO     | choice.server        | Starting web server on http://127.0.0.1:17863
+2024-12-29 10:00:00 | INFO     | choice.server        | Created session abc123: timeout=600s
+2024-12-29 10:00:15 | INFO     | choice.server        | Session abc123 submitted: selected=['react']
 ```
 
-**示例配置：**
+## 🤝 贡献
 
-```bash
-# 启用详细调试日志并保存到文件
-export CHOICE_LOG_LEVEL=DEBUG
-export CHOICE_LOG_FILE=~/.local/share/interactive-choice-mcp/server.log
-```
+欢迎贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
 
-**日志输出示例：**
-```
-2024-12-27 22:00:00 | INFO     | choice.orchestrator  | Handling choice request: title='选择框架', mode=single, options=3
-2024-12-27 22:00:00 | INFO     | choice.server        | Starting web server on http://127.0.0.1:17863
-2024-12-27 22:00:00 | INFO     | choice.server        | Created session abc12345: title='选择框架', timeout=600s
-2024-12-27 22:00:30 | INFO     | choice.server        | Session abc12345 submitted: selected=['react']
-2024-12-27 22:00:30 | INFO     | choice.orchestrator  | Choice completed via web: action=selected
-```
+### 开发流程
 
-**调试技巧：**
+1. Fork 本仓库
+2. 创建特性分支：`git checkout -b feature/amazing-feature`
+3. 提交更改：`git commit -m 'Add amazing feature'`
+4. 推送到分支：`git push origin feature/amazing-feature`
+5. 开启 Pull Request
 
-1. **查看请求处理流程**：设置 `CHOICE_LOG_LEVEL=DEBUG` 可以看到详细的请求解析、配置应用等信息。
-2. **排查超时问题**：日志会记录 session 创建时间、超时设置和超时触发事件。
-3. **追踪 WebSocket 连接**：DEBUG 级别会记录 WebSocket 连接和断开事件。
-4. **持久化日志**：设置 `CHOICE_LOG_FILE` 可以保存日志到文件，支持自动轮转（最大 10MB，保留 5 个备份）。
+### 代码规范
+
+- 使用 **Type Hints** 进行类型标注
+- 遵循 **PEP 8** 代码风格
+- 添加适当的文档字符串
+- 为新功能编写测试
 
 ## 📄 许可证
 
-[MIT License](LICENSE)
+本项目采用 [MIT License](LICENSE)。
+
+## 🙏 致谢
+
+- [FastMCP](https://github.com/modelcontextprotocol/server-sdk-python) - MCP 服务器框架
+- [FastAPI](https://fastapi.tiangolo.com/) - 现代 Python Web 框架
+- [Questionary](https://github.com/tmbo/questionary) - 终端交互库
+- [uv](https://github.com/astral-sh/uv) - 极速 Python 包管理器
+
+## 📞 支持
+
+- **问题反馈**：[GitHub Issues](https://github.com/Sighthesia/interactive-choice-mcp/issues)
+- **讨论交流**：[GitHub Discussions](https://github.com/Sighthesia/interactive-choice-mcp/discussions)
+- **文档更新**：欢迎提交 PR 改进文档
+
+---
+
+**Made with ❤️ by Sighthesia**
