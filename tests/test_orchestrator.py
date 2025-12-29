@@ -7,7 +7,7 @@ from src.core import response as r
 
 # Section: Terminal Hand-off Tests
 def test_orchestrator_terminal_handoff_returns_pending(monkeypatch, tmp_path):
-    """When terminal transport is requested, orchestrator returns pending_terminal_launch."""
+    """When terminal transport is requested but terminal is not available, orchestrator returns pending_terminal_launch."""
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
 
     async def fake_handoff(req, config):
@@ -17,6 +17,8 @@ def test_orchestrator_terminal_handoff_returns_pending(monkeypatch, tmp_path):
             launch_command="uv run python -m src.terminal.client --session test123 --url http://127.0.0.1:17863",
         )
 
+    # Mock terminal as unavailable to trigger handoff flow
+    monkeypatch.setattr("src.core.orchestrator.is_terminal_available", lambda: False)
     monkeypatch.setattr("src.core.orchestrator.create_terminal_handoff_session", fake_handoff)
 
     result = asyncio.run(

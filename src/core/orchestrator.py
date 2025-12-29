@@ -55,7 +55,6 @@ class ChoiceOrchestrator:
         prompt: str,
         selection_mode: str,
         options: List[Dict[str, object]],
-        transport: Optional[str] = None,
         timeout_seconds: Optional[int] = None,
         # Extended schema fields
         single_submit_mode: Optional[bool] = None,
@@ -102,7 +101,6 @@ class ChoiceOrchestrator:
             prompt=prompt,
             selection_mode=selection_mode,
             options=options,
-            transport=transport,
             timeout_seconds=timeout_seconds,
             single_submit_mode=single_submit_mode,
             timeout_default_index=timeout_default_index,
@@ -122,14 +120,14 @@ class ChoiceOrchestrator:
             if config is None:
                 # User aborted terminal configuration — fall back to web portal when possible
                 _logger.info("Terminal config aborted, falling back to web")
-                response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=False)
+                response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=True)
                 self._store.save(final_config)
                 self._last_config = final_config
                 _logger.info(f"Choice completed via web: action={response.action_status}")
                 return response
             if config.transport == TRANSPORT_WEB:
                 _logger.info("User selected web transport from terminal config")
-                response, final_config = await run_web_choice(req, defaults=config, allow_terminal=False)
+                response, final_config = await run_web_choice(req, defaults=config, allow_terminal=True)
                 self._store.save(final_config)
                 self._last_config = final_config
                 _logger.info(f"Choice completed via web: action={response.action_status}")
@@ -149,7 +147,7 @@ class ChoiceOrchestrator:
             return await create_terminal_handoff_session(req, config_defaults)
 
         _logger.debug("Using web transport")
-        response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=False)
+        response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=True)
         self._store.save(final_config)
         self._last_config = final_config
         _logger.info(f"Choice completed via web: action={response.action_status}")
@@ -157,7 +155,8 @@ class ChoiceOrchestrator:
 
     def _build_default_config(self, req: ProvideChoiceRequest) -> ProvideChoiceConfig:
         saved = self._last_config
-        transport_pref = saved.transport if saved else req.transport or TRANSPORT_TERMINAL
+        # Transport preference: use saved config or default to terminal
+        transport_pref = saved.transport if saved else TRANSPORT_TERMINAL
         timeout_pref = saved.timeout_seconds if saved else req.timeout_seconds
 
         # Extended settings: inherit from saved config or request defaults

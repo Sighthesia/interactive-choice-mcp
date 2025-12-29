@@ -98,7 +98,6 @@ class ProvideChoiceRequest:
     selection_mode: str
     options: List[ProvideChoiceOption]
     timeout_seconds: int
-    transport: Optional[str] = None
     # Extended schema fields
     single_submit_mode: bool = True
     timeout_default_index: Optional[int] = None

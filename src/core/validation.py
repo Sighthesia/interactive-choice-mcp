@@ -75,16 +75,6 @@ def _normalize_selection_mode(value: str) -> str:
     return normalized
 
 
-def _validate_transport(value: Optional[str]) -> Optional[str]:
-    from .models import VALID_TRANSPORTS, ValidationError
-
-    if value is None:
-        return None
-    if value not in VALID_TRANSPORTS:
-        raise ValidationError(f"transport must be one of {sorted(VALID_TRANSPORTS)} when provided")
-    return value
-
-
 # Section: Public API
 def parse_request(
     *,
@@ -92,7 +82,6 @@ def parse_request(
     prompt: str,
     selection_mode: str,
     options: Sequence[dict | "ProvideChoiceOption"],
-    transport: Optional[str] = None,
     timeout_seconds: Optional[int] = None,
     # Extended schema fields
     single_submit_mode: Optional[bool] = None,
@@ -114,7 +103,6 @@ def parse_request(
     _ensure_non_empty(prompt, "prompt")
     normalized_selection_mode = _normalize_selection_mode(selection_mode)
     parsed_options = _validate_options(options)
-    validated_transport = _validate_transport(transport)
 
     normalized_timeout = timeout_seconds
     if normalized_timeout is None:
@@ -142,7 +130,6 @@ def parse_request(
         prompt=prompt.strip(),
         selection_mode=normalized_selection_mode,
         options=parsed_options,
-        transport=validated_transport,
         timeout_seconds=normalized_timeout,
         single_submit_mode=single_submit_mode if single_submit_mode is not None else True,
         timeout_default_index=timeout_default_index,
@@ -156,7 +143,11 @@ def apply_configuration(
     req: "ProvideChoiceRequest",
     config: "ProvideChoiceConfig",
 ) -> "ProvideChoiceRequest":
-    """Apply user configuration to the request (transport, timeout, extended settings)."""
+    """Apply user configuration to the request (timeout, extended settings).
+    
+    Note: transport is not applied here as it's a session-level configuration,
+    not a per-request parameter. Transport selection is handled by the orchestrator.
+    """
 
     from .models import ProvideChoiceConfig, ProvideChoiceRequest, VALID_TRANSPORTS, ValidationError
 
@@ -175,7 +166,6 @@ def apply_configuration(
         prompt=req.prompt,
         selection_mode=req.selection_mode,
         options=req.options,
-        transport=config.transport,
         timeout_seconds=config.timeout_seconds,
         single_submit_mode=config.single_submit_mode,
         timeout_default_index=timeout_default_index,

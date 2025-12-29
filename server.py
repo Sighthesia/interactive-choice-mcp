@@ -69,7 +69,6 @@ async def provide_choice(
 		prompt=prompt,
 		selection_mode=selection_mode,
 		options=options,
-		transport=None,
 		timeout_seconds=None,
 		session_id=session_id,
 	)

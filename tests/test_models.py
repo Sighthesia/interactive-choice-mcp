@@ -15,7 +15,6 @@ def test_parse_request_defaults():
         options=[{"id": "A", "description": "desc", "recommended": True}],
     )
     assert req.timeout_seconds == models.DEFAULT_TIMEOUT_SECONDS
-    assert req.transport is None
     assert req.single_submit_mode is True
 
 
@@ -190,5 +189,5 @@ def test_apply_configuration():
     )
     adjusted = v.apply_configuration(req, config)
     assert adjusted.timeout_seconds == 42
-    assert adjusted.transport == models.TRANSPORT_WEB
+    # Note: transport is not applied to request, it's a session-level config
     assert [opt.id for opt in adjusted.options] == ["A", "B"]
