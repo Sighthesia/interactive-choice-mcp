@@ -564,7 +564,7 @@ class WebChoiceServer:
                 })
 
             if action == "cancelled":
-                from ..response import cancelled_response
+                from ..core.response import cancelled_response
                 response = cancelled_response(
                     transport=TRANSPORT_WEB,
                     url=f"http://{self.host}:{self.port}/terminal/{session_id}",
@@ -1087,7 +1087,7 @@ async def create_terminal_handoff_session(
     
     The agent should then run the returned command to open the terminal UI.
     """
-    from ..response import pending_terminal_launch_response
+    from ..core.response import pending_terminal_launch_response
     from ..terminal.session import get_terminal_session_store
 
     server = await _get_server()
@@ -1123,7 +1123,7 @@ async def poll_terminal_session_result(session_id: str, wait_seconds: int = 30) 
         The ProvideChoiceResponse if available, or None if session not found
     """
     from ..terminal.session import get_terminal_session_store
-    from ..response import timeout_response
+    from ..core.response import timeout_response
 
     store = get_terminal_session_store()
     session = store.get_session(session_id)
