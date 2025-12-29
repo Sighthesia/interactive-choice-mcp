@@ -153,7 +153,6 @@ def _switch_to_web(base_url: str, session_id: str, timeout_seconds: int) -> None
     payload = {
         "action_status": "switch_to_web",
         "config": {
-            "transport": "web",
             "timeout_seconds": timeout_seconds,
         },
     }

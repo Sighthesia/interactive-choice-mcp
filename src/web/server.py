@@ -666,7 +666,9 @@ class WebChoiceServer:
                 })
 
             if action == "switch_to_web":
-                parsed_config = _parse_config_payload(session.config, config_payload, session.req)
+                # Parse config but ignore transport changes during switch
+                config_payload_no_transport = {k: v for k, v in config_payload.items() if k != "transport"}
+                parsed_config = _parse_config_payload(session.config, config_payload_no_transport, session.req)
                 session.config = parsed_config
                 try:
                     from ..infra import ConfigStore
