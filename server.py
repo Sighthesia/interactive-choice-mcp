@@ -39,12 +39,14 @@ async def provide_choice(
 	Terminal Mode Workflow:
 		When `action_status` is "pending_terminal_launch":
 		
-		Step 1: Use terminal tool to run the `terminal_command`
-		Step 2: Call `poll_selection` with `session_id` to wait for result
-		
-		Response fields for terminal mode:
-		- `terminal_command`: The exact command to run (copy-paste ready)
-		- `session_id`: Use this with poll_selection to get results
+		Step 1: Run the `terminal_command` in terminal
+		Step 2: Parse terminal output for result markers:
+		   - [SELECTION_COMPLETE] selected=A,B annotations={} global=note
+		     → User made selection in terminal, use the parsed values
+		   - [CANCELLED] global=note
+		     → User cancelled in terminal
+		   - [SWITCH_TO_WEB] session_id=xxx
+		     → User switched to web, call poll_selection(session_id) to wait
 
 	Web Mode:
 		When terminal is not used, this tool blocks until user completes the interaction

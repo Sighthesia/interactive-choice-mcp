@@ -10,6 +10,7 @@ Improved UI semantics for structured terminal hand-off:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 from typing import Optional
@@ -162,11 +163,15 @@ def _switch_to_web(base_url: str, session_id: str, timeout_seconds: int) -> None
         data = resp.json()
         web_url = data.get("web_url")
         if web_url:
-            print("\n\033[36m↗ 已切换至 Web 交互，请在浏览器打开: \033[0m" + web_url)
+            # Output a special marker that the agent can parse
+            # This tells the agent to use poll_selection to get the result
+            print("\n\033[36m↗ Switched to Web interface\033[0m")
+            print(f"URL: {web_url}")
+            print(f"[SWITCH_TO_WEB] session_id={session_id}")
         else:
-            print("\033[33m⚠ Web 地址不可用，请手动重试\033[0m")
+            print("\033[33m⚠ Web URL not available, please retry\033[0m")
     except Exception as exc:  # noqa: BLE001
-        print(f"\033[31m✗ 切换到 Web 失败: {exc}\033[0m")
+        print(f"\033[31m✗ Failed to switch to Web: {exc}\033[0m")
 
 
 def _submit_result(
@@ -207,6 +212,8 @@ def _handle_cancel(base_url: str, session_id: str) -> int:
     global_annotation = _prompt_global_annotation()
     _submit_cancelled(base_url, session_id, global_annotation)
     print("\n\033[33m⚠ Cancelled\033[0m")
+    global_note = global_annotation if global_annotation else ""
+    print(f"[CANCELLED] global={global_note}")
     return 0
 
 
@@ -351,11 +358,15 @@ Keyboard shortcuts:
 
             _submit_result(base_url, session_id, selected, option_annotations, global_annotation)
             print()
-            print(f"\033[32m✓ 选择已提交:\033[0m {selected}")
+            print(f"\033[32m✓ Selection submitted:\033[0m {selected}")
             if option_annotations:
-                print(f"  备注: {option_annotations}")
+                print(f"  Annotations: {option_annotations}")
             if global_annotation:
-                print(f"  全局备注: {global_annotation}")
+                print(f"  Global note: {global_annotation}")
+            # Output a structured marker that the agent can parse
+            annotations_json = json.dumps(option_annotations) if option_annotations else "{}"
+            global_note = global_annotation if global_annotation else ""
+            print(f"[SELECTION_COMPLETE] selected={','.join(selected)} annotations={annotations_json} global={global_note}")
             print()
             return 0
 
