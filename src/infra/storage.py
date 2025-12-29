@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from .paths import get_config_path
 from ..core.models import (
     DEFAULT_TIMEOUT_SECONDS,
     ProvideChoiceConfig,
@@ -29,7 +30,7 @@ class ConfigStore:
     """
 
     def __init__(self, *, path: Optional[Path] = None) -> None:
-        self._path = Path(path) if path is not None else Path.home() / ".interactive_choice_config.json"
+        self._path = Path(path) if path is not None else get_config_path()
 
     def load(self) -> Optional[ProvideChoiceConfig]:
         """Load configuration from disk if present.
@@ -108,6 +109,9 @@ class ConfigStore:
             notify_if_focused = bool(raw.get("notify_if_focused", True))
             notify_if_background = bool(raw.get("notify_if_background", True))
             notify_sound = bool(raw.get("notify_sound", True))
+            notify_sound_path = raw.get("notify_sound_path")
+            if notify_sound_path is not None and not isinstance(notify_sound_path, str):
+                notify_sound_path = None
 
             return ProvideChoiceConfig(
                 transport=transport,
@@ -129,13 +133,22 @@ class ConfigStore:
                 notify_if_focused=notify_if_focused,
                 notify_if_background=notify_if_background,
                 notify_sound=notify_sound,
+                notify_sound_path=notify_sound_path,
             )
         except Exception:
             return None
 
-    def save(self, config: ProvideChoiceConfig) -> None:
-        """Persist configuration to disk using atomic replacement."""
-        payload = {
+    def save(self, config: ProvideChoiceConfig, *, exclude_transport: bool = False) -> None:
+        """Persist configuration to disk using atomic replacement.
+        
+        Args:
+            config: The configuration to save.
+            exclude_transport: If True, preserve the existing transport setting in the file
+                              instead of overwriting it with config.transport. Useful for
+                              operations like terminal->web switch that shouldn't change
+                              the user's transport preference.
+        """
+        payload: Dict[str, Any] = {
             "transport": config.transport,
             "timeout_seconds": config.timeout_seconds,
             "single_submit_mode": config.single_submit_mode,
@@ -155,7 +168,14 @@ class ConfigStore:
             "notify_if_focused": config.notify_if_focused,
             "notify_if_background": config.notify_if_background,
             "notify_sound": config.notify_sound,
+            "notify_sound_path": config.notify_sound_path,
         }
+
+        # If excluding transport, preserve the existing value from disk
+        if exclude_transport:
+            existing = self.load()
+            if existing is not None:
+                payload["transport"] = existing.transport
 
         try:
             self._path.parent.mkdir(parents=True, exist_ok=True)

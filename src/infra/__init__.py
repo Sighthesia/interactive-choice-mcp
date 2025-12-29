@@ -7,13 +7,15 @@ Modules:
     logging: Structured logging with session context support
     storage: JSON-based configuration persistence
     i18n: Internationalization text resources (en/zh)
+    paths: Centralized path management for data storage
 
 Example:
-    from src.infra import get_logger, ConfigStore, get_text
+    from src.infra import get_logger, ConfigStore, get_text, get_data_dir
 
     logger = get_logger(__name__)
     config = ConfigStore().load()
     label = get_text("action.submit", "en")
+    data_dir = get_data_dir()
 """
 from .logging import (
     configure_logging,
@@ -29,6 +31,13 @@ from .i18n import (
     TEXTS,
 )
 
+from .paths import (
+    get_data_dir,
+    get_config_path,
+    get_sessions_dir,
+    get_logs_dir,
+)
+
 __all__ = [
     # Logging
     "configure_logging",
@@ -40,4 +49,9 @@ __all__ = [
     # I18n
     "get_text",
     "TEXTS",
+    # Paths
+    "get_data_dir",
+    "get_config_path",
+    "get_sessions_dir",
+    "get_logs_dir",
 ]
