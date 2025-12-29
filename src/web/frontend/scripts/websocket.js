@@ -46,7 +46,9 @@ function connectWebSocket() {
     state.ws.onclose = () => {
         state.wsConnected = false;
         if (state.hasFinalResult) {
-            updateConnectionStatus(t('status.submitted'), '');
+            // Session completed, connection closed is expected
+            // Show green "Completed" - use 'success' class for green dot
+            updateConnectionStatus(t('status.session_completed'), 'success');
             return;
         }
         updateConnectionStatus(t('status.offline'), 'offline');
@@ -145,10 +147,14 @@ function applyFinalizedState(stateData) {
     }
     document.body.classList.add('submitted');
 
-    let connLabel = t('status.submitted');
-    if (actionKey === 'cancelled' || actionKey === 'cancel_with_annotation') connLabel = t('status.cancelled');
-    else if (actionKey.startsWith('timeout')) connLabel = t('status.timeout');
-    updateConnectionStatus(connLabel, '');
+    // Update header status based on session state
+    if (actionKey === 'interrupted') {
+        // Interrupted session - show red "Interrupted"
+        updateConnectionStatus(t('status.interrupted'), 'error');
+    } else {
+        // Completed session - show green "Completed"
+        updateConnectionStatus(t('status.session_completed'), 'success');
+    }
 
     const submitBtn = document.getElementById('submitBatchBtn');
     const cancelBtn = document.getElementById('cancelButton');
@@ -222,7 +228,8 @@ function disconnectWebSocket() {
     }
 
     state.wsConnected = false;
-    updateConnectionStatus(t('status.completed'), '');
+    // For persisted sessions, show green "Completed"
+    updateConnectionStatus(t('status.session_completed'), 'success');
 }
 
 // Section: Initialize WebSocket

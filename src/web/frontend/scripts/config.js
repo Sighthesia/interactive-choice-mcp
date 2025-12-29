@@ -43,11 +43,15 @@ function isPlaceholderVisible() {
 
 // Section: Settings Persistence
 /**
+ * Track if transport was explicitly changed by user
+ */
+let transportExplicitlyChanged = false;
+
+/**
  * Save global settings to server
  */
 async function saveGlobalSettings() {
     const config = {
-        transport: document.getElementById('transportSelect')?.value || 'web',
         timeout_seconds: parseInt(document.getElementById('timeoutInput')?.value || '60', 10),
         single_submit_mode: document.getElementById('singleSubmitMode')?.checked || false,
         use_default_option: document.getElementById('useDefaultOption')?.checked || false,
@@ -62,6 +66,10 @@ async function saveGlobalSettings() {
         notify_if_background: document.getElementById('notifyIfBackground')?.checked ?? true,
         notify_sound: document.getElementById('notifySound')?.checked ?? true,
     };
+    // Only include transport if it was explicitly changed by the user
+    if (transportExplicitlyChanged) {
+        config.transport = document.getElementById('transportSelect')?.value || 'web';
+    }
     console.log('[Settings] Saving config:', config);
     try {
         const res = await fetch('/api/config', {
@@ -194,7 +202,7 @@ function initializeConfig() {
 
     // Add listeners to global settings controls
     const settingsControls = [
-        'transportSelect', 'singleSubmitMode', 'useDefaultOption',
+        'singleSubmitMode', 'useDefaultOption',
         'timeoutActionSelect', 'notifyNew', 'notifyUpcoming',
         'upcomingThreshold', 'notifyTimeout', 'notifyIfForeground',
         'notifyIfFocused', 'notifyIfBackground', 'notifySound'
@@ -204,6 +212,15 @@ function initializeConfig() {
         const el = document.getElementById(id);
         if (el) el.addEventListener('change', debouncedSaveSettings);
     });
+
+    // Transport select needs special handling to track explicit changes
+    const transportSelect = document.getElementById('transportSelect');
+    if (transportSelect) {
+        transportSelect.addEventListener('change', () => {
+            transportExplicitlyChanged = true;
+            debouncedSaveSettings();
+        });
+    }
 
     // Timeout input change handler
     const timeoutInput = document.getElementById('timeoutInput');

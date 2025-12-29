@@ -68,15 +68,19 @@ function updateUITexts() {
     }
 
     // Update status text based on connection state
+    // Note: CSS classes are: (none)=in-progress, success=completed, error=interrupted, offline=offline
     const statusText = document.getElementById('statusText');
     const connectionDot = document.getElementById('connectionDot');
     if (statusText && connectionDot) {
-        if (connectionDot.classList.contains('connected')) {
-            statusText.textContent = t('status.connected');
+        if (connectionDot.classList.contains('success')) {
+            statusText.textContent = t('status.session_completed');
+        } else if (connectionDot.classList.contains('error')) {
+            statusText.textContent = t('status.interrupted');
         } else if (connectionDot.classList.contains('offline')) {
             statusText.textContent = t('status.offline');
-        } else if (connectionDot.classList.contains('disconnected')) {
-            statusText.textContent = t('status.disconnected');
+        } else {
+            // Default (no special class) = in progress
+            statusText.textContent = t('status.connected');
         }
     }
 
@@ -100,6 +104,7 @@ function getStatusMap() {
         'timeout_reinvoke_requested': { text: t('status_message.timeout_reinvoke_requested'), class: 'timeout' },
         'cancelled': { text: t('status_message.cancelled'), class: 'cancelled' },
         'cancel_with_annotation': { text: t('status_message.cancel_with_annotation'), class: 'cancelled' },
+        'interrupted': { text: t('status_message.interrupted'), class: 'interrupted' },
         'error': { text: t('status_message.server_error'), class: 'error' }
     };
 }

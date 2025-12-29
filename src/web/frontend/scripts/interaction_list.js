@@ -215,9 +215,9 @@ async function navigateToInteraction(sessionId) {
     debugLog('InteractionList', 'Navigating to interaction:', sessionId);
 
     // Start transition animation
-    const mainContent = document.querySelector('.main-content');
-    if (mainContent) {
-        mainContent.classList.add('transitioning');
+    const mainColumn = document.querySelector('.main-column');
+    if (mainColumn) {
+        mainColumn.classList.add('transitioning');
     }
 
     try {
@@ -260,11 +260,16 @@ async function navigateToInteraction(sessionId) {
         // Fallback to full page navigation
         window.location.href = '/choice/' + sessionId;
     } finally {
-        // End transition animation
-        if (mainContent) {
-            // Small delay to allow the new content to be rendered before removing the class
+        // End transition animation with fade-in effect
+        if (mainColumn) {
+            // Small delay to allow the new content to be rendered
             setTimeout(() => {
-                mainContent.classList.remove('transitioning');
+                mainColumn.classList.remove('transitioning');
+                mainColumn.classList.add('fade-in');
+                // Remove fade-in class after animation completes
+                setTimeout(() => {
+                    mainColumn.classList.remove('fade-in');
+                }, 350);
             }, 50);
         }
     }

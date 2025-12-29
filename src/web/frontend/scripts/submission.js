@@ -16,11 +16,8 @@ async function postSelection(payload, statusType = 'manual') {
     state.submitting = true;
 
     const statusEl = document.getElementById('status');
-    const headerStatusText = document.getElementById('statusText');
-    const headerStatusDot = document.getElementById('connectionDot');
-
-    if (headerStatusText) headerStatusText.innerText = t('status.submitting');
-    if (headerStatusDot) headerStatusDot.className = 'status-dot busy';
+    // Note: Header statusText only shows connection state, not submission state
+    // Submission progress is indicated by the status element below
 
     try {
         const res = await fetch('/choice/' + choiceId + '/submit', {
@@ -47,8 +44,8 @@ async function postSelection(payload, statusType = 'manual') {
                 statusEl.innerText = t('status_message.server_error') + ' (' + res.status + '): ' + errorDetail;
                 statusEl.style.display = 'block';
             }
-            if (headerStatusText) headerStatusText.innerText = t('status.error');
-            if (headerStatusDot) headerStatusDot.className = 'status-dot offline';
+            // On error, update connection status to indicate issue
+            updateConnectionStatus(t('status.error'), 'offline');
             state.submitting = false;
             return;
         }
@@ -75,8 +72,8 @@ async function postSelection(payload, statusType = 'manual') {
             statusEl.innerText = 'Network error. Please try again.';
             statusEl.style.display = 'block';
         }
-        if (headerStatusText) headerStatusText.innerText = t('status.offline');
-        if (headerStatusDot) headerStatusDot.className = 'status-dot offline';
+        // Network error means connection issue
+        updateConnectionStatus(t('status.offline'), 'offline');
         state.submitting = false;
     }
 }
