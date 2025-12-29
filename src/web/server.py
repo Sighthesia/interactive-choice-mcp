@@ -48,6 +48,7 @@ __all__ = [
     "run_web_choice",
     "create_terminal_handoff_session",
     "poll_terminal_session_result",
+    "poll_session_result",
 ]
 
 _logger = get_logger(__name__)
@@ -460,7 +461,44 @@ class WebChoiceServer:
         # Section: Terminal Hand-off Endpoints
         @app.get("/terminal/{session_id}")
         async def get_terminal_session(session_id: str):  # noqa: ANN201
-            """Get terminal session info for the CLI client."""
+            """Get terminal session info for the CLI client.
+            
+            Supports both unified ChoiceSession (new) and TerminalSession (legacy).
+            """
+            # First, check unified ChoiceSession store (new terminal sessions)
+            web_session = self.sessions.get(session_id)
+            if web_session is not None:
+                if web_session.final_result is not None:
+                    return JSONResponse({
+                        "status": "completed",
+                        "result": {
+                            "action_status": web_session.final_result.action_status,
+                            "selected_indices": web_session.final_result.selection.selected_indices,
+                            "summary": web_session.final_result.selection.summary,
+                        },
+                    })
+                return JSONResponse({
+                    "status": "pending",
+                    "remaining_seconds": _remaining_seconds(web_session.deadline),
+                    "started_at": time.time() - (time.monotonic() - web_session.created_at),  # Convert to wall clock
+                    "request": {
+                        "title": web_session.req.title,
+                        "prompt": web_session.req.prompt,
+                        "selection_mode": web_session.req.selection_mode,
+                        "options": [
+                            {"id": o.id, "description": o.description, "recommended": o.recommended}
+                            for o in web_session.req.options
+                        ],
+                    },
+                    "config": {
+                        "timeout_seconds": web_session.config_used.timeout_seconds,
+                        "single_submit_mode": web_session.config_used.single_submit_mode,
+                        "use_default_option": web_session.config_used.use_default_option,
+                        "timeout_action": web_session.config_used.timeout_action,
+                    },
+                })
+            
+            # Fall back to legacy TerminalSession store
             from ..terminal.session import get_terminal_session_store
             store = get_terminal_session_store()
             session = store.get_session(session_id)
@@ -498,15 +536,10 @@ class WebChoiceServer:
 
         @app.post("/terminal/{session_id}/submit")
         async def submit_terminal_result(session_id: str, payload: Dict[str, object]):  # noqa: ANN201
-            """Submit the result from the terminal CLI client."""
-            from ..terminal.session import get_terminal_session_store
-            store = get_terminal_session_store()
-            session = store.get_session(session_id)
-            if not session:
-                raise HTTPException(status_code=404, detail="session not found or expired")
-            if session.result is not None:
-                return JSONResponse({"status": "already-set"})
-
+            """Submit the result from the terminal CLI client.
+            
+            Supports both unified ChoiceSession (new) and TerminalSession (legacy).
+            """
             action = str(payload.get("action_status", ""))
             selected_indices = payload.get("selected_indices", [])
             option_annotations = payload.get("option_annotations", {})
@@ -514,6 +547,94 @@ class WebChoiceServer:
             config_payload = payload.get("config") or {}
             if not isinstance(config_payload, dict):
                 raise HTTPException(status_code=400, detail="config must be object")
+
+            # First, check unified ChoiceSession store (new terminal sessions)
+            web_session = self.sessions.get(session_id)
+            if web_session is not None:
+                if web_session.final_result is not None:
+                    return JSONResponse({"status": "already-set"})
+
+                req = web_session.req
+                current_config = web_session.config_used
+                url = f"http://{self.host}:{self.port}/terminal/{session_id}"
+
+                if action == "update_settings":
+                    parsed_config = _parse_config_payload(current_config, config_payload, req)
+                    web_session.config_used = parsed_config
+                    try:
+                        from ..infra import ConfigStore
+                        ConfigStore().save(parsed_config)
+                    except Exception:
+                        pass
+                    return JSONResponse({
+                        "status": "ok",
+                        "config": {
+                            "transport": parsed_config.transport,
+                            "timeout_seconds": parsed_config.timeout_seconds,
+                            "single_submit_mode": parsed_config.single_submit_mode,
+                            "timeout_default_enabled": parsed_config.timeout_default_enabled,
+                            "timeout_default_index": parsed_config.timeout_default_index,
+                            "use_default_option": parsed_config.use_default_option,
+                            "timeout_action": parsed_config.timeout_action,
+                        },
+                    })
+
+                if action == "switch_to_web":
+                    # For unified sessions, just open the web URL - it's the same session
+                    parsed_config = _parse_config_payload(current_config, config_payload, req)
+                    web_session.config_used = parsed_config
+                    try:
+                        from ..infra import ConfigStore
+                        ConfigStore().save(parsed_config)
+                    except Exception:
+                        pass
+                    return JSONResponse({
+                        "status": "ok",
+                        "web_url": f"http://{self.host}:{self.port}/choice/{session_id}",
+                        "timeout_seconds": parsed_config.timeout_seconds,
+                    })
+
+                if action == "cancelled":
+                    from ..core.response import cancelled_response
+                    response = cancelled_response(
+                        transport=TRANSPORT_WEB,
+                        url=url,
+                        option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
+                        global_annotation=str(global_annotation) if global_annotation else None,
+                    )
+                elif action == "selected":
+                    if not isinstance(selected_indices, list):
+                        raise HTTPException(status_code=400, detail="selected_indices must be list")
+                    ids = [str(x) for x in selected_indices]
+                    valid_ids = {o.id for o in req.options}
+                    if any(i not in valid_ids for i in ids):
+                        raise HTTPException(status_code=400, detail="selected_indices contains unknown id")
+                    response = normalize_response(
+                        req=req,
+                        selected_indices=ids,
+                        transport=TRANSPORT_WEB,
+                        url=url,
+                        option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
+                        global_annotation=str(global_annotation) if global_annotation else None,
+                    )
+                elif action.startswith("timeout"):
+                    response = timeout_response(req=req, transport=TRANSPORT_WEB, url=url)
+                else:
+                    raise HTTPException(status_code=400, detail="invalid action_status")
+
+                web_session.set_result(response)
+                self.save_session_to_store(web_session)
+                await self.broadcast_interaction_list()
+                return JSONResponse({"status": "ok"})
+
+            # Fall back to legacy TerminalSession store
+            from ..terminal.session import get_terminal_session_store
+            store = get_terminal_session_store()
+            session = store.get_session(session_id)
+            if not session:
+                raise HTTPException(status_code=404, detail="session not found or expired")
+            if session.result is not None:
+                return JSONResponse({"status": "already-set"})
 
             if action == "update_settings":
                 # Persist updated configuration and apply to current session
@@ -832,16 +953,21 @@ class WebChoiceServer:
         entries: list[InteractionEntry] = []
 
         # Collect web sessions (always use current host/port relative URL)
+        # Note: This now includes both web and terminal sessions (unified storage)
         _logger.debug(f"[get_interaction_list] self.sessions has {len(self.sessions)} entries")
         for sid, session in self.sessions.items():
-            _logger.debug(f"[get_interaction_list] Session {sid[:8]}: final_result={session.final_result is not None}, status={session.status}")
+            _logger.debug(f"[get_interaction_list] Session {sid[:8]}: final_result={session.final_result is not None}, status={session.status}, transport={session.transport}")
             entry = session.to_interaction_entry()
+            # Set relative URL based on transport type
             if entry.transport == TRANSPORT_WEB:
                 entry.url = f"/choice/{entry.session_id}"
+            else:
+                entry.url = None  # Terminal sessions are not clickable in web UI
             _logger.debug(f"[get_interaction_list] Entry {sid[:8]}: status={entry.status.value}")
             entries.append(entry)
 
-        # Collect terminal sessions
+        # Collect legacy terminal sessions (for backward compatibility)
+        # New terminal sessions use unified ChoiceSession storage above
         terminal_store = get_terminal_session_store()
         for session in terminal_store._sessions.values():
             entries.append(session.to_interaction_entry())
@@ -1081,27 +1207,84 @@ async def create_terminal_handoff_session(
     """Create a terminal hand-off session and return immediately with launch info.
     
     This function:
-    1. Ensures the web server is running (for the terminal client to connect to)
-    2. Creates a terminal session in the session store
+    1. Ensures the web server is running
+    2. Creates a unified ChoiceSession (shared with web)
     3. Returns a `pending_terminal_launch` response with the launch command
     
-    The agent should then run the returned command to open the terminal UI.
+    The agent should then:
+    1. Run the returned command to open the terminal UI
+    2. Call poll_selection to wait for the result
+    
+    Note: Terminal sessions now use the same ChoiceSession as web sessions,
+    allowing seamless switching between terminal and web interfaces.
     """
     from ..core.response import pending_terminal_launch_response
-    from ..terminal.session import get_terminal_session_store
+    from ..core.models import TRANSPORT_TERMINAL
 
     server = await _get_server()
-    store = get_terminal_session_store()
-    session = store.create_session(req, config, config.timeout_seconds)
-
-    url = f"http://{server.host}:{server.port}/terminal/{session.session_id}"
-    launch_command = f"uv run python -m src.terminal.client --session {session.session_id} --url http://{server.host}:{server.port}"
+    
+    # Create a unified ChoiceSession (same as web, but marked for terminal use)
+    session = await server.create_session(req, config, allow_terminal=False)
+    # Mark this session as terminal transport for display purposes
+    session.transport = TRANSPORT_TERMINAL
+    session.url = f"http://{server.host}:{server.port}/terminal/{session.choice_id}"
+    
+    launch_command = f"uv run python -m src.terminal.client --session {session.choice_id} --url http://{server.host}:{server.port}"
 
     return pending_terminal_launch_response(
-        session_id=session.session_id,
-        url=url,
+        session_id=session.choice_id,
+        url=session.url,
         launch_command=launch_command,
     )
+
+
+async def poll_session_result(session_id: str, wait_seconds: int = 30) -> Optional[ProvideChoiceResponse]:
+    """Poll for the result of any session (web or terminal) with blocking wait.
+    
+    This is the unified polling function that checks both web and terminal sessions.
+    It implements a smart polling mechanism that:
+    1. Returns immediately if the result is already available
+    2. Waits up to `wait_seconds` for the result if still pending
+    3. Returns None only if session not found in both stores
+    4. Returns timeout response if session expired
+    
+    Args:
+        session_id: The session ID to poll (from either web or terminal)
+        wait_seconds: Maximum seconds to wait for result (default 30)
+        
+    Returns:
+        The ProvideChoiceResponse if available, or None if session not found
+    """
+    from ..core.response import timeout_response
+
+    # First, check web sessions
+    server = await _get_server()
+    web_session = server.sessions.get(session_id)
+    
+    if web_session is not None:
+        # Web session found - wait on it
+        if web_session.final_result is not None:
+            return web_session.final_result
+        
+        # Wait for result with timeout
+        remaining = _remaining_seconds(web_session.deadline)
+        effective_wait = min(wait_seconds, remaining)
+        if effective_wait > 0:
+            try:
+                result = await asyncio.wait_for(web_session.wait_for_result(), timeout=effective_wait)
+                return result
+            except asyncio.TimeoutError:
+                pass
+        
+        # Check final result after waiting
+        if web_session.final_result is not None:
+            return web_session.final_result
+        
+        # Still pending - return None to indicate caller should poll again
+        return None
+    
+    # Fall back to terminal session store for backwards compatibility
+    return await poll_terminal_session_result(session_id, wait_seconds=wait_seconds)
 
 
 async def poll_terminal_session_result(session_id: str, wait_seconds: int = 30) -> Optional[ProvideChoiceResponse]:

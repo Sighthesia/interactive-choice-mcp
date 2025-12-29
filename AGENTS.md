@@ -132,11 +132,15 @@ session_logger.info("User submitted selection")  # 输出: [abc123de] User submi
   - 最多保存 100 个 session（可通过 `max_sessions` 配置）
 - **Terminal Hand-off**: 
   - 当 `provide_choice` 以终端传输方式调用时，工具立即返回 `action_status: pending_terminal_launch`
-  - 响应包含 `terminal_command` 字段，这是一个可直接执行的 CLI 命令
+  - 响应包含 `terminal_command` 和 `session_id` 字段
   - 代理应在终端执行该命令以打开交互式 UI
-  - 随后使用返回的 `session_id` 再次调用 `provide_choice` 以轮询最终结果
-  - **轮询阻塞**：轮询调用会阻塞等待最多 30 秒，减少频繁轮询的需要
+  - 使用 `poll_selection(session_id)` 工具阻塞等待用户完成交互
+  - **统一 Session 管理**：Terminal 和 Web sessions 现在共享相同的 `ChoiceSession` 存储，允许无缝切换
+  - **轮询阻塞**：`poll_selection` 阻塞等待最多 30 秒（默认），减少频繁轮询需要
   - 注意：会话为单次使用并受 `timeout_seconds` 控制
+- **MCP 工具**:
+  - `provide_choice`: 创建交互会话。Web 模式阻塞等待，Terminal 模式返回 `pending_terminal_launch`
+  - `poll_selection`: 轮询 session 结果（阻塞型），用于 Terminal 模式获取用户选择
 - **终端客户端参数**:
   - `--session` / `-s`: 会话 ID（必需）
   - `--url` / `-u`: 服务器 URL（必需）

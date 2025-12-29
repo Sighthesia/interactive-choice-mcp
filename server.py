@@ -1,6 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 
 from src.core.orchestrator import ChoiceOrchestrator, safe_handle
+from src.web import poll_session_result
 
 # Section: Initialization
 # Initialize the FastMCP server instance and the choice orchestrator.
@@ -34,31 +35,20 @@ async def provide_choice(
 	Parameter Guidance:
 		selection_mode: Must be "single" or "multi".
 		options: Each entry must include `id`, `description`; mark one with `recommended: true`.
-		session_id: Used for polling terminal session results (see below).
 
 	Terminal Mode Workflow:
 		When `action_status` is "pending_terminal_launch":
 		
 		Step 1: Use terminal tool to run the `terminal_command`
-		Step 2: Wait for user to complete the terminal interaction  
-		Step 3: Call provide_choice again with the same parameters + `session_id` to get result
-
+		Step 2: Call `poll_selection` with `session_id` to wait for result
+		
 		Response fields for terminal mode:
 		- `terminal_command`: The exact command to run (copy-paste ready)
-		- `session_id`: Use this to poll for results
-		- `instructions`: Human-readable steps
-		
-		Example:
-		{
-		  "action_status": "pending_terminal_launch",
-		  "terminal_command": "uv run python -m src.terminal.client --session abc123 --url http://127.0.0.1:17863",
-		  "session_id": "abc123",
-		  "instructions": "1. Run the terminal_command...\n2. Wait for user...\n3. Poll with session_id"
-		}
+		- `session_id`: Use this with poll_selection to get results
 
-	Polling Result:
-		When called with `session_id`, returns the final result if ready.
-		If user hasn't completed, waits up to 30 seconds before returning.
+	Web Mode:
+		When terminal is not used, this tool blocks until user completes the interaction
+		in the web browser.
 	"""
 
 	# Delegate the execution to the orchestrator.
@@ -89,18 +79,59 @@ async def provide_choice(
 		out["session_id"] = session_id_val
 		# Provide a clean, copy-paste ready command for the agent
 		out["terminal_command"] = selection.summary
-		# Simple instructions for the agent
-		out["instructions"] = (
-			f"1. Use terminal tool to run the `terminal_command`\n"
-			f"2. Wait for user to complete the interaction\n"
-			f"3. Call provide_choice again with session_id='{session_id_val}' to get the result"
-		)
 		return out
 
 	if selection.summary:
 		out["summary"] = selection.summary
 		if selection.summary.startswith("validation_error"):
 			out["validation_error"] = selection.summary
+	if selection.selected_indices:
+		out["selected_indices"] = list(selection.selected_indices)
+	if selection.option_annotations:
+		out["option_annotations"] = selection.option_annotations
+	if selection.global_annotation:
+		out["global_annotation"] = selection.global_annotation
+	return out
+
+
+@mcp.tool()
+async def poll_selection(session_id: str, wait_seconds: int = 30) -> dict[str, object]:
+	"""Poll for the result of a pending interaction session.
+
+	This tool is used after `provide_choice` returns `pending_terminal_launch` status.
+	It blocks until the user completes the interaction or the timeout is reached.
+
+	Args:
+		session_id: The session ID returned by provide_choice
+		wait_seconds: Maximum seconds to wait for result (default 30, max 120)
+
+	Returns:
+		The selection result with same format as provide_choice:
+		- action_status: "selected", "cancelled", "timeout_*", etc.
+		- selected_indices: List of selected option IDs
+		- option_annotations: Dict of option ID to annotation
+		- global_annotation: Optional global note
+		
+	If session is not found or expired, returns:
+		- action_status: "cancelled"
+		- error: Error description
+	"""
+	# Clamp wait_seconds to reasonable bounds
+	wait_seconds = max(1, min(120, wait_seconds))
+
+	result = await poll_session_result(session_id, wait_seconds=wait_seconds)
+	
+	if result is None:
+		return {
+			"action_status": "cancelled",
+			"error": f"Session '{session_id}' not found or expired. Please create a new session.",
+		}
+	
+	selection = result.selection
+	out: dict[str, object] = {"action_status": result.action_status}
+
+	if selection.summary:
+		out["summary"] = selection.summary
 	if selection.selected_indices:
 		out["selected_indices"] = list(selection.selected_indices)
 	if selection.option_annotations:
