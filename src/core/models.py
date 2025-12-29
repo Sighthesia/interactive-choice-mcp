@@ -60,10 +60,13 @@ class InteractionStatus(str, Enum):
     AUTO_SUBMITTED = "auto_submitted"
     CANCELLED = "cancelled"
     TIMEOUT = "timeout"
+    INTERRUPTED = "interrupted"  # Session interrupted unexpectedly (e.g., agent disconnected)
 
     @classmethod
     def from_action_status(cls, action_status: str) -> "InteractionStatus":
         """Convert an action_status string to an InteractionStatus."""
+        if action_status == "interrupted":
+            return cls.INTERRUPTED
         if action_status.startswith("timeout"):
             if "auto_submitted" in action_status:
                 return cls.AUTO_SUBMITTED
@@ -136,6 +139,7 @@ class ProvideChoiceConfig:
     notify_if_focused: bool = True
     notify_if_background: bool = True
     notify_sound: bool = True
+    notify_sound_path: Optional[str] = None  # Custom sound file path
 
 
 @dataclass
@@ -205,5 +209,7 @@ VALID_ACTIONS = {
     "timeout_reinvoke_requested",
     # Terminal hand-off: returned immediately when launching external terminal UI
     "pending_terminal_launch",
+    # Session interrupted unexpectedly (e.g., agent disconnected mid-interaction)
+    "interrupted",
 }
 VALID_TRANSPORTS = {TRANSPORT_TERMINAL, TRANSPORT_TERMINAL_WEB, TRANSPORT_WEB}

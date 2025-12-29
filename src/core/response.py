@@ -93,6 +93,23 @@ def cancelled_response(
     return ProvideChoiceResponse(action_status="cancelled", selection=selection)
 
 
+def interrupted_response(
+    *,
+    transport: str,
+    url: Optional[str] = None,
+) -> "ProvideChoiceResponse":
+    """Generate a response for an interrupted session (e.g., agent disconnected)."""
+    from .models import ProvideChoiceResponse, ProvideChoiceSelection
+
+    selection = ProvideChoiceSelection(
+        selected_indices=[],
+        transport=transport,
+        summary="interrupted",
+        url=url,
+    )
+    return ProvideChoiceResponse(action_status="interrupted", selection=selection)
+
+
 def timeout_response(
     *,
     req: "ProvideChoiceRequest",
