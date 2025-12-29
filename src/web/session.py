@@ -73,12 +73,20 @@ class ChoiceSession:
         self.config_used.timeout_seconds = seconds
 
     def set_result(self, response: ProvideChoiceResponse) -> bool:
-        if self.result_future.done():
-            return False
+        """Set the final result for this session.
+        
+        Note: Even if the future is already done (e.g., from timeout), we still
+        update final_result so that interaction list displays correct status.
+        """
+        # Always update final_result for consistent status display
         self.final_result = response
         self.status = _status_label(response.action_status)
-        self.result_future.set_result(response)
         self.completed_at = time.monotonic()
+        
+        # Try to set future result if not already done
+        if self.result_future.done():
+            return False
+        self.result_future.set_result(response)
         return True
 
     async def wait_for_result(self) -> ProvideChoiceResponse:

@@ -1,0 +1,19 @@
+{
+    "styles": [
+        "styles/base.css",
+        "styles/layout.css",
+        "styles/components.css",
+        "styles/responsive.css"
+    ],
+    "scripts": [
+        "scripts/bootstrap.js",
+        "scripts/i18n.js",
+        "scripts/config.js",
+        "scripts/render.js",
+        "scripts/websocket.js",
+        "scripts/timeout.js",
+        "scripts/interaction_list.js",
+        "scripts/submission.js",
+        "scripts/main.js"
+    ]
+}

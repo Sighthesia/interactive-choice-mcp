@@ -1,0 +1,173 @@
+/**
+ * layout.css - Page structure and grid layout
+ * Header bar, three-column layout, sidebar positioning
+ */
+
+/* Section: Header Bar */
+.header-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    background: var(--header-bg);
+    color: var(--header-text);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    font-size: 0.8125rem;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.header-bar .title {
+    font-weight: 700;
+    margin-right: 24px;
+    color: var(--header-title);
+    line-height: 1;
+}
+
+.header-bar .title .title-long {
+    display: inline;
+}
+
+.header-bar .title .title-short {
+    display: none;
+}
+
+.header-bar .status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 20px;
+    color: var(--header-muted);
+}
+
+.header-bar .status-item span {
+    color: var(--header-text);
+}
+
+.header-bar .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+}
+
+.header-bar .status-dot.offline {
+    background: #ef4444;
+}
+
+.header-bar .status-dot.busy {
+    background: #f59e0b;
+}
+
+.header-bar .spacer {
+    flex: 1;
+}
+
+.header-bar .timeout-text {
+    font-family: monospace;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Section: Three-Column Layout */
+.layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 20%) 1fr minmax(260px, 20%);
+    gap: 24px;
+    width: calc(100% - 32px);
+    max-width: none;
+    margin: 0 16px;
+}
+
+.main-column {
+    min-width: 0;
+}
+
+.sidebar {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+}
+
+/* Section: Interaction List (Left Sidebar) */
+.interaction-list {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+}
+
+.interaction-list .card {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+}
+
+.interaction-list .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.interaction-list .filter-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.interaction-list .filter-tab {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.interaction-list .filter-tab:hover {
+    border-color: var(--primary);
+}
+
+.interaction-list .filter-tab.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+#interactionListContent {
+    flex: 1 1 auto;
+    max-height: none;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Section: Sidebar Card */
+.sidebar .card {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+}
+
+/* Section: Collapsible Config */
+.config-toggle {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.config-content {
+    margin-top: 12px;
+    flex: 1 1 auto;
+    max-height: none;
+    overflow-y: auto;
+    padding-right: 4px;
+}

@@ -34,7 +34,7 @@ class InteractionStatus(str, Enum):
             if "auto_submitted" in action_status:
                 return cls.AUTO_SUBMITTED
             return cls.TIMEOUT
-        if action_status == "cancelled":
+        if action_status in ("cancelled", "cancel_with_annotation"):
             return cls.CANCELLED
         if action_status == "selected":
             return cls.SUBMITTED

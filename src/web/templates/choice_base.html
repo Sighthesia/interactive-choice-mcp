@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="${lang}">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${title}</title>
+    <!-- Early theme initialization to prevent flash -->
+    <script>
+        (function () {
+            try {
+                const theme = localStorage.getItem('mcp-theme') || 'system';
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (theme === 'dark' || (theme === 'system' && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                }
+            }
+        })();
+    </script>
+    <!-- CSS Bundle Placeholder -->
+    ${css_bundle}
+</head>
+
+<body>
+    <header class="header-bar">
+        <div class="title">
+            <span class="title-long">Interactive Choice MCP Web Portal</span>
+            <span class="title-short">Interactive Choice</span>
+        </div>
+
+        <div class="status-item">
+            <span class="status-label" data-i18n="label.version">Version:</span>
+            <span class="status-value">${mcp_version}</span>
+        </div>
+
+        <div class="spacer"></div>
+
+        <div class="status-item">
+            <span class="status-label" data-i18n="label.timeout_remaining">Time Left:</span>
+            <span id="timeoutText" class="timeout-text">--:--</span>
+        </div>
+
+        <div class="status-item">
+            <span class="status-label" data-i18n="label.started_at">Invoked:</span>
+            <span>${invocation_time}</span>
+        </div>
+
+        <div class="status-item">
+            <div id="connectionDot" class="status-dot"></div>
+            <span class="status-label" data-i18n="label.status">Status:</span>
+            <span id="statusText" data-i18n="status.connected">Connected</span>
+        </div>
+
+        <!-- Progress Bar integrated at bottom of header -->
+        <div id="timeoutContainer" class="timeout-progress-container"
+            style="position: absolute; bottom: 0; left: 0; margin-bottom: 0; height: 3px; border-radius: 0;">
+            <div id="timeoutProgressBar" class="timeout-progress-bar"></div>
+        </div>
+    </header>
+
+    <div class="layout">
+        <!-- Interaction List (Left Sidebar) -->
+        <div class="interaction-list">
+            <div class="card collapsible" tabindex="0" aria-expanded="false">
+                <div class="card-header config-toggle" onclick="toggleInteractionList()" id="interactionToggle"
+                    role="button" tabindex="0" aria-controls="interactionListContent" data-i18n="list.title">
+                    Interactions</div>
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all" onclick="filterInteractions('all')"
+                        data-i18n="list.all">All</button>
+                    <button class="filter-tab" data-filter="active" onclick="filterInteractions('active')"
+                        data-i18n="list.active">Active</button>
+                    <button class="filter-tab" data-filter="completed" onclick="filterInteractions('completed')"
+                        data-i18n="list.completed">Completed</button>
+                </div>
+                <div id="interactionListContent">
+                    <div class="interaction-empty">Loading interactions...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content (Center) -->
+        <div class="main-column">
+            <h1>${title}</h1>
+            <p class="prompt">${prompt}</p>
+
+            <!-- Error Display -->
+            <div id="error" class="error-message"></div>
+
+            <!-- Options List -->
+            <div id="options" tabindex="0"></div>
+
+            <!-- Annotation Section -->
+            <div id="annotationSection" class="card annotation-section">
+                <div class="card-header" data-i18n="label.global_annotation">Global Annotation</div>
+                <textarea id="globalAnnotation" placeholder=""></textarea>
+            </div>
+
+            <!-- Keyboard Navigation Hint -->
+            <div class="keyboard-hint">
+                <span><kbd>↑</kbd><kbd>↓</kbd>/<kbd>k</kbd><kbd>j</kbd> <span
+                        data-i18n="hint.navigate">Navigate</span></span>
+                <span><kbd>Enter</kbd> <span data-i18n="hint.select">Select</span></span>
+                <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> <span data-i18n="hint.submit">Submit</span></span>
+                <span><kbd>Shift</kbd>+<kbd>A</kbd> <span data-i18n="hint.annotation">Annotation</span></span>
+                <span><kbd>Esc</kbd> <span data-i18n="hint.cancel">Cancel</span></span>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <button id="submitBatchBtn" class="btn btn-primary" onclick="submitBatch()"
+                    data-i18n="action.submit">Submit
+                    Selection</button>
+                <button id="cancelButton" class="btn btn-danger" onclick="submitCancel()"
+                    data-i18n="action.cancel">Cancel</button>
+            </div>
+
+
+            <!-- Status -->
+            <div id="status" class="status" style="display:none;"></div>
+        </div>
+
+        <!-- Sidebar (Right) - Configuration Panel -->
+        <div class="sidebar">
+            <div class="card collapsible" tabindex="0" aria-expanded="false">
+                <div class="card-header config-toggle" onclick="toggleConfig()" id="configToggle" role="button"
+                    tabindex="0" aria-controls="configContent" data-i18n="web.configuration">Configuration</div>
+                <div class="config-content" id="configContent">
+                    <div class="config-grid">
+                        <div class="config-section-title" data-i18n="web.global_settings">Global Settings</div>
+
+                        <div class="config-item">
+                            <label class="config-label" id="label-language">
+                                <span data-i18n="settings.language">Language</span>
+                                <select id="languageSelect" style="margin-left: auto;">
+                                    <option value="en" data-i18n="settings.language_en">English</option>
+                                    <option value="zh" data-i18n="settings.language_zh">中文</option>
+                                </select>
+                            </label>
+                            <div class="config-desc" data-i18n="desc.language">Switch interface language.</div>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <span data-i18n="settings.transport">Transport</span>
+                                <select id="transportSelect" style="margin-left: auto;">
+                                    ${transport_options}
+                                </select>
+                            </label>
+                            <div class="config-desc" data-i18n="desc.transport">The communication protocol used by the
+                                MCP server.</div>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <span data-i18n="settings.timeout">Timeout (s)</span>
+                                <input id="timeoutInput" type="number" min="1" value="${timeout_value}"
+                                    style="width:70px; margin-left: auto;" />
+                            </label>
+                            <div class="config-desc" data-i18n="desc.timeout">Time limit for making a choice before
+                                auto-action.</div>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <span data-i18n="settings.timeout_action">Timeout Action</span>
+                                <select id="timeoutActionSelect" style="margin-left: auto;">
+                                    <option value="submit" data-i18n="settings.timeout_action_submit">Auto-submit
+                                        selected</option>
+                                    <option value="cancel" data-i18n="settings.timeout_action_cancel">Auto-cancel
+                                    </option>
+                                    <option value="reinvoke" data-i18n="settings.timeout_action_reinvoke">Request
+                                        re-invocation</option>
+                                </select>
+                            </label>
+                            <div class="config-desc" data-i18n="desc.timeout_action">Action to take when the timeout is
+                                reached.</div>
+                        </div>
+
+                        <div class="config-item" id="item-singleSubmitMode">
+                            <label class="config-label">
+                                <input id="singleSubmitMode" type="checkbox" ${single_submit_checked} />
+                                <span data-i18n="settings.single_submit">Auto Submit on Single Selection Mode</span>
+                            </label>
+                            <div class="config-desc" data-i18n="desc.single_submit">
+                                Automatically submit the selection as soon as an option is clicked
+                            </div>
+                        </div>
+
+                        <div class="config-item" id="item-useDefaultOption">
+                            <label class="config-label">
+                                <input id="useDefaultOption" type="checkbox" />
+                                <span data-i18n="settings.timeout_default">Use recommended option</span>
+                            </label>
+                            <div class="config-desc" data-i18n="desc.timeout_default">
+                                Auto-select AI recommended options
+                            </div>
+                        </div>
+
+                        <div class="config-section-title" data-i18n="web.portal_settings">Web Portal Settings</div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <span data-i18n="web.theme">Theme</span>
+                                <select id="themeSelect" style="margin-left: auto;">
+                                    <option value="light" data-i18n="web.theme_light">Light</option>
+                                    <option value="dark" data-i18n="web.theme_dark">Dark</option>
+                                    <option value="system" data-i18n="web.theme_system">System</option>
+                                </select>
+                            </label>
+                            <div class="config-desc" data-i18n="desc.theme">Switch between light, dark, or system theme.
+                            </div>
+                        </div>
+
+                        <div class="config-section-title" data-i18n="settings.notifications">Notifications</div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyNew" />
+                                <span data-i18n="settings.notify_new">New interaction</span>
+                            </label>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyUpcoming" />
+                                <span data-i18n="settings.notify_upcoming">Upcoming timeout</span>
+                            </label>
+                            <div class="config-sub-item"
+                                style="margin-top: 8px; margin-left: 24px; display: flex; align-items: center; gap: 8px; font-size: 0.875rem;">
+                                <span data-i18n="settings.upcoming_threshold">Threshold (s)</span>
+                                <input type="number" id="upcomingThreshold" min="1"
+                                    style="width: 70px; margin-left: auto;" />
+                            </div>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyTimeout" />
+                                <span data-i18n="settings.notify_timeout">Timeout reached</span>
+                            </label>
+                        </div>
+
+                        <div class="config-section-title" data-i18n="settings.notify_conditions">Trigger Conditions
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyIfForeground" />
+                                <span data-i18n="settings.notify_if_foreground">Browser in foreground</span>
+                            </label>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyIfFocused" />
+                                <span data-i18n="settings.notify_if_focused">Tab focused</span>
+                            </label>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifyIfBackground" />
+                                <span data-i18n="settings.notify_if_background">Browser in background</span>
+                            </label>
+                        </div>
+
+                        <div class="config-item">
+                            <label class="config-label">
+                                <input type="checkbox" id="notifySound" />
+                                <span data-i18n="settings.notify_sound">Notification sound</span>
+                            </label>
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Injection Blocks -->
+    <script type="application/json" id="mcp-defaults">${defaults_json}</script>
+    <script type="application/json" id="mcp-options">${options_json}</script>
+    <script type="application/json" id="mcp-session-state">${session_state_json}</script>
+    <script type="application/json" id="mcp-i18n">${i18n_json}</script>
+    <script type="application/json" id="mcp-choice-id">"${choice_id}"</script>
+    <script type="application/json" id="mcp-prompt-type">"${prompt_type}"</script>
+
+    <!-- JS Bundle Placeholder -->
+    ${js_bundle}
+</body>
+
+</html>

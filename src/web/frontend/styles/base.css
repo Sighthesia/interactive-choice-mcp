@@ -1,0 +1,97 @@
+/**
+ * base.css - CSS Custom Properties (variables) and reset styles
+ * Defines theme colors, spacing, and typography foundations
+ */
+
+:root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --success: #22c55e;
+    --bg: #f9fafb;
+    --card-bg: #ffffff;
+    --border: #e5e7eb;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.25);
+
+    /* Header bar colors */
+    --header-bg: #1e293b;
+    --header-text: #f8fafc;
+    --header-title: #818cf8;
+    --header-muted: #94a3b8;
+
+    /* Status colors */
+    --success-bg: #dcfce7;
+    --success-text: #166534;
+    --success-border: #bbf7d0;
+    --error-bg: #fee2e2;
+    --error-text: #991b1b;
+    --error-border: #fecaca;
+
+    --secondary-hover: #d1d5db;
+}
+
+.dark {
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --border: #334155;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.3);
+
+    --header-bg: #020617;
+    --header-text: #f8fafc;
+    --header-title: #818cf8;
+    --header-muted: #94a3b8;
+
+    /* Status colors */
+    --success-bg: #064e3b;
+    --success-text: #34d399;
+    --success-border: #065f46;
+    --error-bg: #7f1d1d;
+    --error-text: #f87171;
+    --error-border: #991b1b;
+
+    --secondary-hover: #475569;
+}
+
+/* Reset */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 72px 16px 24px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+}
+
+.prompt {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+}
+
+.error-message {
+    color: var(--danger);
+    font-size: 0.875rem;
+    margin-top: 8px;
+}

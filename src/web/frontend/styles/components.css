@@ -1,0 +1,565 @@
+/**
+ * components.css - UI components (cards, options, buttons, forms, badges)
+ */
+
+/* Section: Card */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+}
+
+.card-header {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Section: Form Elements */
+.config-grid {
+    display: grid;
+    gap: 4px;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    background: var(--card-bg);
+    color: var(--text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: var(--focus-ring);
+}
+
+input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.options-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.options-grid label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--bg);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.options-grid label:hover {
+    background: var(--border);
+}
+
+/* Section: Options */
+#options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: calc(100vh - 320px);
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    cursor: pointer;
+    outline: none;
+}
+
+.option:hover {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.02);
+}
+
+.option:focus,
+.option.focused {
+    border-color: var(--primary);
+    box-shadow: var(--focus-ring);
+}
+
+.option.selected {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.05);
+}
+
+.option button {
+    padding: 10px 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.option button:hover,
+.option button:focus {
+    background: var(--primary-hover);
+}
+
+.option-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.option-label {
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.option-desc {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+.option-note {
+    flex: 0 0 180px;
+    padding: 6px 10px;
+    font-size: 0.8125rem;
+}
+
+/* Section: Keyboard Hint */
+.keyboard-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.keyboard-hint kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+/* Section: Timeout Progress */
+.timeout-progress-container {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    display: none;
+}
+
+.timeout-progress-bar {
+    height: 100%;
+    background: var(--primary);
+    width: 100%;
+    transition: width 1s linear, background-color 0.6s ease-in-out;
+}
+
+.timeout-progress-bar.warning {
+    background: #f59e0b;
+}
+
+.timeout-progress-bar.danger {
+    background: var(--danger);
+}
+
+.timeout-progress-bar.success {
+    background: var(--success);
+}
+
+/* Section: Annotation */
+.annotation-section {
+    margin-top: 16px;
+}
+
+.annotation-section textarea {
+    width: 100%;
+    min-height: 60px;
+    resize: vertical;
+}
+
+.annotation-section.has-content {
+    border-color: var(--primary);
+    box-shadow: var(--focus-ring);
+}
+
+/* Section: Actions */
+.actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+/* Section: Buttons */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: var(--border);
+    color: var(--text);
+}
+
+.btn-secondary:hover {
+    background: var(--secondary-hover);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: var(--danger-hover);
+}
+
+/* Section: Status */
+.status {
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    text-align: center;
+}
+
+.status.success {
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.status.error {
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+
+.status.manual {
+    color: var(--success-text);
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+}
+
+.status.timeout {
+    color: var(--error-text);
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+}
+
+/* Section: Submitted States */
+body.submitted .option:not(.selected) {
+    opacity: 0.5;
+    filter: grayscale(1);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+body.submitted .option.selected {
+    border-color: var(--success);
+    background: rgba(34, 197, 94, 0.05);
+    cursor: default;
+    pointer-events: none;
+}
+
+body.submitted .annotation-section:not(.has-content) {
+    opacity: 0.5;
+    filter: grayscale(1);
+    pointer-events: none;
+}
+
+body.submitted .annotation-section.has-content {
+    border-color: var(--success);
+    background: rgba(34, 197, 94, 0.05);
+    pointer-events: none;
+}
+
+body.submitted .actions {
+    display: none;
+}
+
+body.submitted .status {
+    display: block !important;
+    margin-top: 20px;
+    padding: 16px;
+    font-size: 1rem;
+}
+
+/* Section: Interaction Item */
+.interaction-item {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--card-bg);
+}
+
+.interaction-item:hover {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.02);
+}
+
+.interaction-item.current {
+    border-color: var(--primary);
+    border-width: 2px;
+    background: rgba(79, 70, 229, 0.05);
+}
+
+.interaction-progress {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.interaction-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--primary);
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.interaction-progress-bar.warning {
+    background: #f59e0b;
+}
+
+.interaction-progress-bar.danger {
+    background: var(--danger);
+}
+
+.interaction-item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.interaction-item-title {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.interaction-item-meta {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+}
+
+.interaction-empty {
+    text-align: center;
+    padding: 24px 12px;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+}
+
+/* Section: Badges */
+.interaction-badge {
+    padding: 2px 6px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    border-radius: 3px;
+    text-transform: uppercase;
+}
+
+.badge-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.dark .badge-pending {
+    background: #78350f;
+    color: #fde68a;
+}
+
+.badge-submitted {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.dark .badge-submitted {
+    background: #14532d;
+    color: #86efac;
+}
+
+.badge-auto_submitted {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.dark .badge-auto_submitted {
+    background: #1e3a8a;
+    color: #93c5fd;
+}
+
+.badge-cancelled {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.dark .badge-cancelled {
+    background: #374151;
+    color: #d1d5db;
+}
+
+.badge-timeout {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.dark .badge-timeout {
+    background: #7f1d1d;
+    color: #fca5a5;
+}
+
+.badge-web {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.dark .badge-web {
+    background: #312e81;
+    color: #a5b4fc;
+}
+
+.badge-terminal {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.dark .badge-terminal {
+    background: #14532d;
+    color: #86efac;
+}
+
+/* Section: Config Items */
+.config-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed var(--border);
+}
+
+.config-section-title:first-child {
+    margin-top: 0;
+}
+
+.config-item {
+    padding: 10px;
+    border-radius: var(--radius);
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    margin-bottom: 4px;
+}
+
+.config-item.highlighted {
+    background-color: rgba(79, 70, 229, 0.08);
+    border-color: var(--primary);
+}
+
+.dark .config-item.highlighted {
+    background-color: rgba(99, 102, 241, 0.15);
+    border-color: var(--primary);
+}
+
+.config-label {
+    font-size: 0.875rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.config-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    margin-left: 24px;
+    line-height: 1.4;
+}
+
+.config-tip {
+    display: block;
+    margin-top: 2px;
+    color: var(--primary);
+    font-weight: 600;
+    font-style: italic;
+}

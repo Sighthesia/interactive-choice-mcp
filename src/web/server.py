@@ -54,7 +54,6 @@ _logger = get_logger(__name__)
 
 _DEFAULT_WEB_HOST = "127.0.0.1"
 _DEFAULT_WEB_PORT = 17863
-_SESSION_RETENTION_SECONDS = 600
 
 
 def _resolve_host() -> str:
@@ -105,6 +104,44 @@ class WebChoiceServer:
 
     def _register_routes(self) -> None:
         app = self.app
+        
+        # Section: Static Bundle Routes
+        @app.get("/static/bundle.{hash}.css")
+        async def serve_css_bundle(hash: str):  # noqa: ANN201
+            """Serve the cached CSS bundle with long-term caching."""
+            from .bundler import get_asset_bundle
+            from fastapi.responses import Response
+            
+            bundle = get_asset_bundle()
+            if hash != bundle.css_hash:
+                raise HTTPException(status_code=404, detail="Bundle not found")
+            return Response(
+                content=bundle.css,
+                media_type="text/css",
+                headers={
+                    "Cache-Control": "public, max-age=31536000, immutable",
+                    "ETag": f'"{bundle.css_hash}"',
+                },
+            )
+        
+        @app.get("/static/bundle.{hash}.js")
+        async def serve_js_bundle(hash: str):  # noqa: ANN201
+            """Serve the cached JS bundle with long-term caching."""
+            from .bundler import get_asset_bundle
+            from fastapi.responses import Response
+            
+            bundle = get_asset_bundle()
+            if hash != bundle.js_hash:
+                raise HTTPException(status_code=404, detail="Bundle not found")
+            return Response(
+                content=bundle.js,
+                media_type="application/javascript",
+                headers={
+                    "Cache-Control": "public, max-age=31536000, immutable",
+                    "ETag": f'"{bundle.js_hash}"',
+                },
+            )
+
         @app.get("/choice/{incoming_id}")
         async def choice_page(incoming_id: str):  # noqa: ANN201
             session = self.sessions.get(incoming_id)
@@ -172,10 +209,15 @@ class WebChoiceServer:
                     options=options,
                     timeout_seconds=timeout_value,
                 )
-                display_defaults = ProvideChoiceConfig(
-                    transport=TRANSPORT_WEB,
-                    timeout_seconds=timeout_value,
-                )
+                from ..storage import ConfigStore
+                latest_config = ConfigStore().load()
+                if latest_config:
+                    display_defaults = latest_config
+                else:
+                    display_defaults = ProvideChoiceConfig(
+                        transport=TRANSPORT_WEB,
+                        timeout_seconds=timeout_value,
+                    )
                 if isinstance(persisted.result, dict):
                     selection = persisted.result.get("selection", {})
                     action_status = str(persisted.result.get("action_status", "submitted"))
@@ -260,10 +302,15 @@ class WebChoiceServer:
 
         @app.post("/choice/{incoming_id}/submit")
         async def submit_choice(incoming_id: str, payload: Dict[str, object]):  # noqa: ANN201
+            _logger.debug(f"[submit] Received submit for {incoming_id[:8]}, payload action={payload.get('action_status')}")
+            _logger.debug(f"[submit] self.sessions keys: {[k[:8] for k in self.sessions.keys()]}")
             session = self.sessions.get(incoming_id)
             if not session:
+                _logger.warning(f"[submit] Session {incoming_id[:8]} NOT FOUND in self.sessions!")
                 raise HTTPException(status_code=404)
+            _logger.debug(f"[submit] Found session {incoming_id[:8]}: final_result={session.final_result is not None}, future_done={session.result_future.done()}")
             if session.result_future.done():
+                _logger.debug(f"[submit] Session {incoming_id[:8]} already done, returning already-set")
                 return JSONResponse({"status": "already-set", "state": session.to_template_state()})
 
             try:
@@ -285,18 +332,26 @@ class WebChoiceServer:
                 global_annotation_raw = payload.get("global_annotation")
                 global_annotation: str | None = str(global_annotation_raw) if global_annotation_raw else None
 
-                if action == "cancelled":
+                if action == "cancelled" or action == "cancel_with_annotation":
                     response = cancelled_response_fn(
                         transport=TRANSPORT_WEB,
                         url=session.url,
                         option_annotations=option_annotations,
                         global_annotation=global_annotation,
                     )
-                    session.set_result(response)
+                    # Update action_status if it's cancel_with_annotation
+                    if action == "cancel_with_annotation":
+                        response = ProvideChoiceResponse(
+                            action_status="cancel_with_annotation",
+                            selection=response.selection,
+                        )
+                    result_set = session.set_result(response)
+                    _logger.debug(f"Session {incoming_id[:8]} set_result returned: {result_set}")
+                    _logger.debug(f"Session {incoming_id[:8]} final_result: {session.final_result}")
                     self.save_session_to_store(session)
                     await session.broadcast_status("cancelled", action_status=response.action_status)
                     await self.broadcast_interaction_list()
-                    _logger.info(f"Session {incoming_id[:8]} cancelled by user")
+                    _logger.info(f"Session {incoming_id[:8]} cancelled by user (action={action})")
                     return {"status": "ok"}
 
                 if action == "selected":
@@ -316,7 +371,9 @@ class WebChoiceServer:
                         option_annotations=option_annotations,
                         global_annotation=global_annotation,
                     )
-                    session.set_result(response)
+                    result_set = session.set_result(response)
+                    _logger.debug(f"Session {incoming_id[:8]} set_result returned: {result_set}")
+                    _logger.debug(f"Session {incoming_id[:8]} final_result: {session.final_result}")
                     self.save_session_to_store(session)
                     await session.broadcast_status("submitted", action_status=response.action_status)
                     await self.broadcast_interaction_list()
@@ -549,6 +606,9 @@ class WebChoiceServer:
         async def get_interactions():  # noqa: ANN201
             """Get the list of all interactions (active + recent completed)."""
             interactions = self.get_interaction_list()
+            _logger.debug(f"GET /api/interactions: returning {len(interactions)} entries")
+            for i in interactions:
+                _logger.debug(f"  - {i.session_id[:8]}: status={i.status.value}, transport={i.transport}")
             return JSONResponse({
                 "interactions": [i.to_dict() for i in interactions],
             })
@@ -669,10 +729,13 @@ class WebChoiceServer:
         entries: list[InteractionEntry] = []
 
         # Collect web sessions (always use current host/port relative URL)
-        for session in self.sessions.values():
+        _logger.debug(f"[get_interaction_list] self.sessions has {len(self.sessions)} entries")
+        for sid, session in self.sessions.items():
+            _logger.debug(f"[get_interaction_list] Session {sid[:8]}: final_result={session.final_result is not None}, status={session.status}")
             entry = session.to_interaction_entry()
             if entry.transport == TRANSPORT_WEB:
                 entry.url = f"/choice/{entry.session_id}"
+            _logger.debug(f"[get_interaction_list] Entry {sid[:8]}: status={entry.status.value}")
             entries.append(entry)
 
         # Collect terminal sessions

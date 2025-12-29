@@ -1,0 +1,119 @@
+/**
+ * responsive.css - Media queries for responsive layout
+ */
+
+@media (max-width: 1200px) {
+    .layout {
+        grid-template-columns: 220px 1fr 280px;
+    }
+}
+
+@media (max-width: 1000px) {
+    .layout {
+        grid-template-columns: 1fr 280px;
+    }
+
+    .interaction-list {
+        display: block;
+    }
+}
+
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .main-column {
+        order: 1;
+    }
+
+    .interaction-list {
+        display: block;
+        position: static;
+        order: 2;
+    }
+
+    .sidebar {
+        position: static;
+        order: 3;
+    }
+
+    .card.collapsible {
+        max-height: 56px;
+        overflow: hidden;
+        transition: max-height 0.25s ease;
+        cursor: pointer;
+    }
+
+    .card.collapsible:focus {
+        box-shadow: var(--focus-ring);
+    }
+
+    .card.collapsible[aria-expanded="true"] {
+        max-height: calc(100vh - 160px);
+        box-shadow: var(--focus-ring);
+    }
+
+    .config-content {
+        display: block !important;
+    }
+
+    .config-content.show {
+        display: block;
+    }
+
+    .header-bar .status-item .status-label {
+        display: none;
+    }
+
+    .header-bar .title {
+        white-space: normal;
+        overflow-wrap: break-word;
+        max-width: 45%;
+        line-height: 1.1;
+    }
+
+    .header-bar .title .title-long {
+        display: none;
+    }
+
+    .header-bar .title .title-short {
+        display: inline;
+    }
+}
+
+@media (min-width: 901px) {
+    .config-content {
+        display: block !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .config-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .option {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .option-note {
+        flex: none;
+        width: 100%;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .keyboard-hint {
+        display: none;
+    }
+}
