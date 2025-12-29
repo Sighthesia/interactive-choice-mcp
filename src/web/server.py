@@ -32,6 +32,7 @@ from ..core.models import (
     ValidationError,
     DEFAULT_TIMEOUT_SECONDS,
     TRANSPORT_WEB,
+    TRANSPORT_TERMINAL,
     TRANSPORT_TERMINAL_WEB,
 )
 from ..core.response import cancelled_response as cancelled_response_fn, normalize_response, timeout_response
@@ -965,11 +966,14 @@ class WebChoiceServer:
         for sid, session in self.sessions.items():
             _logger.debug(f"[get_interaction_list] Session {sid[:8]}: final_result={session.final_result is not None}, status={session.status}, transport={session.transport}")
             entry = session.to_interaction_entry()
-            # Set relative URL based on transport type
+            # Set relative URL based on transport type and status
             if entry.transport in (TRANSPORT_WEB, TRANSPORT_TERMINAL_WEB):
                 entry.url = f"/choice/{entry.session_id}"
+            elif entry.transport == TRANSPORT_TERMINAL and entry.status != InteractionStatus.PENDING:
+                # Completed terminal sessions can be viewed in web UI
+                entry.url = f"/choice/{entry.session_id}"
             else:
-                entry.url = None  # Terminal sessions are not clickable in web UI
+                entry.url = None  # Pending terminal sessions are not clickable in web UI
             _logger.debug(f"[get_interaction_list] Entry {sid[:8]}: status={entry.status.value}")
             entries.append(entry)
 
@@ -992,6 +996,9 @@ class WebChoiceServer:
             if entry.session_id in in_memory_ids:
                 continue
             if entry.transport in (TRANSPORT_WEB, TRANSPORT_TERMINAL_WEB):
+                entry.url = f"/choice/{entry.session_id}"
+            elif entry.transport == TRANSPORT_TERMINAL and entry.status != InteractionStatus.PENDING:
+                # Completed terminal sessions can be viewed in web UI
                 entry.url = f"/choice/{entry.session_id}"
             else:
                 entry.url = None
