@@ -123,3 +123,49 @@ def test_save_and_load_preserves_notification_fields(tmp_path: Path):
     assert loaded.notify_if_focused is False
     assert loaded.notify_if_background is False
     assert loaded.notify_sound is False
+
+
+def test_save_exclude_transport_preserves_existing(tmp_path: Path):
+    """Test that exclude_transport preserves existing transport value during terminal->web switch."""
+    path = tmp_path / "cfg.json"
+    store = ConfigStore(path=path)
+    
+    # Save initial config with terminal transport
+    initial = models.ProvideChoiceConfig(
+        transport=models.TRANSPORT_TERMINAL,
+        timeout_seconds=60,
+    )
+    store.save(initial)
+    
+    # Simulate terminal->web switch: save new config with exclude_transport=True
+    # The new config has a different transport but it should not overwrite
+    switched_config = models.ProvideChoiceConfig(
+        transport=models.TRANSPORT_WEB,  # This would be set during switch
+        timeout_seconds=120,  # This should be updated
+    )
+    store.save(switched_config, exclude_transport=True)
+    
+    # Verify transport was preserved but other settings were updated
+    loaded = store.load()
+    assert loaded is not None
+    assert loaded.transport == models.TRANSPORT_TERMINAL  # Should be preserved
+    assert loaded.timeout_seconds == 120  # Should be updated
+
+
+def test_save_exclude_transport_no_existing_file(tmp_path: Path):
+    """Test exclude_transport when there's no existing config file."""
+    path = tmp_path / "cfg.json"
+    store = ConfigStore(path=path)
+    
+    # No existing config file - exclude_transport should use config's transport
+    new_config = models.ProvideChoiceConfig(
+        transport=models.TRANSPORT_WEB,
+        timeout_seconds=90,
+    )
+    store.save(new_config, exclude_transport=True)
+    
+    # When no existing file, fallback to config's transport
+    loaded = store.load()
+    assert loaded is not None
+    assert loaded.transport == models.TRANSPORT_WEB
+    assert loaded.timeout_seconds == 90
