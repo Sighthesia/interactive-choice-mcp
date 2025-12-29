@@ -9,6 +9,7 @@
     --danger: #ef4444;
     --danger-hover: #dc2626;
     --success: #22c55e;
+    --warning: #f59e0b;
     --bg: #f9fafb;
     --card-bg: #ffffff;
     --border: #e5e7eb;
@@ -24,10 +25,35 @@
     --header-title: #818cf8;
     --header-muted: #94a3b8;
 
-    /* Status colors */
-    --success-bg: #dcfce7;
-    --success-text: #166534;
-    --success-border: #bbf7d0;
+    /* Pending: Blue - awaiting user action */
+    --status-pending-bg: #dbeafe;
+    --status-pending-text: #1e40af;
+    --status-pending-border: #93c5fd;
+
+    /* Submitted: Green - successfully completed */
+    --status-submitted-bg: #dcfce7;
+    --status-submitted-text: #166534;
+    --status-submitted-border: #86efac;
+
+    /* Auto-submitted: Purple - system auto-completed */
+    --status-auto-bg: #f3e8ff;
+    --status-auto-text: #6b21a8;
+    --status-auto-border: #d8b4fe;
+
+    /* Cancelled: Gray - user cancelled */
+    --status-cancelled-bg: #f3f4f6;
+    --status-cancelled-text: #4b5563;
+    --status-cancelled-border: #d1d5db;
+
+    /* Timeout: Orange/Red - time expired */
+    --status-timeout-bg: #ffedd5;
+    --status-timeout-text: #c2410c;
+    --status-timeout-border: #fed7aa;
+
+    /* Legacy status colors (for backward compat) */
+    --success-bg: var(--status-submitted-bg);
+    --success-text: var(--status-submitted-text);
+    --success-border: var(--status-submitted-border);
     --error-bg: #fee2e2;
     --error-text: #991b1b;
     --error-border: #fecaca;
@@ -49,10 +75,30 @@
     --header-title: #818cf8;
     --header-muted: #94a3b8;
 
-    /* Status colors */
-    --success-bg: #064e3b;
-    --success-text: #34d399;
-    --success-border: #065f46;
+    /* Unified Status Colors - Dark mode */
+    --status-pending-bg: #1e3a8a;
+    --status-pending-text: #93c5fd;
+    --status-pending-border: #1d4ed8;
+
+    --status-submitted-bg: #14532d;
+    --status-submitted-text: #86efac;
+    --status-submitted-border: #166534;
+
+    --status-auto-bg: #581c87;
+    --status-auto-text: #d8b4fe;
+    --status-auto-border: #7c3aed;
+
+    --status-cancelled-bg: #374151;
+    --status-cancelled-text: #d1d5db;
+    --status-cancelled-border: #4b5563;
+
+    --status-timeout-bg: #7c2d12;
+    --status-timeout-text: #fed7aa;
+    --status-timeout-border: #c2410c;
+
+    --success-bg: var(--status-submitted-bg);
+    --success-text: var(--status-submitted-text);
+    --success-border: var(--status-submitted-border);
     --error-bg: #7f1d1d;
     --error-text: #f87171;
     --error-border: #991b1b;

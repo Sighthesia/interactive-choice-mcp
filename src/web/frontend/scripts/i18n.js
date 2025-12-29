@@ -94,11 +94,12 @@ function updateUITexts() {
 function getStatusMap() {
     return {
         'manual': { text: t('status_message.manual'), class: 'manual' },
-        'timeout_auto_submitted': { text: t('status_message.timeout_auto_submitted'), class: 'warning' },
-        'timeout_cancelled': { text: t('status_message.timeout_cancelled'), class: 'error' },
-        'timeout_reinvoke_requested': { text: t('status_message.timeout_reinvoke_requested'), class: 'warning' },
-        'cancelled': { text: t('status_message.cancelled'), class: 'error' },
-        'cancel_with_annotation': { text: t('status_message.cancel_with_annotation'), class: 'primary' },
+        'selected': { text: t('status_message.manual'), class: 'success' },
+        'timeout_auto_submitted': { text: t('status_message.timeout_auto_submitted'), class: 'auto_submitted' },
+        'timeout_cancelled': { text: t('status_message.timeout_cancelled'), class: 'timeout' },
+        'timeout_reinvoke_requested': { text: t('status_message.timeout_reinvoke_requested'), class: 'timeout' },
+        'cancelled': { text: t('status_message.cancelled'), class: 'cancelled' },
+        'cancel_with_annotation': { text: t('status_message.cancel_with_annotation'), class: 'cancelled' },
         'error': { text: t('status_message.server_error'), class: 'error' }
     };
 }

@@ -52,15 +52,15 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #22c55e;
+    background: var(--success);
 }
 
 .header-bar .status-dot.offline {
-    background: #ef4444;
+    background: var(--danger);
 }
 
 .header-bar .status-dot.busy {
-    background: #f59e0b;
+    background: var(--warning);
 }
 
 .header-bar .spacer {
