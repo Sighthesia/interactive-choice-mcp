@@ -48,15 +48,24 @@
     color: var(--header-text);
 }
 
+/* Status dot colors: blue (in-progress), green (success/completed), red (error/interrupted) */
 .header-bar .status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--success);
+    background: var(--primary, #3b82f6);
+    /* Blue - In Progress */
 }
 
-.header-bar .status-dot.offline {
+.header-bar .status-dot.success {
+    background: var(--success);
+    /* Green - Completed */
+}
+
+.header-bar .status-dot.offline,
+.header-bar .status-dot.error {
     background: var(--danger);
+    /* Red - Offline/Interrupted */
 }
 
 .header-bar .status-dot.busy {
