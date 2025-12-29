@@ -31,3 +31,6 @@ coverage.xml
 
 # OS
 .DS_Store
+
+# MCP data directory (config, sessions, logs)
+.mcp-data/
