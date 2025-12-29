@@ -16,6 +16,7 @@ __all__ = [
     # Constants
     "DEFAULT_TIMEOUT_SECONDS",
     "TRANSPORT_TERMINAL",
+    "TRANSPORT_TERMINAL_WEB",
     "TRANSPORT_WEB",
     "LANG_EN",
     "LANG_ZH",
@@ -38,6 +39,7 @@ __all__ = [
 
 DEFAULT_TIMEOUT_SECONDS = 300
 TRANSPORT_TERMINAL = "terminal"
+TRANSPORT_TERMINAL_WEB = "terminal-web"  # Started in terminal, switched to web
 TRANSPORT_WEB = "web"
 
 # Language constants
@@ -204,4 +206,4 @@ VALID_ACTIONS = {
     # Terminal hand-off: returned immediately when launching external terminal UI
     "pending_terminal_launch",
 }
-VALID_TRANSPORTS = {TRANSPORT_TERMINAL, TRANSPORT_WEB}
+VALID_TRANSPORTS = {TRANSPORT_TERMINAL, TRANSPORT_TERMINAL_WEB, TRANSPORT_WEB}

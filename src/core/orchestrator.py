@@ -115,20 +115,21 @@ class ChoiceOrchestrator:
         # The AI agent will execute the terminal command to start the interaction.
         if config_defaults.transport == TRANSPORT_TERMINAL:
             _logger.debug("Using terminal transport (handoff)")
-            self._store.save(config_defaults)
+            # Update cached config for future calls
             self._last_config = config_defaults
             return await create_terminal_handoff_session(req, config_defaults)
 
         # Otherwise, use web transport (default)
         _logger.debug("Using web transport")
         response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=True)
-        self._store.save(final_config)
+        # Update cached config with final config used
         self._last_config = final_config
         _logger.info(f"Choice completed via web: action={response.action_status}")
         return response
 
     def _build_default_config(self, req: ProvideChoiceRequest) -> ProvideChoiceConfig:
-        saved = self._last_config
+        # Always reload config to get latest settings from Web UI
+        saved = self._store.load()
         # Transport preference: use saved config or default to web
         transport_pref = saved.transport if saved else TRANSPORT_WEB
         timeout_pref = saved.timeout_seconds if saved else req.timeout_seconds

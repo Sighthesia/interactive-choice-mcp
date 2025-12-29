@@ -581,6 +581,9 @@ class WebChoiceServer:
 
                 if action == "switch_to_web":
                     # For unified sessions, just open the web URL - it's the same session
+                    # Mark transport as terminal-web to indicate the switch
+                    from ..core.models import TRANSPORT_TERMINAL_WEB
+                    web_session.transport = TRANSPORT_TERMINAL_WEB
                     parsed_config = _parse_config_payload(current_config, config_payload, req)
                     web_session.config_used = parsed_config
                     try:
@@ -669,6 +672,9 @@ class WebChoiceServer:
 
                 server = await _get_server()
                 web_session = await server.create_session(session.req, parsed_config, allow_terminal=False)
+                # Mark the new web session as terminal-web to indicate the switch
+                from ..core.models import TRANSPORT_TERMINAL_WEB
+                web_session.transport = TRANSPORT_TERMINAL_WEB
 
                 async def bridge_web_result() -> None:
                     try:
