@@ -586,7 +586,10 @@ class WebChoiceServer:
                     # Mark transport as terminal-web to indicate the switch
                     from ..core.models import TRANSPORT_TERMINAL_WEB
                     web_session.transport = TRANSPORT_TERMINAL_WEB
+                    # Parse config but preserve the original transport preference
                     parsed_config = _parse_config_payload(current_config, config_payload, req)
+                    # Don't change global transport setting when switching to web
+                    parsed_config.transport = current_config.transport
                     web_session.config_used = parsed_config
                     try:
                         from ..infra import ConfigStore

@@ -172,8 +172,8 @@ function renderInteractionList() {
         const isTerminalWeb = item.transport === 'terminal-web';
         const statusBadge = '<span class="interaction-badge badge-' + item.status + '">' + item.status.replace('_', ' ') + '</span>';
         const transportBadge = '<span class="interaction-badge badge-' + item.transport + '">' + item.transport + '</span>';
-        // Terminal-only sessions are not clickable (no URL); web and terminal-web sessions with URL are navigable
-        const isClickable = !isTerminalOnly && item.url;
+        // Terminal sessions are only clickable if completed (have URL), or if terminal-web
+        const isClickable = item.url && (!isTerminalOnly || item.status !== 'pending');
         const clickAttr = isClickable ? 'data-session-id="' + item.session_id + '"' : '';
         const timeoutHint = item.status === 'pending' && typeof item.remaining_seconds === 'number'
             ? ' · timeout ~' + Math.ceil(item.remaining_seconds) + 's'
