@@ -47,6 +47,12 @@ def _status_label(action_status: str) -> str:
     return "submitted"
 
 
+from typing import Callable, Awaitable
+
+# Callback type for session completion notification
+OnCompletionCallback = Callable[["ChoiceSession"], Awaitable[None]]
+
+
 @dataclass
 class ChoiceSession:
     choice_id: str
@@ -65,6 +71,7 @@ class ChoiceSession:
     final_result: Optional[ProvideChoiceResponse] = None
     completed_at: Optional[float] = None
     monitor_task: Optional[asyncio.Task[None]] = None
+    on_completion: Optional[OnCompletionCallback] = None  # Callback when session completes
 
     def effective_defaults(self) -> ProvideChoiceConfig:
         return self.config_used if self.final_result else self.defaults
@@ -196,6 +203,9 @@ class ChoiceSession:
                     self.set_result(response)
                     await self.broadcast_status("timeout", action_status=response.action_status)
                     logger.info(f"Timeout action completed: {response.action_status}")
+                    # Notify server to save session and broadcast updates
+                    if self.on_completion:
+                        await self.on_completion(self)
                     break
                 await asyncio.sleep(1)
         except asyncio.CancelledError:

@@ -174,6 +174,8 @@ class WebChoiceServer:
                 display_defaults = session.effective_defaults()
                 if latest_config:
                     # Use latest global settings for display, but keep session-specific values
+                    # NOTE: Keep transport from global config, not session, since session.transport
+                    # tracks the actual interface used (e.g., terminal-web) which isn't a valid setting
                     display_defaults = ProvideChoiceConfig(
                         transport=latest_config.transport,
                         timeout_seconds=latest_config.timeout_seconds,
@@ -541,7 +543,10 @@ class WebChoiceServer:
             """Submit the result from the terminal CLI client.
             
             Supports both unified ChoiceSession (new) and TerminalSession (legacy).
+            Enforces timeout - rejects submissions after deadline.
             """
+            from .session import _remaining_seconds
+            
             action = str(payload.get("action_status", ""))
             selected_indices = payload.get("selected_indices", [])
             option_annotations = payload.get("option_annotations", {})
@@ -555,6 +560,17 @@ class WebChoiceServer:
             if web_session is not None:
                 if web_session.final_result is not None:
                     return JSONResponse({"status": "already-set"})
+                
+                # Check timeout - reject non-settings actions after deadline
+                remaining = _remaining_seconds(web_session.deadline)
+                if remaining <= 0 and action not in ("update_settings", "switch_to_web"):
+                    # Session has timed out - auto-apply timeout action
+                    _logger.info(f"Terminal session {session_id[:8]} timed out, rejecting submission")
+                    response = timeout_response(req=web_session.req, transport=TRANSPORT_WEB, url=f"http://{self.host}:{self.port}/terminal/{session_id}")
+                    web_session.set_result(response)
+                    self.save_session_to_store(web_session)
+                    await self.broadcast_interaction_list()
+                    return JSONResponse({"status": "timeout", "message": "Session has timed out"})
 
                 req = web_session.req
                 current_config = web_session.config_used
@@ -592,7 +608,8 @@ class WebChoiceServer:
                     web_session.config_used = parsed_config
                     try:
                         from ..infra import ConfigStore
-                        ConfigStore().save(parsed_config)
+                        # Don't overwrite transport preference during terminal->web switch
+                        ConfigStore().save(parsed_config, exclude_transport=True)
                     except Exception:
                         pass
                     return JSONResponse({
@@ -642,6 +659,13 @@ class WebChoiceServer:
                 raise HTTPException(status_code=404, detail="session not found or expired")
             if session.result is not None:
                 return JSONResponse({"status": "already-set"})
+            
+            # Check timeout - reject non-settings actions after deadline
+            if session.is_expired and action not in ("update_settings", "switch_to_web"):
+                _logger.info(f"Legacy terminal session {session_id[:8]} timed out, rejecting submission")
+                response = timeout_response(req=session.req, transport=TRANSPORT_WEB, url=None)
+                session.set_result(response)
+                return JSONResponse({"status": "timeout", "message": "Session has timed out"})
 
             if action == "update_settings":
                 # Persist updated configuration and apply to current session
@@ -672,7 +696,8 @@ class WebChoiceServer:
                 session.config = parsed_config
                 try:
                     from ..infra import ConfigStore
-                    ConfigStore().save(parsed_config)
+                    # Don't overwrite transport preference during terminal->web switch
+                    ConfigStore().save(parsed_config, exclude_transport=True)
                 except Exception:
                     pass
 
@@ -925,6 +950,7 @@ class WebChoiceServer:
             config_used=defaults,
             created_at=now,
             invocation_time=invocation_time,
+            on_completion=self._on_session_completion,
         )
         session.monitor_task = asyncio.create_task(session.monitor_deadline())
         self.sessions[choice_id] = session
@@ -932,6 +958,15 @@ class WebChoiceServer:
         # Broadcast updated interaction list
         await self.broadcast_interaction_list()
         return session
+
+    async def _on_session_completion(self, session: ChoiceSession) -> None:
+        """Callback when a session completes (e.g., via timeout).
+        
+        Saves the session to persistent store and broadcasts the updated list.
+        """
+        self.save_session_to_store(session)
+        await self.broadcast_interaction_list()
+        _logger.info(f"Session {session.choice_id[:8]} completion handled: {session.final_result.action_status if session.final_result else 'unknown'}")
 
     async def _cleanup_loop(self) -> None:
         while True:
@@ -1097,6 +1132,9 @@ async def run_web_choice(
     defaults: ProvideChoiceConfig,
     allow_terminal: bool,
 ) -> tuple[ProvideChoiceResponse, ProvideChoiceConfig]:
+    from .session import TRANSPORT_WEB
+    from ..core.response import interrupted_response
+    
     server = await _get_server()
     session = await server.create_session(req, defaults, allow_terminal)
     try:
@@ -1104,16 +1142,29 @@ async def run_web_choice(
     except Exception:
         pass
 
-    result = await session.wait_for_result()
+    try:
+        result = await session.wait_for_result()
+    except asyncio.CancelledError:
+        # Agent disconnected - mark session as interrupted
+        _logger.info(f"Session {session.choice_id[:8]} interrupted (agent disconnected)")
+        response = interrupted_response(transport=TRANSPORT_WEB, url=session.url)
+        session.set_result(response)
+        server.save_session_to_store(session)
+        await server.broadcast_interaction_list()
+        raise
+    
     final_config = session.config_used
     return result, final_config
 
 
 def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, object], req: ProvideChoiceRequest) -> ProvideChoiceConfig:  # noqa: ARG001
+    # Only update transport if explicitly provided in the payload
     transport_raw = payload.get("transport")
-    transport = str(transport_raw) if transport_raw else TRANSPORT_WEB
-    if transport not in VALID_TRANSPORTS:
-        transport = TRANSPORT_WEB
+    transport = defaults.transport  # Keep existing transport by default
+    if transport_raw is not None:
+        transport = str(transport_raw)
+        if transport not in VALID_TRANSPORTS:
+            transport = defaults.transport
 
     timeout_raw = payload.get("timeout_seconds")
     timeout_val = defaults.timeout_seconds
@@ -1197,6 +1248,12 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
     if not isinstance(notify_sound, bool):
         notify_sound = defaults.notify_sound
 
+    notify_sound_path = payload.get("notify_sound_path")
+    if notify_sound_path is not None and not isinstance(notify_sound_path, str):
+        notify_sound_path = defaults.notify_sound_path
+    elif notify_sound_path is None:
+        notify_sound_path = defaults.notify_sound_path
+
     return ProvideChoiceConfig(
         transport=transport,
         timeout_seconds=timeout_val,
@@ -1214,6 +1271,7 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
         notify_if_focused=notify_if_focused,
         notify_if_background=notify_if_background,
         notify_sound=notify_sound,
+        notify_sound_path=notify_sound_path,
     )
 
 

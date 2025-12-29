@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from ..infra import get_logger
+from ..infra.paths import get_sessions_dir
 from ..core.models import InteractionEntry, InteractionStatus
 
 if TYPE_CHECKING:
@@ -23,7 +24,6 @@ if TYPE_CHECKING:
 __all__ = [
     "InteractionStore",
     "PersistedSession",
-    "DEFAULT_BASE_PATH",
     "DEFAULT_RETENTION_DAYS",
     "DEFAULT_MAX_SESSIONS",
 ]
@@ -31,7 +31,6 @@ __all__ = [
 _logger = get_logger(__name__)
 
 # Section: Constants
-DEFAULT_BASE_PATH = Path.home() / ".local" / "share" / "interactive-choice-mcp"
 DEFAULT_RETENTION_DAYS = 3
 DEFAULT_MAX_SESSIONS = 100
 
@@ -123,8 +122,8 @@ class InteractionStore:
         retention_days: int = DEFAULT_RETENTION_DAYS,
         max_sessions: int = DEFAULT_MAX_SESSIONS,
     ) -> None:
-        self._base_path = base_path or DEFAULT_BASE_PATH
-        self._sessions_path = self._base_path / "sessions"
+        self._base_path = base_path or get_sessions_dir()
+        self._sessions_path = self._base_path
         self._index_path = self._sessions_path / "index.json"
         self._retention_days = retention_days
         self._max_sessions = max_sessions
