@@ -175,6 +175,12 @@ function initializeConfig() {
         if (el) el.checked = value;
     });
 
+    // Initialize single submit and use-default-option checkboxes from defaults
+    const singleSubmitEl = document.getElementById('singleSubmitMode');
+    if (singleSubmitEl) singleSubmitEl.checked = !!defaults.single_submit_mode;
+    const useDefaultEl = document.getElementById('useDefaultOption');
+    if (useDefaultEl) useDefaultEl.checked = !!defaults.use_default_option;
+
     const upcomingThreshold = document.getElementById('upcomingThreshold');
     if (upcomingThreshold) upcomingThreshold.value = defaults.upcoming_threshold ?? 60;
 
