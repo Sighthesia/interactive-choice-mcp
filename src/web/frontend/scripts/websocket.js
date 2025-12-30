@@ -48,7 +48,7 @@ function connectWebSocket() {
         if (state.hasFinalResult) {
             // Session completed, connection closed is expected
             // Show green "Completed" - use 'success' class for green dot
-            updateConnectionStatus(t('status.session_completed'), 'success');
+            updateConnectionStatus(t('status.completed'), 'success');
             return;
         }
         updateConnectionStatus(t('status.offline'), 'offline');
@@ -153,7 +153,7 @@ function applyFinalizedState(stateData) {
         updateConnectionStatus(t('status.interrupted'), 'error');
     } else {
         // Completed session - show green "Completed"
-        updateConnectionStatus(t('status.session_completed'), 'success');
+        updateConnectionStatus(t('status.completed'), 'success');
     }
 
     const submitBtn = document.getElementById('submitBatchBtn');
@@ -233,7 +233,7 @@ function disconnectWebSocket() {
 
     state.wsConnected = false;
     // For persisted sessions, show green "Completed"
-    updateConnectionStatus(t('status.session_completed'), 'success');
+    updateConnectionStatus(t('status.completed'), 'success');
 }
 
 // Section: Initialize WebSocket
