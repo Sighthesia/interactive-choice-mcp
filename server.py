@@ -19,40 +19,29 @@ async def provide_choice(
 	options: list[dict],
 	session_id: str | None = None,
 ):
-	"""Present an interactive choice prompt to the user and return their selection.
+	"""Initiates a human-in-the-loop interaction to resolve ambiguity, confirm actions, or validate task completion.
 
-	RULE: Mandatory interface for human-in-the-loop decision making. Call this tool IMMEDIATELY when:
-	1. Ambiguous requirements occur
-	2. Multiple technical paths are available
-	3. Confirming destructive actions (delete/overwrite)
-	4. User input is needed to proceed
+    MANDATORY USAGE RULES:
+    1.  **Continuous Validation**: You MUST call this tool repeatedly at the end of every major step or when the task seems complete. Do not stop until the user explicitly selects an option indicating "Task Completed" or "End Session".
+    2.  **Contextual Summary**: In the `prompt` argument, you MUST summarize what has been done so far and what specific decision is needed now.
+    3.  **No Assumptions**: Never guess the user's preference. If multiple technical paths exist, ask. If a destructive action (delete/overwrite) is required, ask.
+    4.  **Feedback Loop**: If the user selects an option with annotations (feedback), you must adjust your plan and call this tool again to confirm the new direction.
 
-	Strict Rules:
-		NO GUESSING: Never assume user preference.
-		BLOCKING: Halt current task and wait for the tool output.
-		EXECUTION: Strictly follow the returned id for subsequent steps.
+    Workflow & State Handling:
+    This tool supports both Web and Terminal interfaces. You must handle the `action_status` in the return value strictly:
 
-	Parameter Guidance:
-		selection_mode: Must be "single" or "multi".
-		options: Each entry must include `id`, `description`; mark one with `recommended: true`.
+    [CASE A: Web Mode / Direct Result]
+    If `action_status` is "selected" or "cancelled":
+        - Action: Proceed immediately based on `selected_indices` and `option_annotations`.
 
-	Terminal Mode Workflow:
-		When `action_status` is "pending_terminal_launch":
-		
-		Step 1: Run the `terminal_command` in terminal
-		Step 2: Parse terminal output for result markers:
-		   - [SELECTION_COMPLETE] selected=A,B [annotations={...}] [global_annotation=note]
-		     → User made selection in terminal, use the parsed values
-		     → annotations and global_annotation only appear if non-empty
-		   - [CANCELLED] [global_annotation=note]
-		     → User cancelled in terminal
-		     → global_annotation only appears if non-empty
-		   - [SWITCH_TO_WEB] session_id=xxx
-		     → User switched to web, call poll_selection(session_id) to wait
-
-	Web Mode:
-		When terminal is not used, this tool blocks until user completes the interaction
-		in the web browser.
+    [CASE B: Terminal Mode]
+    If `action_status` is "pending_terminal_launch":
+        - Action: Use the `terminal` tool to execute the command provided in `terminal_command`.
+        - **CRITICAL**: You must read the terminal output and parse for these markers:
+            1. `[SELECTION_COMPLETE] selected=...`: Interaction finished in terminal. Use these values.
+            2. `[CANCELLED]`: User cancelled in terminal.
+            3. `[SWITCH_TO_WEB] session_id=...`: User requested to move to Web.
+               -> **IMMEDIATE ACTION**: Call `poll_selection(session_id=...)` and wait for the result.
 	"""
 
 	# Delegate the execution to the orchestrator.
@@ -100,25 +89,18 @@ async def provide_choice(
 
 @mcp.tool()
 async def poll_selection(session_id: str) -> dict[str, object]:
-	"""Poll for the result of a pending interaction session.
+	"""Blocks and polls for the result of an ongoing interaction session that was switched from Terminal to Web.
 
-	This tool is used after `provide_choice` returns `pending_terminal_launch` status,
-	and the terminal outputs [SWITCH_TO_WEB] marker.
-	It blocks until the user completes the interaction or the session timeout is reached.
+    WHEN TO USE:
+    - ONLY call this tool if you executed a command from `provide_choice` and the terminal output contained the marker: `[SWITCH_TO_WEB] session_id=...`.
+    - Do not call this tool directly without a preceding `provide_choice` interaction.
 
-	Args:
-		session_id: The session ID returned by provide_choice
+    BEHAVIOR:
+    - This tool acts as a blocking wait. It will pause execution until the user completes the selection in the browser or the session times out.
+    - If the result implies further feedback (annotations), you must loop back and use `provide_choice` again after addressing the feedback.
 
-	Returns:
-		The selection result with same format as provide_choice:
-		- action_status: "selected", "cancelled", "timeout_*", etc.
-		- selected_indices: List of selected option IDs
-		- option_annotations: Dict of option ID to annotation
-		- global_annotation: Optional global note
-		
-	If session is not found or expired, returns:
-		- action_status: "cancelled"
-		- error: Error description
+    Args:
+        session_id: The ID extracted from the `[SWITCH_TO_WEB]` terminal marker.
 	"""
 	result = await poll_session_result(session_id)
 	
