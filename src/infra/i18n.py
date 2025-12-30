@@ -115,8 +115,8 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "提交",
     },
     "action.submit_auto_single": {
-        "en": "Auto-submit selected option",
-        "zh": "选中选项自动提交",
+        "en": "Auto-submit after selecting option",
+        "zh": "选中选项后自动提交",
     },
     "action.cancel": {
         "en": "Cancel",
