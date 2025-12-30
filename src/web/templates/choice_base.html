@@ -94,10 +94,9 @@
         <!-- Main Content (Center) -->
         <div class="main-column">
             <h1>${title}</h1>
-            <p class="prompt">${prompt}</p>
-
-            <!-- Error Display -->
-            <div id="error" class="error-message"></div>
+            <div class="prompt-container">
+                <div id="prompt" class="prompt">${prompt}</div>
+            </div>
 
             <!-- Options List -->
             <div id="options" tabindex="0"></div>
@@ -298,6 +297,7 @@
     <script type="application/json" id="mcp-i18n">${i18n_json}</script>
     <script type="application/json" id="mcp-choice-id">"${choice_id}"</script>
     <script type="application/json" id="mcp-prompt-type">"${prompt_type}"</script>
+    <script type="application/json" id="mcp-prompt">${prompt_json}</script>
 
     <!-- JS Bundle Placeholder -->
     ${js_bundle}

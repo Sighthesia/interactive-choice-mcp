@@ -3,6 +3,20 @@
  * Handles option display, selection, and annotations
  */
 
+// Section: Markdown Helper
+function renderMarkdown(text) {
+    // Simple markdown rendering for session switching
+    // For full markdown support, we rely on server-side rendering
+    if (!text) return '';
+
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>');
+}
+
 // Section: Render Options
 function getVisibleOptions() {
     return window.mcpData.options;
@@ -283,6 +297,7 @@ function initializeRender() {
         globalAnnotation.placeholder = t('terminal.global_annotation_prompt');
     }
 
+
     // Keyboard navigation
     document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
@@ -370,12 +385,37 @@ function refreshFullUI() {
     const data = window.mcpData;
     const sessionState = data.sessionState || {};
 
-    // Update page header
-    const titleEl = document.querySelector('.prompt-title');
-    if (titleEl) titleEl.textContent = data.promptTitle || '';
+    console.log('DEBUG: refreshFullUI - data.promptTitle:', data.promptTitle);
+    console.log('DEBUG: refreshFullUI - data.promptHtml:', data.promptHtml);
+    console.log('DEBUG: refreshFullUI - data.promptText:', data.promptText);
 
-    const promptEl = document.querySelector('.prompt-text');
-    if (promptEl) promptEl.textContent = data.promptText || '';
+    // Update page header
+    const titleEl = document.querySelector('h1');
+    if (titleEl) {
+        console.log('DEBUG: Found title element, updating to:', data.promptTitle);
+        titleEl.textContent = data.promptTitle || '';
+    } else {
+        console.log('DEBUG: Title element not found');
+    }
+
+    // Update prompt content - use server-rendered HTML if available, otherwise render client-side
+    const promptEl = document.getElementById('prompt');
+    if (promptEl) {
+        console.log('DEBUG: Found prompt element');
+        if (data.promptHtml) {
+            console.log('DEBUG: Using server-rendered HTML');
+            // Use server-rendered HTML if available
+            promptEl.innerHTML = data.promptHtml;
+        } else if (data.promptText) {
+            console.log('DEBUG: Using client-side rendering');
+            // Fallback to client-side rendering
+            promptEl.innerHTML = renderMarkdown(data.promptText);
+        } else {
+            console.log('DEBUG: No prompt data available');
+        }
+    } else {
+        console.log('DEBUG: Prompt element not found');
+    }
 
     const timeEl = document.querySelector('.prompt-time');
     if (timeEl) timeEl.textContent = data.invocationTime || '';

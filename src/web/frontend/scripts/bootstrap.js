@@ -106,6 +106,19 @@ window.debugLog = debugLog;
         console.warn('[Bootstrap] mcp-i18n element not found');
     }
 
+    // Read prompt from JSON block
+    const promptEl = document.getElementById('mcp-prompt');
+    if (promptEl) {
+        try {
+            window.mcpData.prompt = JSON.parse(promptEl.textContent);
+            debugLog('Bootstrap', 'Loaded prompt:', window.mcpData.prompt);
+        } catch (e) {
+            console.error('[Bootstrap] Failed to parse prompt:', e);
+        }
+    } else {
+        console.warn('[Bootstrap] mcp-prompt element not found');
+    }
+
     debugLog('Bootstrap', 'Data loading complete. mcpData:', window.mcpData);
 })();
 

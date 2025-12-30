@@ -15,6 +15,7 @@ import webbrowser
 from datetime import datetime
 from typing import Dict, Optional, cast
 
+import markdown
 import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -799,11 +800,15 @@ class WebChoiceServer:
                         notify_if_background=latest_config.notify_if_background,
                         notify_sound=latest_config.notify_sound,
                     )
+                # Render markdown for the prompt
+                prompt_html = markdown.markdown(session.req.prompt) if session.req.prompt else ""
+                
                 return JSONResponse({
                     "type": "active",
                     "choice_id": session.choice_id,
                     "title": session.req.title,
                     "prompt": session.req.prompt,
+                    "prompt_html": prompt_html,
                     "selection_mode": session.req.selection_mode,
                     "options": [
                         {"id": o.id, "description": o.description, "recommended": o.recommended}

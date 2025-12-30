@@ -96,6 +96,10 @@
 
 .main-column {
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 48px); /* Full height minus header */
+    overflow: hidden;
 }
 
 .sidebar {

@@ -261,8 +261,14 @@ input[type="checkbox"] {
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    margin-top: 20px;
+    margin-top: 16px;
     flex-wrap: wrap;
+    padding: 12px 0;
+    background-color: var(--bg);
+    border-top: 1px solid var(--border);
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
 }
 
 /* Section: Buttons */
@@ -471,6 +477,38 @@ body.submitted .status {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.interaction-item-preview {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 4px 0;
+    padding: 4px;
+    background-color: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-height: 1.4;
+}
+
+.interaction-item-preview strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.interaction-item-preview em {
+    font-style: italic;
+}
+
+.interaction-item-preview code {
+    font-family: monospace;
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 1px 3px;
+    border-radius: 3px;
 }
 
 .interaction-item-meta {

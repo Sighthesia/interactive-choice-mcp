@@ -189,12 +189,30 @@ function renderInteractionList() {
         // Add disabled class for non-clickable sessions
         const disabledClass = !isClickable ? ' disabled' : '';
 
+        // Add prompt preview if available
+        let promptPreview = '';
+        if (item.prompt) {
+            // Simple markdown rendering for preview
+            let previewText = item.prompt;
+            if (previewText.length > 100) {
+                previewText = previewText.substring(0, 100) + '...';
+            }
+            // Basic markdown formatting for preview
+            previewText = previewText
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/\n/g, '<br>');
+            promptPreview = '<div class="interaction-item-preview">' + previewText + '</div>';
+        }
+
         return '<div class="interaction-item' + (isCurrent ? ' current' : '') + disabledClass + '" ' + clickAttr + '>' +
             '<div class="interaction-item-header">' +
             '<span class="interaction-item-title">' + (item.title || 'Untitled') + '</span>' +
             statusBadge + transportBadge +
             '</div>' +
             '<div class="interaction-item-meta">' + item.started_at + timeoutHint + '</div>' +
+            promptPreview +
             progressBar +
             '</div>';
     }).join('');
@@ -276,10 +294,14 @@ async function navigateToInteraction(sessionId) {
 }
 
 function updateMcpData(data) {
+    console.log('DEBUG: updateMcpData called with:', data);
+
     // Update core data
     window.mcpData.choiceId = data.choice_id;
     window.mcpData.promptTitle = data.title;
     window.mcpData.promptText = data.prompt;
+    window.mcpData.promptHtml = data.prompt_html;  // Add rendered HTML
+    console.log('DEBUG: Set promptHtml to:', data.prompt_html);
     window.mcpData.selectionMode = data.selection_mode;
     window.mcpData.options = data.options;
     window.mcpData.allowTerminal = data.allow_terminal;

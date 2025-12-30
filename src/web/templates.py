@@ -7,6 +7,8 @@ from pathlib import Path
 from string import Template
 from typing import TYPE_CHECKING
 
+import markdown
+
 from ..infra.i18n import get_text, TEXTS
 from ..core.models import TRANSPORT_WEB, LANG_EN
 from .bundler import get_asset_bundle
@@ -135,10 +137,17 @@ def _render_html(
 
     template = _load_template(use_modular=use_modular)
     
+    # Render markdown on server side
+    prompt_html = markdown.markdown(req.prompt) if req.prompt else ""
+    
+    # Add prompt HTML to session state for switching between sessions
+    session_state['prompt_html'] = prompt_html
+    session_state['prompt_text'] = req.prompt
+    
     # Build substitution dict based on template type
     subs = {
         "title": req.title,
-        "prompt": req.prompt,
+        "prompt": prompt_html,  
         "prompt_type": req.selection_mode,
         "choice_id": choice_id,
         "defaults_json": json.dumps(defaults_payload),
@@ -150,6 +159,7 @@ def _render_html(
         "mcp_version": "0.1.0",
         "invocation_time": invocation_time,
         "i18n_json": json.dumps(_build_i18n_payload()),
+        "prompt_json": json.dumps(req.prompt),  
         "lang": lang,
     }
     

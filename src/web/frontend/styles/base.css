@@ -141,10 +141,104 @@ h1 {
     color: var(--text);
 }
 
+.prompt-container {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    background-color: var(--card-bg);
+}
+
 .prompt {
     font-size: 1rem;
     color: var(--text-muted);
-    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.prompt h1,
+.prompt h2,
+.prompt h3,
+.prompt h4,
+.prompt h5,
+.prompt h6 {
+    color: var(--text);
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+.prompt p {
+    margin-bottom: 12px;
+}
+
+.prompt ul,
+.prompt ol {
+    margin-bottom: 12px;
+    padding-left: 24px;
+}
+
+.prompt li {
+    margin-bottom: 4px;
+}
+
+.prompt pre {
+    background-color: var(--bg);
+    padding: 8px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-bottom: 12px;
+}
+
+.prompt code {
+    font-family: monospace;
+    background-color: var(--bg);
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.prompt blockquote {
+    border-left: 4px solid var(--border);
+    padding-left: 12px;
+    margin-left: 0;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.prompt a {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+.prompt a:hover {
+    color: var(--primary-hover);
+}
+
+.prompt hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 16px 0;
+}
+
+.prompt table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.prompt th,
+.prompt td {
+    border: 1px solid var(--border);
+    padding: 8px;
+}
+
+.prompt th {
+    background-color: var(--bg);
+}
+
+.prompt img {
+    max-width: 100%;
+    height: auto;
 }
 
 .error-message {
