@@ -1,10 +1,6 @@
 # Interactive Choice MCP
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![FastMCP](https://img.shields.io/badge/FastMCP-2.14+-green.svg)](https://github.com/modelcontextprotocol/server-sdk-python)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-一个强大的 **Model Context Protocol (MCP)** 服务器，为 AI 代理提供结构化的人机交互决策能力。通过 `provide_choice` 工具，AI 可以在需要用户决策时暂停执行，提供清晰的选项界面，避免猜测用户意图。
+一个服务器，为 AI 代理提供结构化的人机交互决策能力。通过 `provide_choice` 工具，AI 可以在需要用户决策时暂停执行，提供清晰的选项界面，避免猜测用户意图。
 
 ## ✨ 核心特性
 
@@ -47,9 +43,9 @@ uv run pytest
 
 ## 🚀 快速配置
 
-### 1. Claude Desktop 配置
+### 1. MCP 配置
 
-编辑 Claude Desktop 配置文件（通常位于 `~/Library/Application Support/Claude/claude_desktop_config.json` 或 `%APPDATA%\Claude\claude_desktop_config.json`）：
+编辑 IDE 或 Coding Agent的配置 (Claude Desktop)（通常位于 `~/Library/Application Support/Claude/claude_desktop_config.json` 或 `%APPDATA%\Claude\claude_desktop_config.json`）：
 
 ```json
 {
@@ -67,7 +63,7 @@ uv run pytest
 }
 ```
 
-**提示**：将 `/path/to/interactive-choice-mcp` 替换为实际路径，如 `~/Projects/interactive-choice-mcp`。
+**提示**：将 `/path/to/interactive-choice-mcp` 替换为实际路径，如 `~/interactive-choice-mcp`。
 
 ### 2. 启用调试模式（可选）
 
@@ -179,7 +175,7 @@ Web 界面自动显示最近的交互历史，支持查看详情和重新使用�
 
 ### 持久化配置
 
-用户偏好自动保存到 `~/.mcp-data/interactive_choice/config.json`：
+用户偏好自动保存到 `.mcp-data/config.json`：
 
 ```json
 {
@@ -290,7 +286,7 @@ uv run mcp dev server.py
 
 ## 🤝 贡献
 
-欢迎贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
+欢迎任何贡献！无论是报告问题、提出功能请求，还是提交代码改进，都非常感谢。
 
 ### 开发流程
 
@@ -300,30 +296,14 @@ uv run mcp dev server.py
 4. 推送到分支：`git push origin feature/amazing-feature`
 5. 开启 Pull Request
 
-### 代码规范
+## 💖 致谢
 
-- 使用 **Type Hints** 进行类型标注
-- 遵循 **PEP 8** 代码风格
-- 添加适当的文档字符串
-- 为新功能编写测试
-
-## 📄 许可证
-
-本项目采用 [MIT License](LICENSE)。
-
-## 🙏 致谢
-
+- [mcp-feedback-enhanced](https://github.com/Minidoracat/mcp-feedback-enhanced) - 项目参考和灵感来源
 - [FastMCP](https://github.com/modelcontextprotocol/server-sdk-python) - MCP 服务器框架
 - [FastAPI](https://fastapi.tiangolo.com/) - 现代 Python Web 框架
 - [Questionary](https://github.com/tmbo/questionary) - 终端交互库
 - [uv](https://github.com/astral-sh/uv) - 极速 Python 包管理器
 
-## 📞 支持
+## 📄 许可证
 
-- **问题反馈**：[GitHub Issues](https://github.com/Sighthesia/interactive-choice-mcp/issues)
-- **讨论交流**：[GitHub Discussions](https://github.com/Sighthesia/interactive-choice-mcp/discussions)
-- **文档更新**：欢迎提交 PR 改进文档
-
----
-
-**Made with ❤️ by Sighthesia**
+[MIT License](LICENSE)。
