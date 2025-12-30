@@ -79,14 +79,32 @@ def _resolve_port() -> int:
     return _DEFAULT_WEB_PORT
 
 
-def _find_free_port(host: str, port: int) -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.bind((host, port))
-            return int(s.getsockname()[1])
-        except OSError:
-            s.bind((host, 0))
-            return int(s.getsockname()[1])
+def _find_free_port(host: str, port: int, max_retries: int = 3, retry_delay: float = 1.0) -> int:
+    """Find a free port, retrying if the port is occupied.
+    
+    Args:
+        host: The host address to bind to.
+        port: The desired port to bind to.
+        max_retries: Maximum number of retries if the port is occupied.
+        retry_delay: Delay in seconds between retries.
+        
+    Returns:
+        The port number that was successfully bound.
+    """
+    for attempt in range(max_retries + 1):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind((host, port))
+                _logger.info(f"Successfully bound to port {port} on attempt {attempt + 1}")
+                return int(s.getsockname()[1])
+            except OSError:
+                if attempt < max_retries:
+                    _logger.warning(f"Port {port} is occupied, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+                else:
+                    _logger.warning(f"Port {port} is occupied after {max_retries} retries, selecting a random free port")
+                    s.bind((host, 0))
+                    return int(s.getsockname()[1])
 
 
 # Section: Constants
@@ -96,7 +114,10 @@ _MAX_RECENT_COMPLETED = 10  # Maximum number of completed interactions to surfac
 class WebChoiceServer:
     def __init__(self) -> None:
         self.host = _resolve_host()
-        self.port = _find_free_port(self.host, _resolve_port())
+        resolved_port = _resolve_port()
+        _logger.info(f"Attempting to bind to host {self.host} and port {resolved_port}")
+        self.port = _find_free_port(self.host, resolved_port)
+        _logger.info(f"Server will use port {self.port}")
         self.app = FastAPI()
         self.sessions: Dict[str, ChoiceSession] = {}
         self._server: Optional[uvicorn.Server] = None
