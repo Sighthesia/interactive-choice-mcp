@@ -197,8 +197,8 @@ TEXTS: Dict[str, Dict[str, str]] = {
 
     # Section: Status Messages
     "status_message.manual": {
-        "en": "✅ Submitted successfully. You can close this tab.",
-        "zh": "✅ 提交成功。你可以关闭此标签页。",
+        "en": "✅ Submitted successfully",
+        "zh": "✅ 提交成功",
     },
     "status_message.timeout_auto_submitted": {
         "en": "⏰ Timeout: Auto-submitted.",
