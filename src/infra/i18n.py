@@ -37,8 +37,8 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "交互界面",
     },
     "settings.transport_terminal": {
-        "en": "Terminal",
-        "zh": "终端",
+        "en": "Terminal(experimental)",
+        "zh": "终端(实验性)",
     },
     "settings.transport_web": {
         "en": "Web",
