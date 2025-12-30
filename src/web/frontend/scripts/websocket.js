@@ -161,20 +161,24 @@ function applyFinalizedState(stateData) {
     if (submitBtn) submitBtn.disabled = true;
     if (cancelBtn) cancelBtn.disabled = true;
 
-    // Show success progress bar animation when submitted (not timeout)
+    // Show finalized progress bar animation with state-specific colors
     const bar = document.getElementById('timeoutProgressBar');
     const container = document.getElementById('timeoutContainer');
     const timeoutText = document.getElementById('timeoutText');
     if (bar && container) {
-        if (!actionKey.startsWith('timeout')) {
-            bar.classList.remove('warning', 'danger');
-            bar.classList.add('success');
-            bar.style.width = '100%';
-            container.style.display = 'block';
-            if (timeoutText) timeoutText.innerText = t('status.completed');
-        } else {
-            container.style.display = 'none';
+        bar.classList.remove('success', 'warning', 'danger');
+        bar.style.width = '100%';
+        container.style.display = 'block';
+
+        if (actionKey.startsWith('timeout')) {
+            bar.classList.add('warning');
             if (timeoutText) timeoutText.innerText = t('status.timeout');
+        } else if (actionKey === 'interrupted') {
+            bar.classList.add('danger');
+            if (timeoutText) timeoutText.innerText = t('status.interrupted');
+        } else {
+            bar.classList.add('success');
+            if (timeoutText) timeoutText.innerText = t('status.completed');
         }
     }
 
