@@ -58,7 +58,7 @@ function renderOptions() {
             }
         };
 
-        if (!singleSubmit || window.mcpData.promptType === 'multi') {
+        if (!singleSubmit && window.mcpData.promptType === 'multi') {
             const cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.value = opt.id;
