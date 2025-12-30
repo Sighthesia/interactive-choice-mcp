@@ -26,7 +26,7 @@ This document describes the technical design for persisting completed interactio
       "status": "submitted",
       "started_at": "2025-01-01T12:00:00Z",
       "completed_at": "2025-01-01T12:05:00Z",
-      "url": "http://localhost:17863/choice/abc123"
+      "url": "http://localhost:9999/choice/abc123"
     }
   ]
 }
@@ -53,7 +53,7 @@ This document describes the technical design for persisting completed interactio
   },
   "started_at": "2025-01-01T12:00:00Z",
   "completed_at": "2025-01-01T12:05:00Z",
-  "url": "http://localhost:17863/choice/abc123"
+  "url": "http://localhost:9999/choice/abc123"
 }
 ```
 

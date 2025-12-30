@@ -43,7 +43,7 @@ class TestInteractionEntry:
             interface=TRANSPORT_WEB,
             status=InteractionStatus.PENDING,
             started_at="2025-12-28 10:00:00",
-            url="http://localhost:17863/choice/abc123",
+            url="http://localhost:9999/choice/abc123",
         )
         result = entry.to_dict()
         assert result == {
@@ -52,7 +52,7 @@ class TestInteractionEntry:
             "interface": "web",
             "status": "pending",
             "started_at": "2025-12-28 10:00:00",
-            "url": "http://localhost:17863/choice/abc123",
+            "url": "http://localhost:9999/choice/abc123",
         }
 
     def test_to_dict_terminal_session(self):
@@ -115,7 +115,7 @@ class TestSessionToInteractionEntry:
             req=req,
             defaults=config,
             allow_terminal=False,
-            url="http://localhost:17863/choice/web123",
+            url="http://localhost:9999/choice/web123",
             deadline=100.0,
             result_future=result_future,
             connections=set(),
@@ -129,7 +129,7 @@ class TestSessionToInteractionEntry:
         assert entry.title == "Web Test"
         assert entry.interface == TRANSPORT_WEB
         assert entry.status == InteractionStatus.PENDING
-        assert entry.url == "http://localhost:17863/choice/web123"
+        assert entry.url == "http://localhost:9999/choice/web123"
 
         loop.close()
 

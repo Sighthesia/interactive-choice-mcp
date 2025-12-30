@@ -21,8 +21,8 @@ def test_orchestrator_terminal_handoff_returns_pending(monkeypatch, tmp_path):
     async def fake_handoff(req, config):
         return r.pending_terminal_launch_response(
             session_id="test123",
-            url="http://127.0.0.1:17863/terminal/test123",
-            launch_command="uv run python -m src.terminal.client --session test123 --url http://127.0.0.1:17863",
+            url="http://127.0.0.1:9999/terminal/test123",
+            launch_command="uv run python -m src.terminal.client --session test123 --url http://127.0.0.1:9999",
         )
 
     monkeypatch.setattr("src.core.orchestrator.create_terminal_handoff_session", fake_handoff)

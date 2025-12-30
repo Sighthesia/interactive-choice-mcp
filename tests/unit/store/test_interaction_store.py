@@ -60,7 +60,7 @@ def sample_response() -> ProvideChoiceResponse:
             selected_indices=["opt1"],
             interface="web",
             summary="ids=['opt1']",
-            url="http://localhost:17863/choice/abc123",
+            url="http://localhost:9999/choice/abc123",
             option_annotations={"opt1": "Good choice"},
             global_annotation="Done",
         ),

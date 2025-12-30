@@ -136,7 +136,7 @@ result = provide_choice(
 // 终端模式响应示例
 {
   "action_status": "pending_terminal_launch",
-  "terminal_command": "uv run python -m src.terminal.client --session abc123 --url http://127.0.0.1:17863",
+  "terminal_command": "uv run python -m src.terminal.client --session abc123 --url http://127.0.0.1:9999",
   "session_id": "abc123",
   "instructions": "执行终端命令以启动交互界面"
 }
@@ -148,14 +148,14 @@ result = provide_choice(
 用户可以为选择添加备注：
 
 ```bash
-uv run python -m src.terminal.client --session abc123 --url http://127.0.0.1:17863 --annotate
+uv run python -m src.terminal.client --session abc123 --url http://127.0.0.1:9999 --annotate
 ```
 
 #### 2. 静默模式
 隐藏选项描述，仅显示 ID：
 
 ```bash
-uv run python -m src.terminal.client --session abc123 --url http://127.0.0.1:17863 --quiet
+uv run python -m src.terminal.client --session abc123 --url http://127.0.0.1:9999 --quiet
 ```
 
 #### 3. 会话历史
@@ -168,7 +168,7 @@ Web 界面自动显示最近的交互历史，支持查看详情和重新使用�
 | 变量名             | 默认值      | 说明                                          |
 | ------------------ | ----------- | --------------------------------------------- |
 | `CHOICE_WEB_HOST`  | `127.0.0.1` | Web 服务器绑定地址                            |
-| `CHOICE_WEB_PORT`  | `17863`     | Web 服务器端口（自动选择空闲端口）            |
+| `CHOICE_WEB_PORT`  | `9999`      | Web 服务器端口（自动选择空闲端口）            |
 | `CHOICE_LOG_LEVEL` | `INFO`      | 日志级别：`DEBUG`, `INFO`, `WARNING`, `ERROR` |
 | `CHOICE_LOG_FILE`  | 无          | 日志文件路径                                  |
 | `CHOICE_LANG`      | `zh`        | 界面语言：`en`, `zh`                          |
@@ -279,7 +279,7 @@ uv run mcp dev server.py
 
 ```
 2024-12-29 10:00:00 | INFO     | choice.orchestrator  | Handling choice request
-2024-12-29 10:00:00 | INFO     | choice.server        | Starting web server on http://127.0.0.1:17863
+2024-12-29 10:00:00 | INFO     | choice.server        | Starting web server on http://127.0.0.1:9999
 2024-12-29 10:00:00 | INFO     | choice.server        | Created session abc123: timeout=600s
 2024-12-29 10:00:15 | INFO     | choice.server        | Session abc123 submitted: selected=['react']
 ```

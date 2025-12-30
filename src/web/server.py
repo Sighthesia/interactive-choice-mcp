@@ -56,7 +56,7 @@ __all__ = [
 _logger = get_logger(__name__)
 
 _DEFAULT_WEB_HOST = "127.0.0.1"
-_DEFAULT_WEB_PORT = 17863
+_DEFAULT_WEB_PORT = 9999
 
 
 def _resolve_host() -> str:
