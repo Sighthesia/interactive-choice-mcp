@@ -108,7 +108,7 @@ def _prompt_global_annotation() -> Optional[str]:
 
 
 def _update_settings(base_url: str, session_id: str, current_timeout: int) -> None:
-    """Open a settings menu to update timeout/transport and persist via server."""
+    """Open a settings menu to update timeout/interface and persist via server."""
     try:
         new_timeout = questionary.text(
             "设置超时时间 (秒)",
@@ -136,7 +136,7 @@ def _update_settings(base_url: str, session_id: str, current_timeout: int) -> No
         "action_status": "update_settings",
         "config": {
             "timeout_seconds": timeout_val,
-            "transport": transport_choice,
+            "interface": transport_choice,
         },
     }
     try:

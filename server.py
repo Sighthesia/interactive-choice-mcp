@@ -6,7 +6,7 @@ from src.web import poll_session_result
 # Section: Initialization
 # Initialize the FastMCP server instance and the choice orchestrator.
 # The orchestrator is responsible for routing requests to the appropriate
-# transport (terminal or web) based on availability and configuration.
+# interface (terminal or web) based on availability and configuration.
 mcp = FastMCP("Interactive Choice")
 orchestrator = ChoiceOrchestrator()
 
@@ -56,7 +56,7 @@ async def provide_choice(
 	"""
 
 	# Delegate the execution to the orchestrator.
-	# The orchestrator handles validation, transport selection, and the actual interaction loop.
+	# The orchestrator handles validation, interface selection, and the actual interaction loop.
 	result = await safe_handle(
 		orchestrator,
 		title=title,

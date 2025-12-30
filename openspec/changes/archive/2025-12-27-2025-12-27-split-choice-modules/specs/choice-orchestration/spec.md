@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Reduce large file size and enforce single-responsibility
-- Description: The `choice` package MUST be organized so that individual source files are small and focused. Files that implement more than one high-level concern (data modeling, validation, transport runtime, template rendering, UI prompts) MUST be split into separate modules.
+- Description: The `choice` package MUST be organized so that individual source files are small and focused. Files that implement more than one high-level concern (data modeling, validation, interface runtime, template rendering, UI prompts) MUST be split into separate modules.
 
 #### Scenario: Adding a new web feature (e.g., dashboard filter)
 - Given an engineer needs to add a UI-only change to the web dashboard,

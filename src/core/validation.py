@@ -145,14 +145,14 @@ def apply_configuration(
 ) -> "ProvideChoiceRequest":
     """Apply user configuration to the request (timeout, extended settings).
     
-    Note: transport is not applied here as it's a session-level configuration,
+    Note: interface is not applied here as it's a session-level configuration,
     not a per-request parameter. Transport selection is handled by the orchestrator.
     """
 
     from .models import ProvideChoiceConfig, ProvideChoiceRequest, VALID_TRANSPORTS, ValidationError
 
-    if config.transport not in VALID_TRANSPORTS:
-        raise ValidationError(f"transport must be one of {sorted(VALID_TRANSPORTS)}")
+    if config.interface not in VALID_TRANSPORTS:
+        raise ValidationError(f"interface must be one of {sorted(VALID_TRANSPORTS)}")
     if config.timeout_seconds <= 0:
         raise ValidationError("timeout_seconds must be positive")
 

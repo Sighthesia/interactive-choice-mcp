@@ -21,7 +21,7 @@ def normalize_response(
     *,
     req: "ProvideChoiceRequest",
     selected_indices: Sequence[str] | None,
-    transport: str,
+    interface: str,
     url: Optional[str] = None,
     option_annotations: Optional[dict[str, str]] = None,
     global_annotation: Optional[str] = None,
@@ -37,8 +37,8 @@ def normalize_response(
         ValidationError,
     )
 
-    if transport not in VALID_TRANSPORTS:
-        raise ValidationError("invalid transport for response")
+    if interface not in VALID_TRANSPORTS:
+        raise ValidationError("invalid interface for response")
 
     if action_status not in VALID_ACTIONS:
         raise ValidationError("invalid action_status for response")
@@ -62,7 +62,7 @@ def normalize_response(
 
     selection = ProvideChoiceSelection(
         selected_indices=ordered_ids,
-        transport=transport,
+        interface=interface,
         summary=summary,
         url=url,
         option_annotations=option_annotations or {},
@@ -74,7 +74,7 @@ def normalize_response(
 
 def cancelled_response(
     *,
-    transport: str,
+    interface: str,
     url: Optional[str] = None,
     option_annotations: Optional[dict[str, str]] = None,
     global_annotation: Optional[str] = None,
@@ -84,7 +84,7 @@ def cancelled_response(
 
     selection = ProvideChoiceSelection(
         selected_indices=[],
-        transport=transport,
+        interface=interface,
         summary=summary,
         url=url,
         option_annotations=option_annotations or {},
@@ -95,7 +95,7 @@ def cancelled_response(
 
 def interrupted_response(
     *,
-    transport: str,
+    interface: str,
     url: Optional[str] = None,
 ) -> "ProvideChoiceResponse":
     """Generate a response for an interrupted session (e.g., agent disconnected)."""
@@ -103,7 +103,7 @@ def interrupted_response(
 
     selection = ProvideChoiceSelection(
         selected_indices=[],
-        transport=transport,
+        interface=interface,
         summary="interrupted",
         url=url,
     )
@@ -113,7 +113,7 @@ def interrupted_response(
 def timeout_response(
     *,
     req: "ProvideChoiceRequest",
-    transport: str,
+    interface: str,
     url: Optional[str] = None,
 ) -> "ProvideChoiceResponse":
     """Generate a timeout response, potentially with a default selection."""
@@ -140,7 +140,7 @@ def timeout_response(
     return normalize_response(
         req=req,
         selected_indices=ids,
-        transport=transport,
+        interface=interface,
         url=url,
         action_status=action_status,
     )
@@ -164,7 +164,7 @@ def pending_terminal_launch_response(
 
     selection = ProvideChoiceSelection(
         selected_indices=[],
-        transport=TRANSPORT_TERMINAL,
+        interface=TRANSPORT_TERMINAL,
         summary=launch_command,
         url=url,
     )

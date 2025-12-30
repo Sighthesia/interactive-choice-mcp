@@ -168,10 +168,10 @@ function renderInteractionList() {
 
     container.innerHTML = filtered.map(item => {
         const isCurrent = item.session_id === choiceId;
-        const isTerminalOnly = item.transport === 'terminal';
-        const isTerminalWeb = item.transport === 'terminal-web';
+        const isTerminalOnly = item.interface === 'terminal';
+        const isTerminalWeb = item.interface === 'terminal-web';
         const statusBadge = '<span class="interaction-badge badge-' + item.status + '">' + item.status.replace('_', ' ') + '</span>';
-        const transportBadge = '<span class="interaction-badge badge-' + item.transport + '">' + item.transport + '</span>';
+        const transportBadge = '<span class="interaction-badge badge-' + item.interface + '">' + item.interface + '</span>';
         // Terminal sessions are only clickable if completed (have URL), or if terminal-web
         const isClickable = item.url && (!isTerminalOnly || item.status !== 'pending');
         const clickAttr = isClickable ? 'data-session-id="' + item.session_id + '"' : '';

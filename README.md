@@ -179,7 +179,7 @@ Web 界面自动显示最近的交互历史，支持查看详情和重新使用�
 
 ```json
 {
-  "transport": "web",
+  "interface": "web",
   "language": "zh",
   "timeout_seconds": 600,
   "single_submit_mode": true,

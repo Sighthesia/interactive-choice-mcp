@@ -157,7 +157,7 @@ class WebChoiceServer:
                 if (
                     not persisted_session
                     or not persisted_session.result
-                    or persisted_session.transport != TRANSPORT_WEB
+                    or persisted_session.interface != TRANSPORT_WEB
                 ):
                     raise HTTPException(status_code=404)
                 assert persisted_session is not None
@@ -174,10 +174,10 @@ class WebChoiceServer:
                 display_defaults = session.effective_defaults()
                 if latest_config:
                     # Use latest global settings for display, but keep session-specific values
-                    # NOTE: Keep transport from global config, not session, since session.transport
+                    # NOTE: Keep interface from global config, not session, since session.interface
                     # tracks the actual interface used (e.g., terminal-web) which isn't a valid setting
                     display_defaults = ProvideChoiceConfig(
-                        transport=latest_config.transport,
+                        interface=latest_config.interface,
                         timeout_seconds=latest_config.timeout_seconds,
                         single_submit_mode=latest_config.single_submit_mode,
                         timeout_default_enabled=latest_config.timeout_default_enabled,
@@ -220,7 +220,7 @@ class WebChoiceServer:
                     display_defaults = latest_config
                 else:
                     display_defaults = ProvideChoiceConfig(
-                        transport=TRANSPORT_WEB,
+                        interface=TRANSPORT_WEB,
                         timeout_seconds=timeout_value,
                     )
                 if isinstance(persisted.result, dict):
@@ -339,7 +339,7 @@ class WebChoiceServer:
 
                 if action == "cancelled" or action == "cancel_with_annotation":
                     response = cancelled_response_fn(
-                        transport=TRANSPORT_WEB,
+                        interface=TRANSPORT_WEB,
                         url=session.url,
                         option_annotations=option_annotations,
                         global_annotation=global_annotation,
@@ -371,7 +371,7 @@ class WebChoiceServer:
                     response = normalize_response(
                         req=adjusted_req,
                         selected_indices=ids,
-                        transport=TRANSPORT_WEB,
+                        interface=TRANSPORT_WEB,
                         url=session.url,
                         option_annotations=option_annotations,
                         global_annotation=global_annotation,
@@ -388,7 +388,7 @@ class WebChoiceServer:
                 if action == "timeout" or action in {"timeout_auto_submitted", "timeout_cancelled", "timeout_reinvoke_requested"}:
                     response = timeout_response(
                         req=adjusted_req,
-                        transport=TRANSPORT_WEB,
+                        interface=TRANSPORT_WEB,
                         url=session.url,
                     )
                     session.set_result(response)
@@ -414,7 +414,7 @@ class WebChoiceServer:
         async def update_global_config(payload: Dict[str, object]):  # noqa: ANN201
             """Save global configuration settings.
 
-            This endpoint persists settings like transport, timeout, language, etc.
+            This endpoint persists settings like interface, timeout, language, etc.
             without requiring an active session.
             """
             from ..infra import ConfigStore
@@ -432,16 +432,16 @@ class WebChoiceServer:
             try:
                 store = ConfigStore()
                 current_config = store.load() or ProvideChoiceConfig(
-                    transport=TRANSPORT_TERMINAL,
+                    interface=TRANSPORT_TERMINAL,
                     timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
                 )
                 parsed_config = _parse_config_payload(current_config, payload, dummy_req)
                 store.save(parsed_config)
-                _logger.info(f"Global config saved: transport={parsed_config.transport}, timeout={parsed_config.timeout_seconds}")
+                _logger.info(f"Global config saved: interface={parsed_config.interface}, timeout={parsed_config.timeout_seconds}")
                 return JSONResponse({
                     "status": "ok",
                     "config": {
-                        "transport": parsed_config.transport,
+                        "interface": parsed_config.interface,
                         "timeout_seconds": parsed_config.timeout_seconds,
                         "single_submit_mode": parsed_config.single_submit_mode,
                         "timeout_default_enabled": parsed_config.timeout_default_enabled,
@@ -566,7 +566,7 @@ class WebChoiceServer:
                 if remaining <= 0 and action not in ("update_settings", "switch_to_web"):
                     # Session has timed out - auto-apply timeout action
                     _logger.info(f"Terminal session {session_id[:8]} timed out, rejecting submission")
-                    response = timeout_response(req=web_session.req, transport=TRANSPORT_WEB, url=f"http://{self.host}:{self.port}/terminal/{session_id}")
+                    response = timeout_response(req=web_session.req, interface=TRANSPORT_WEB, url=f"http://{self.host}:{self.port}/terminal/{session_id}")
                     web_session.set_result(response)
                     self.save_session_to_store(web_session)
                     await self.broadcast_interaction_list()
@@ -587,7 +587,7 @@ class WebChoiceServer:
                     return JSONResponse({
                         "status": "ok",
                         "config": {
-                            "transport": parsed_config.transport,
+                            "interface": parsed_config.interface,
                             "timeout_seconds": parsed_config.timeout_seconds,
                             "single_submit_mode": parsed_config.single_submit_mode,
                             "timeout_default_enabled": parsed_config.timeout_default_enabled,
@@ -599,16 +599,16 @@ class WebChoiceServer:
 
                 if action == "switch_to_web":
                     # For unified sessions, just open the web URL - it's the same session
-                    # Mark transport as terminal-web to indicate the switch
+                    # Mark interface as terminal-web to indicate the switch
                     from ..core.models import TRANSPORT_TERMINAL_WEB
-                    web_session.transport = TRANSPORT_TERMINAL_WEB
-                    # Parse config but ignore transport changes during switch
-                    config_payload_no_transport = {k: v for k, v in config_payload.items() if k != "transport"}
+                    web_session.interface = TRANSPORT_TERMINAL_WEB
+                    # Parse config but ignore interface changes during switch
+                    config_payload_no_transport = {k: v for k, v in config_payload.items() if k != "interface"}
                     parsed_config = _parse_config_payload(current_config, config_payload_no_transport, req)
                     web_session.config_used = parsed_config
                     try:
                         from ..infra import ConfigStore
-                        # Don't overwrite transport preference during terminal->web switch
+                        # Don't overwrite interface preference during terminal->web switch
                         ConfigStore().save(parsed_config, exclude_transport=True)
                     except Exception:
                         pass
@@ -621,7 +621,7 @@ class WebChoiceServer:
                 if action == "cancelled":
                     from ..core.response import cancelled_response
                     response = cancelled_response(
-                        transport=TRANSPORT_WEB,
+                        interface=TRANSPORT_WEB,
                         url=url,
                         option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
                         global_annotation=str(global_annotation) if global_annotation else None,
@@ -636,13 +636,13 @@ class WebChoiceServer:
                     response = normalize_response(
                         req=req,
                         selected_indices=ids,
-                        transport=TRANSPORT_WEB,
+                        interface=TRANSPORT_WEB,
                         url=url,
                         option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
                         global_annotation=str(global_annotation) if global_annotation else None,
                     )
                 elif action.startswith("timeout"):
-                    response = timeout_response(req=req, transport=TRANSPORT_WEB, url=url)
+                    response = timeout_response(req=req, interface=TRANSPORT_WEB, url=url)
                 else:
                     raise HTTPException(status_code=400, detail="invalid action_status")
 
@@ -663,7 +663,7 @@ class WebChoiceServer:
             # Check timeout - reject non-settings actions after deadline
             if session.is_expired and action not in ("update_settings", "switch_to_web"):
                 _logger.info(f"Legacy terminal session {session_id[:8]} timed out, rejecting submission")
-                response = timeout_response(req=session.req, transport=TRANSPORT_WEB, url=None)
+                response = timeout_response(req=session.req, interface=TRANSPORT_WEB, url=None)
                 session.set_result(response)
                 return JSONResponse({"status": "timeout", "message": "Session has timed out"})
 
@@ -679,7 +679,7 @@ class WebChoiceServer:
                 return JSONResponse({
                     "status": "ok",
                     "config": {
-                        "transport": parsed_config.transport,
+                        "interface": parsed_config.interface,
                         "timeout_seconds": parsed_config.timeout_seconds,
                         "single_submit_mode": parsed_config.single_submit_mode,
                         "timeout_default_enabled": parsed_config.timeout_default_enabled,
@@ -690,13 +690,13 @@ class WebChoiceServer:
                 })
 
             if action == "switch_to_web":
-                # Parse config but ignore transport changes during switch
-                config_payload_no_transport = {k: v for k, v in config_payload.items() if k != "transport"}
+                # Parse config but ignore interface changes during switch
+                config_payload_no_transport = {k: v for k, v in config_payload.items() if k != "interface"}
                 parsed_config = _parse_config_payload(session.config, config_payload_no_transport, session.req)
                 session.config = parsed_config
                 try:
                     from ..infra import ConfigStore
-                    # Don't overwrite transport preference during terminal->web switch
+                    # Don't overwrite interface preference during terminal->web switch
                     ConfigStore().save(parsed_config, exclude_transport=True)
                 except Exception:
                     pass
@@ -705,7 +705,7 @@ class WebChoiceServer:
                 web_session = await server.create_session(session.req, parsed_config, allow_terminal=False)
                 # Mark the new web session as terminal-web to indicate the switch
                 from ..core.models import TRANSPORT_TERMINAL_WEB
-                web_session.transport = TRANSPORT_TERMINAL_WEB
+                web_session.interface = TRANSPORT_TERMINAL_WEB
 
                 async def bridge_web_result() -> None:
                     try:
@@ -724,7 +724,7 @@ class WebChoiceServer:
             if action == "cancelled":
                 from ..core.response import cancelled_response
                 response = cancelled_response(
-                    transport=TRANSPORT_WEB,
+                    interface=TRANSPORT_WEB,
                     url=f"http://{self.host}:{self.port}/terminal/{session_id}",
                     option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
                     global_annotation=str(global_annotation) if global_annotation else None,
@@ -739,7 +739,7 @@ class WebChoiceServer:
                 response = normalize_response(
                     req=session.req,
                     selected_indices=ids,
-                    transport=TRANSPORT_WEB,
+                    interface=TRANSPORT_WEB,
                     url=f"http://{self.host}:{self.port}/terminal/{session_id}",
                     option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
                     global_annotation=str(global_annotation) if global_annotation else None,
@@ -747,7 +747,7 @@ class WebChoiceServer:
             elif action.startswith("timeout"):
                 response = timeout_response(
                     req=session.req,
-                    transport=TRANSPORT_WEB,
+                    interface=TRANSPORT_WEB,
                     url=f"http://{self.host}:{self.port}/terminal/{session_id}",
                 )
             else:
@@ -766,7 +766,7 @@ class WebChoiceServer:
             interactions = self.get_interaction_list()
             _logger.debug(f"GET /api/interactions: returning {len(interactions)} entries")
             for i in interactions:
-                _logger.debug(f"  - {i.session_id[:8]}: status={i.status.value}, transport={i.transport}")
+                _logger.debug(f"  - {i.session_id[:8]}: status={i.status.value}, interface={i.interface}")
             return JSONResponse({
                 "interactions": [i.to_dict() for i in interactions],
             })
@@ -782,7 +782,7 @@ class WebChoiceServer:
                 display_defaults = session.effective_defaults()
                 if latest_config:
                     display_defaults = ProvideChoiceConfig(
-                        transport=latest_config.transport,
+                        interface=latest_config.interface,
                         timeout_seconds=latest_config.timeout_seconds,
                         single_submit_mode=latest_config.single_submit_mode,
                         timeout_default_enabled=latest_config.timeout_default_enabled,
@@ -813,7 +813,7 @@ class WebChoiceServer:
                     "invocation_time": session.invocation_time,
                     "session_state": session.to_template_state(),
                     "config": {
-                        "transport": display_defaults.transport,
+                        "interface": display_defaults.interface,
                         "timeout_seconds": display_defaults.timeout_seconds,
                         "single_submit_mode": display_defaults.single_submit_mode,
                         "timeout_default_enabled": display_defaults.timeout_default_enabled,
@@ -829,14 +829,14 @@ class WebChoiceServer:
             from ..store.interaction_store import get_interaction_store
             store = get_interaction_store()
             persisted = store.get_by_id(interaction_id)
-            if not persisted or not persisted.result or persisted.transport != TRANSPORT_WEB:
+            if not persisted or not persisted.result or persisted.interface != TRANSPORT_WEB:
                 raise HTTPException(status_code=404)
 
             from ..infra import ConfigStore
             latest_config = ConfigStore().load()
             if latest_config:
                 config_dict = {
-                    "transport": latest_config.transport,
+                    "interface": latest_config.interface,
                     "timeout_seconds": latest_config.timeout_seconds,
                     "single_submit_mode": latest_config.single_submit_mode,
                     "timeout_default_enabled": latest_config.timeout_default_enabled,
@@ -847,7 +847,7 @@ class WebChoiceServer:
                 }
             else:
                 config_dict = {
-                    "transport": TRANSPORT_WEB,
+                    "interface": TRANSPORT_WEB,
                     "timeout_seconds": persisted.timeout_seconds or DEFAULT_TIMEOUT_SECONDS,
                 }
 
@@ -932,7 +932,7 @@ class WebChoiceServer:
     async def create_session(self, req: ProvideChoiceRequest, defaults: ProvideChoiceConfig, allow_terminal: bool) -> ChoiceSession:
         await self.ensure_running()
         choice_id = uuid.uuid4().hex
-        defaults.transport = TRANSPORT_WEB
+        defaults.interface = TRANSPORT_WEB
         loop = asyncio.get_running_loop()
         result_future: asyncio.Future[ProvideChoiceResponse] = loop.create_future()
         now = time.monotonic()
@@ -1003,12 +1003,12 @@ class WebChoiceServer:
         # Note: This now includes both web and terminal sessions (unified storage)
         _logger.debug(f"[get_interaction_list] self.sessions has {len(self.sessions)} entries")
         for sid, session in self.sessions.items():
-            _logger.debug(f"[get_interaction_list] Session {sid[:8]}: final_result={session.final_result is not None}, status={session.status}, transport={session.transport}")
+            _logger.debug(f"[get_interaction_list] Session {sid[:8]}: final_result={session.final_result is not None}, status={session.status}, interface={session.interface}")
             entry = session.to_interaction_entry()
-            # Set relative URL based on transport type and status
-            if entry.transport in (TRANSPORT_WEB, TRANSPORT_TERMINAL_WEB):
+            # Set relative URL based on interface type and status
+            if entry.interface in (TRANSPORT_WEB, TRANSPORT_TERMINAL_WEB):
                 entry.url = f"/choice/{entry.session_id}"
-            elif entry.transport == TRANSPORT_TERMINAL and entry.status != InteractionStatus.PENDING:
+            elif entry.interface == TRANSPORT_TERMINAL and entry.status != InteractionStatus.PENDING:
                 # Completed terminal sessions can be viewed in web UI
                 entry.url = f"/choice/{entry.session_id}"
             else:
@@ -1034,9 +1034,9 @@ class WebChoiceServer:
         for entry in persisted:
             if entry.session_id in in_memory_ids:
                 continue
-            if entry.transport in (TRANSPORT_WEB, TRANSPORT_TERMINAL_WEB):
+            if entry.interface in (TRANSPORT_WEB, TRANSPORT_TERMINAL_WEB):
                 entry.url = f"/choice/{entry.session_id}"
-            elif entry.transport == TRANSPORT_TERMINAL and entry.status != InteractionStatus.PENDING:
+            elif entry.interface == TRANSPORT_TERMINAL and entry.status != InteractionStatus.PENDING:
                 # Completed terminal sessions can be viewed in web UI
                 entry.url = f"/choice/{entry.session_id}"
             else:
@@ -1072,7 +1072,7 @@ class WebChoiceServer:
             started_at=session.invocation_time,
             completed_at=completed_at,
             url=session.url,
-            transport=TRANSPORT_WEB,
+            interface=TRANSPORT_WEB,
         )
 
     def _save_terminal_session(self, session: "TerminalSession") -> None:
@@ -1092,7 +1092,7 @@ class WebChoiceServer:
             started_at=session.started_at_iso,
             completed_at=completed_at,
             url=None,
-            transport=TRANSPORT_TERMINAL,
+            interface=TRANSPORT_TERMINAL,
         )
 
     async def broadcast_interaction_list(self) -> None:
@@ -1147,7 +1147,7 @@ async def run_web_choice(
     except asyncio.CancelledError:
         # Agent disconnected - mark session as interrupted
         _logger.info(f"Session {session.choice_id[:8]} interrupted (agent disconnected)")
-        response = interrupted_response(transport=TRANSPORT_WEB, url=session.url)
+        response = interrupted_response(interface=TRANSPORT_WEB, url=session.url)
         session.set_result(response)
         server.save_session_to_store(session)
         await server.broadcast_interaction_list()
@@ -1158,13 +1158,13 @@ async def run_web_choice(
 
 
 def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, object], req: ProvideChoiceRequest) -> ProvideChoiceConfig:  # noqa: ARG001
-    # Only update transport if explicitly provided in the payload
-    transport_raw = payload.get("transport")
-    transport = defaults.transport  # Keep existing transport by default
+    # Only update interface if explicitly provided in the payload
+    transport_raw = payload.get("interface")
+    interface = defaults.interface  # Keep existing interface by default
     if transport_raw is not None:
-        transport = str(transport_raw)
-        if transport not in VALID_TRANSPORTS:
-            transport = defaults.transport
+        interface = str(transport_raw)
+        if interface not in VALID_TRANSPORTS:
+            interface = defaults.interface
 
     timeout_raw = payload.get("timeout_seconds")
     timeout_val = defaults.timeout_seconds
@@ -1255,7 +1255,7 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
         notify_sound_path = defaults.notify_sound_path
 
     return ProvideChoiceConfig(
-        transport=transport,
+        interface=interface,
         timeout_seconds=timeout_val,
         single_submit_mode=single_submit_val,
         timeout_default_enabled=timeout_default_enabled,
@@ -1301,8 +1301,8 @@ async def create_terminal_handoff_session(
     
     # Create a unified ChoiceSession (same as web, but marked for terminal use)
     session = await server.create_session(req, config, allow_terminal=False)
-    # Mark this session as terminal transport for display purposes
-    session.transport = TRANSPORT_TERMINAL
+    # Mark this session as terminal interface for display purposes
+    session.interface = TRANSPORT_TERMINAL
     session.url = f"http://{server.host}:{server.port}/terminal/{session.choice_id}"
     
     launch_command = f"uv run python -m src.terminal.client --session {session.choice_id} --url http://{server.host}:{server.port}"
@@ -1397,7 +1397,7 @@ async def poll_terminal_session_result(session_id: str, wait_seconds: int = 30) 
 
     # If already expired, return timeout
     if session.is_expired:
-        response = timeout_response(req=session.req, transport=TRANSPORT_WEB, url=None)
+        response = timeout_response(req=session.req, interface=TRANSPORT_WEB, url=None)
         session.set_result(response)
         return response
 
@@ -1413,7 +1413,7 @@ async def poll_terminal_session_result(session_id: str, wait_seconds: int = 30) 
         return session.result
     
     if session.is_expired:
-        response = timeout_response(req=session.req, transport=TRANSPORT_WEB, url=None)
+        response = timeout_response(req=session.req, interface=TRANSPORT_WEB, url=None)
         session.set_result(response)
         return response
 

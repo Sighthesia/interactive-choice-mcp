@@ -1,5 +1,5 @@
 ## Context
-- Terminal transport currently blocks inside the MCP request, so the AI cannot run an external terminal command after calling `provide_choice` with `transport=terminal`.
+- Terminal interface currently blocks inside the MCP request, so the AI cannot run an external terminal command after calling `provide_choice` with `interface=terminal`.
 - The request is to let the tool return immediately with a launch address/command that the AI can execute to open the terminal UI, while still enforcing the existing choice orchestration behaviors (timeouts, cancel, annotations, config persistence).
 
 ## Goals / Non-Goals

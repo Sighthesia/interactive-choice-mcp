@@ -7,8 +7,8 @@ Package Structure:
     ├── core/          - Core business logic (models, orchestrator, validation, response)
     ├── infra/         - Infrastructure (logging, storage, i18n)
     ├── store/         - Session persistence
-    ├── terminal/      - Terminal transport implementation
-    └── web/           - Web transport implementation
+    ├── terminal/      - Terminal interface implementation
+    └── web/           - Web interface implementation
 
 Logging Configuration:
     Set the following environment variables to configure logging:

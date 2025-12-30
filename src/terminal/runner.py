@@ -65,7 +65,7 @@ def _run_prompt_sync(
                 default=default_val
             ).unsafe_ask()
             if answer is None:
-                return cancelled_response(transport=TRANSPORT_TERMINAL)
+                return cancelled_response(interface=TRANSPORT_TERMINAL)
 
             if annotation_enabled:
                 try:
@@ -76,7 +76,7 @@ def _run_prompt_sync(
                         instruction=instruction,
                     ).unsafe_ask()
                 except (KeyboardInterrupt, EOFError, Exception):
-                    return cancelled_response(transport=TRANSPORT_TERMINAL)
+                    return cancelled_response(interface=TRANSPORT_TERMINAL)
                 if opt_note:
                     option_annotations[answer] = opt_note
                 try:
@@ -88,14 +88,14 @@ def _run_prompt_sync(
                     ).unsafe_ask()
                 except (KeyboardInterrupt, EOFError, Exception):
                     return cancelled_response(
-                        transport=TRANSPORT_TERMINAL,
+                        interface=TRANSPORT_TERMINAL,
                         option_annotations=option_annotations,
                     )
 
             return normalize_response(
                 req=req,
                 selected_indices=[answer],
-                transport=TRANSPORT_TERMINAL,
+                interface=TRANSPORT_TERMINAL,
                 option_annotations=option_annotations,
                 global_annotation=global_annotation or None if annotation_enabled else None,
             )
@@ -113,7 +113,7 @@ def _run_prompt_sync(
                 ]
             answer = questionary.checkbox(req.prompt, choices=choices).unsafe_ask()
             if answer is None:
-                return cancelled_response(transport=TRANSPORT_TERMINAL)
+                return cancelled_response(interface=TRANSPORT_TERMINAL)
 
             if annotation_enabled:
                 for opt_id in answer:
@@ -126,7 +126,7 @@ def _run_prompt_sync(
                         ).unsafe_ask()
                     except (KeyboardInterrupt, EOFError, Exception):
                         return cancelled_response(
-                            transport=TRANSPORT_TERMINAL,
+                            interface=TRANSPORT_TERMINAL,
                             option_annotations=option_annotations,
                         )
                     if opt_note:
@@ -140,21 +140,21 @@ def _run_prompt_sync(
                     ).unsafe_ask()
                 except (KeyboardInterrupt, EOFError, Exception):
                     return cancelled_response(
-                        transport=TRANSPORT_TERMINAL,
+                        interface=TRANSPORT_TERMINAL,
                         option_annotations=option_annotations,
                     )
 
             return normalize_response(
                 req=req,
                 selected_indices=answer,
-                transport=TRANSPORT_TERMINAL,
+                interface=TRANSPORT_TERMINAL,
                 option_annotations=option_annotations,
                 global_annotation=global_annotation or None if annotation_enabled else None,
             )
 
-        return cancelled_response(transport=TRANSPORT_TERMINAL)
+        return cancelled_response(interface=TRANSPORT_TERMINAL)
     except (KeyboardInterrupt, EOFError, Exception):
-        return cancelled_response(transport=TRANSPORT_TERMINAL)
+        return cancelled_response(interface=TRANSPORT_TERMINAL)
 
     raise ValidationError(f"Unsupported selection_mode: {req.selection_mode}")
 
@@ -164,7 +164,7 @@ async def _run_with_timeout(req: ProvideChoiceRequest, func: Callable[[], Provid
     try:
         return await asyncio.wait_for(loop.run_in_executor(None, func), timeout=timeout_seconds)
     except asyncio.TimeoutError:
-        return timeout_response(req=req, transport=TRANSPORT_TERMINAL)
+        return timeout_response(req=req, interface=TRANSPORT_TERMINAL)
 
 
 async def run_terminal_choice(
@@ -211,9 +211,9 @@ async def prompt_configuration(
             transports.append(questionary.Choice(title=get_text("settings.transport_web", lang), value=TRANSPORT_WEB))
         try:
             chosen_transport = questionary.select(
-                get_text("settings.transport", lang),
+                get_text("settings.interface", lang),
                 choices=transports,
-                default=defaults.transport if defaults.transport in {c.value for c in transports} else TRANSPORT_TERMINAL
+                default=defaults.interface if defaults.interface in {c.value for c in transports} else TRANSPORT_TERMINAL
             ).unsafe_ask()
             if chosen_transport is None:
                 return None
@@ -269,7 +269,7 @@ async def prompt_configuration(
                 ).unsafe_ask()
 
             return ProvideChoiceConfig(
-                transport=chosen_transport,
+                interface=chosen_transport,
                 timeout_seconds=timeout_val,
                 single_submit_mode=bool(single_submit_choice),
                 timeout_default_enabled=timeout_default_enabled,

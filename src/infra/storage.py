@@ -1,7 +1,7 @@
 """Configuration storage for interactive choice settings.
 
 Provides a JSON-backed store for persisting user preferences like
-transport preference, timeout settings, and notification options.
+interface preference, timeout settings, and notification options.
 """
 from __future__ import annotations
 
@@ -47,9 +47,9 @@ class ConfigStore:
             return None
 
         try:
-            transport = raw.get("transport")
-            if transport not in VALID_TRANSPORTS:
-                transport = TRANSPORT_TERMINAL
+            interface = raw.get("interface")
+            if interface not in VALID_TRANSPORTS:
+                interface = TRANSPORT_TERMINAL
 
             timeout_seconds = DEFAULT_TIMEOUT_SECONDS
             raw_timeout = raw.get("timeout_seconds")
@@ -114,7 +114,7 @@ class ConfigStore:
                 notify_sound_path = None
 
             return ProvideChoiceConfig(
-                transport=transport,
+                interface=interface,
                 timeout_seconds=timeout_seconds,
                 single_submit_mode=single_submit_mode,
                 timeout_default_index=timeout_default_index,
@@ -143,13 +143,13 @@ class ConfigStore:
         
         Args:
             config: The configuration to save.
-            exclude_transport: If True, preserve the existing transport setting in the file
-                              instead of overwriting it with config.transport. Useful for
+            exclude_transport: If True, preserve the existing interface setting in the file
+                              instead of overwriting it with config.interface. Useful for
                               operations like terminal->web switch that shouldn't change
-                              the user's transport preference.
+                              the user's interface preference.
         """
         payload: Dict[str, Any] = {
-            "transport": config.transport,
+            "interface": config.interface,
             "timeout_seconds": config.timeout_seconds,
             "single_submit_mode": config.single_submit_mode,
             "timeout_default_index": config.timeout_default_index,
@@ -171,11 +171,11 @@ class ConfigStore:
             "notify_sound_path": config.notify_sound_path,
         }
 
-        # If excluding transport, preserve the existing value from disk
+        # If excluding interface, preserve the existing value from disk
         if exclude_transport:
             existing = self.load()
             if existing is not None:
-                payload["transport"] = existing.transport
+                payload["interface"] = existing.interface
 
         try:
             self._path.parent.mkdir(parents=True, exist_ok=True)

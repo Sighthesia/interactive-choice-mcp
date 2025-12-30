@@ -46,7 +46,7 @@ class PersistedSession:
     session_id: str
     title: str
     prompt: str
-    transport: str
+    interface: str
     selection_mode: str
     options: list[dict]  # List of option dicts
     result: Optional[dict]  # ProvideChoiceResponse as dict
@@ -66,7 +66,7 @@ class PersistedSession:
         return InteractionEntry(
             session_id=self.session_id,
             title=self.title,
-            transport=self.transport,
+            interface=self.interface,
             status=status,
             started_at=self.started_at,
             url=self.url,
@@ -79,7 +79,7 @@ class PersistedSession:
             "session_id": self.session_id,
             "title": self.title,
             "prompt": self.prompt,
-            "transport": self.transport,
+            "interface": self.interface,
             "selection_mode": self.selection_mode,
             "options": self.options,
             "result": self.result,
@@ -96,7 +96,7 @@ class PersistedSession:
             session_id=data["session_id"],
             title=data["title"],
             prompt=data["prompt"],
-            transport=data["transport"],
+            interface=data["interface"],
             selection_mode=data["selection_mode"],
             options=data.get("options", []),
             result=data.get("result"),
@@ -184,7 +184,7 @@ class InteractionStore:
         started_at: str,
         completed_at: Optional[str],
         url: Optional[str],
-        transport: str,
+        interface: str,
     ) -> None:
         """Persist a completed session.
 
@@ -195,7 +195,7 @@ class InteractionStore:
             started_at: ISO 8601 start time
             completed_at: ISO 8601 completion time (if completed)
             url: Web URL for the session (if applicable)
-            transport: "web" or "terminal"
+            interface: "web" or "terminal"
         """
         if not self._loaded:
             self.load()
@@ -213,7 +213,7 @@ class InteractionStore:
                 "action_status": result.action_status,
                 "selection": {
                     "selected_indices": result.selection.selected_indices,
-                    "transport": result.selection.transport,
+                    "interface": result.selection.interface,
                     "summary": result.selection.summary,
                     "url": result.selection.url,
                     "option_annotations": result.selection.option_annotations,
@@ -224,7 +224,7 @@ class InteractionStore:
         # Use relative URL to avoid stale host/port when rendering historical entries
         stored_url = None
         stored_timeout = req.timeout_seconds if hasattr(req, "timeout_seconds") else None
-        if transport == "web":
+        if interface == "web":
             stored_url = f"/choice/{session_id}"
         elif url:
             stored_url = url
@@ -233,7 +233,7 @@ class InteractionStore:
             session_id=session_id,
             title=req.title,
             prompt=req.prompt,
-            transport=transport,
+            interface=interface,
             selection_mode=req.selection_mode,
             options=options,
             result=result_dict,

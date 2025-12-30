@@ -2,8 +2,8 @@
 
 The ChoiceOrchestrator is the central coordinator for user interaction:
 - Validates incoming requests
-- Determines the best available transport (Terminal vs Web)
-- Executes the interaction on the chosen transport
+- Determines the best available interface (Terminal vs Web)
+- Executes the interaction on the chosen interface
 - Supports terminal hand-off for non-blocking MCP invocations
 """
 from __future__ import annotations
@@ -38,8 +38,8 @@ class ChoiceOrchestrator:
 
     This class is responsible for:
     1. Validating the incoming request.
-    2. Determining the best available transport (Terminal vs Web).
-    3. Executing the interaction on the chosen transport.
+    2. Determining the best available interface (Terminal vs Web).
+    3. Executing the interaction on the chosen interface.
     4. Supporting terminal hand-off for non-blocking MCP invocations.
     """
     def __init__(self, *, config_path: Optional[Path] = None) -> None:
@@ -66,7 +66,7 @@ class ChoiceOrchestrator:
         """
         Process a choice request from start to finish.
         
-        Validates inputs, selects transport, and awaits user action.
+        Validates inputs, selects interface, and awaits user action.
         
         When `session_id` is provided, polls for the result of an existing
         terminal hand-off session instead of creating a new interaction.
@@ -87,7 +87,7 @@ class ChoiceOrchestrator:
                 action_status="cancelled",
                 selection=ProvideChoiceSelection(
                     selected_indices=[],
-                    transport=TRANSPORT_TERMINAL,
+                    interface=TRANSPORT_TERMINAL,
                     summary=f"Session {session_id} not found or expired. Please create a new session.",
                 ),
             )
@@ -111,16 +111,16 @@ class ChoiceOrchestrator:
         config_defaults = self._build_default_config(req)
 
         # Section: Transport Selection
-        # If terminal transport is configured, create a terminal hand-off session.
+        # If terminal interface is configured, create a terminal hand-off session.
         # The AI agent will execute the terminal command to start the interaction.
-        if config_defaults.transport == TRANSPORT_TERMINAL:
-            _logger.debug("Using terminal transport (handoff)")
+        if config_defaults.interface == TRANSPORT_TERMINAL:
+            _logger.debug("Using terminal interface (handoff)")
             # Update cached config for future calls
             self._last_config = config_defaults
             return await create_terminal_handoff_session(req, config_defaults)
 
-        # Otherwise, use web transport (default)
-        _logger.debug("Using web transport")
+        # Otherwise, use web interface (default)
+        _logger.debug("Using web interface")
         response, final_config = await run_web_choice(req, defaults=config_defaults, allow_terminal=True)
         # Update cached config with final config used
         self._last_config = final_config
@@ -131,7 +131,7 @@ class ChoiceOrchestrator:
         # Always reload config to get latest settings from Web UI
         saved = self._store.load()
         # Transport preference: use saved config or default to web
-        transport_pref = saved.transport if saved else TRANSPORT_WEB
+        transport_pref = saved.interface if saved else TRANSPORT_WEB
         timeout_pref = saved.timeout_seconds if saved else req.timeout_seconds
 
         # Extended settings: inherit from saved config or request defaults
@@ -151,7 +151,7 @@ class ChoiceOrchestrator:
             language_pref = LANG_EN
 
         return ProvideChoiceConfig(
-            transport=transport_pref,
+            interface=transport_pref,
             timeout_seconds=timeout_pref,
             single_submit_mode=single_submit_pref,
             timeout_default_index=timeout_default_index_pref,
@@ -177,7 +177,7 @@ async def safe_handle(orchestrator: ChoiceOrchestrator, **kwargs) -> ProvideChoi
         # Return a cancelled response if validation fails, including the validation detail.
         _logger.warning(f"Validation error: {exc}")
         return cancelled_response(
-            transport=kwargs.get("transport") or TRANSPORT_TERMINAL,
+            interface=kwargs.get("interface") or TRANSPORT_TERMINAL,
             url=None,
             summary=f"validation_error: {exc}",
         )
@@ -192,7 +192,7 @@ async def safe_handle(orchestrator: ChoiceOrchestrator, **kwargs) -> ProvideChoi
             # Filter out session_id as it's not part of parse_request
             parse_kwargs = {k: v for k, v in kwargs.items() if k != "session_id"}
             req = parse_request(**parse_kwargs)
-            return timeout_response(req=req, transport=kwargs.get("transport") or TRANSPORT_TERMINAL, url=None)
+            return timeout_response(req=req, interface=kwargs.get("interface") or TRANSPORT_TERMINAL, url=None)
         except Exception:
             # If even parsing fails, we can't use timeout_response properly, return cancelled
-            return cancelled_response(transport=kwargs.get("transport") or TRANSPORT_TERMINAL, url=None)
+            return cancelled_response(interface=kwargs.get("interface") or TRANSPORT_TERMINAL, url=None)

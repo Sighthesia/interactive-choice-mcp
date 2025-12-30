@@ -106,13 +106,13 @@ def test_normalize_response_selection():
     resp = r.normalize_response(
         req=req,
         selected_indices=["A"],
-        transport=models.TRANSPORT_WEB,
+        interface=models.TRANSPORT_WEB,
         url="http://localhost",
         global_annotation="some note",
     )
     assert resp.action_status == "selected"
     assert resp.selection.selected_indices == ["A"]
-    assert resp.selection.transport == models.TRANSPORT_WEB
+    assert resp.selection.interface == models.TRANSPORT_WEB
     assert resp.selection.global_annotation == "some note"
 
 
@@ -127,7 +127,7 @@ def test_normalize_response_rejects_invalid_action_status():
         r.normalize_response(
             req=req,
             selected_indices=["A"],
-            transport=models.TRANSPORT_TERMINAL,
+            interface=models.TRANSPORT_TERMINAL,
             action_status="bad_status",
         )
 
@@ -144,7 +144,7 @@ def test_timeout_response_auto_select():
         timeout_default_enabled=True,
         timeout_default_index=1,
     )
-    resp = r.timeout_response(req=req, transport=models.TRANSPORT_TERMINAL)
+    resp = r.timeout_response(req=req, interface=models.TRANSPORT_TERMINAL)
     assert resp.action_status == "timeout_auto_submitted"
     assert resp.selection.selected_indices == ["B"]
 
@@ -157,7 +157,7 @@ def test_timeout_response_cancelled_when_no_default():
         options=[{"id": "A", "description": "desc", "recommended": True}],
         timeout_default_enabled=False,
     )
-    resp = r.timeout_response(req=req, transport=models.TRANSPORT_TERMINAL)
+    resp = r.timeout_response(req=req, interface=models.TRANSPORT_TERMINAL)
     assert resp.action_status == "timeout_cancelled"
     assert resp.selection.selected_indices == []
 
@@ -184,10 +184,10 @@ def test_apply_configuration():
         ],
     )
     config = models.ProvideChoiceConfig(
-        transport=models.TRANSPORT_WEB,
+        interface=models.TRANSPORT_WEB,
         timeout_seconds=42,
     )
     adjusted = v.apply_configuration(req, config)
     assert adjusted.timeout_seconds == 42
-    # Note: transport is not applied to request, it's a session-level config
+    # Note: interface is not applied to request, it's a session-level config
     assert [opt.id for opt in adjusted.options] == ["A", "B"]

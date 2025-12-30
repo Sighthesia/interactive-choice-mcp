@@ -22,7 +22,7 @@ This document describes the technical design for persisting completed interactio
     {
       "session_id": "abc123",
       "title": "Choose option",
-      "transport": "web",
+      "interface": "web",
       "status": "submitted",
       "started_at": "2025-01-01T12:00:00Z",
       "completed_at": "2025-01-01T12:05:00Z",
@@ -39,7 +39,7 @@ This document describes the technical design for persisting completed interactio
   "session_id": "abc123",
   "title": "Choose option",
   "prompt": "Please select an option",
-  "transport": "web",
+  "interface": "web",
   "selection_mode": "single",
   "options": [
     {"id": "opt1", "description": "Option 1", "recommended": true},

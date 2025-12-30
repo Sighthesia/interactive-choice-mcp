@@ -10,7 +10,7 @@
 ## Goals
 - Make terminal hand-off unambiguous: structured fields (`terminal_command`, `session_id`, optional `url`), clear agent instructions, and default blocking poll to reduce missed execution.
 - Upgrade terminal UI ergonomics: show invocation + timeout, support j/k navigation, Tab to annotations, always-available annotations (empty = no note), cancel triggers global annotation prompt.
-- Provide an in-terminal settings entry to adjust global/terminal UI settings and switch the current session to web transport when desired.
+- Provide an in-terminal settings entry to adjust global/terminal UI settings and switch the current session to web interface when desired.
 - Clarify URL semantics: keep for client connectivity but make it optional/auxiliary so agents need only `terminal_command` + `session_id`.
 
 ## Non-Goals

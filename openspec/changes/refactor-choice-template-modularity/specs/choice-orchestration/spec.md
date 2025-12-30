@@ -1,6 +1,6 @@
 ## MODIFIED Requirements
 ### Requirement: Reduce large file size and enforce single-responsibility
-- Description: The `choice` package MUST be organized so that individual source files are small and focused. Files that implement more than one high-level concern (data modeling, validation, transport runtime, template rendering, UI prompts) MUST be split into separate modules. The web portal SHALL source its styles and scripts from concern-specific modules assembled via an explicit manifest into the delivered page, keeping i18n/config wiring centralized, and SHALL expose a versioned static bundle route (with inline fallback) so the assembled assets can be cached and smoke-tested.
+- Description: The `choice` package MUST be organized so that individual source files are small and focused. Files that implement more than one high-level concern (data modeling, validation, interface runtime, template rendering, UI prompts) MUST be split into separate modules. The web portal SHALL source its styles and scripts from concern-specific modules assembled via an explicit manifest into the delivered page, keeping i18n/config wiring centralized, and SHALL expose a versioned static bundle route (with inline fallback) so the assembled assets can be cached and smoke-tested.
 
 #### Scenario: Adding a new web feature (e.g., dashboard filter)
 - **Given** an engineer needs to add a UI-only change to the web dashboard,

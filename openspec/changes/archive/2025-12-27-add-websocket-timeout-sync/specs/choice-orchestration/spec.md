@@ -18,7 +18,7 @@ The system SHALL provide a transient FastAPI-based web portal as a fallback or w
 - **THEN** the user can navigate to the root URL of the web portal to see a list of active interactions and select the one they wish to re-enter.
 
 ### Requirement: Timeout and Cancel Handling
-The system SHALL enforce a bounded wait with a configurable timeout (default 5 minutes) for user input across transports, SHALL honor cancellations with cancel always visible/enabled (no toggle to hide it), and SHALL return `timeout` or `cancelled` action statuses without executing further actions. **In the web transport, the timeout deadline SHALL be dynamically adjustable, and the server SHALL maintain the authoritative expiration time.**
+The system SHALL enforce a bounded wait with a configurable timeout (default 5 minutes) for user input across transports, SHALL honor cancellations with cancel always visible/enabled (no toggle to hide it), and SHALL return `timeout` or `cancelled` action statuses without executing further actions. **In the web interface, the timeout deadline SHALL be dynamically adjustable, and the server SHALL maintain the authoritative expiration time.**
 
 #### Scenario: Dynamic timeout update in web portal
 - **WHEN** a user adjusts the timeout value in the web portal configuration panel

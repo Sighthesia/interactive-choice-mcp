@@ -7,7 +7,7 @@ The MCP server SHALL expose a `provide_choice` tool with a schema-first request 
 - **THEN** the server validates the payload (rejecting inverted limits, invalid defaults, or unsupported flags for the chosen type) and rejects malformed requests before starting any user interaction.
 
 #### Scenario: Deterministic response payload with annotations
-- **WHEN** a user completes the interaction across any transport
+- **WHEN** a user completes the interaction across any interface
 - **THEN** the tool returns `action_status (selected|custom_input|cancelled|timeout)` with a normalized selection payload that orders option ids, enforces min/max counts, preserves default selections when untouched, and includes any option-level or global annotations alongside optional custom input.
 
 ### Requirement: Timeout and Cancel Handling

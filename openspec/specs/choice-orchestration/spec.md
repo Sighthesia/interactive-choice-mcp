@@ -7,7 +7,7 @@ TBD - created by archiving change add-provide-choice-capability. Update Purpose 
 The terminal hand-off response SHALL return structured fields: `terminal_command` (copy-paste ready), `session_id`, and an `instructions` string that explicitly directs the agent to run the command and then poll with the same session id. A `url` MAY be included for diagnostics or client connectivity, but agents MUST NOT depend on parsing it when `terminal_command` is present. Polling a session_id SHALL block up to a bounded interval (e.g., 30s) before returning pending/timeout to reduce missed executions.
 
 #### Scenario: Structured hand-off response
-- **WHEN** terminal transport is requested and hand-off is used
+- **WHEN** terminal interface is requested and hand-off is used
 - **THEN** the response includes `terminal_command`, `session_id`, optional `url`, and `instructions` that tell the agent to execute the command and poll; no freeform parsing of `summary` is required.
 
 #### Scenario: Blocking poll reduces missed execution
@@ -15,7 +15,7 @@ The terminal hand-off response SHALL return structured fields: `terminal_command
 - **THEN** the server waits up to the configured blocking window for a terminal submission before replying, returning the final result if ready, otherwise pending/timeout, minimizing repeated agent calls.
 
 ### Requirement: Terminal Choice Flow
-The terminal UI SHALL display invocation time and timeout countdown, support `j`/`k` as aliases for down/up navigation, allow `Tab` to focus annotation input, and keep per-option/global annotations always available (empty input yields no annotation). Selecting cancel SHALL prompt for global annotation before completing cancel. The terminal UI SHALL provide a settings entry that lets the user adjust global and terminal UI settings and trigger a switch of the current session to the web transport.
+The terminal UI SHALL display invocation time and timeout countdown, support `j`/`k` as aliases for down/up navigation, allow `Tab` to focus annotation input, and keep per-option/global annotations always available (empty input yields no annotation). Selecting cancel SHALL prompt for global annotation before completing cancel. The terminal UI SHALL provide a settings entry that lets the user adjust global and terminal UI settings and trigger a switch of the current session to the web interface.
 
 #### Scenario: Ergonomic navigation and annotations
 - **WHEN** the terminal prompt is shown
@@ -25,12 +25,12 @@ The terminal UI SHALL display invocation time and timeout countdown, support `j`
 - **WHEN** the user chooses cancel
 - **THEN** the UI requests a global annotation (optional text) before emitting the `cancelled` action.
 
-#### Scenario: Settings and transport switch
+#### Scenario: Settings and interface switch
 - **WHEN** the user enters the settings entry from the terminal UI
-- **THEN** they can update persisted global/terminal UI settings and choose to switch this interaction to the web transport, which cancels the terminal session and starts a web session with the same request/options.
+- **THEN** they can update persisted global/terminal UI settings and choose to switch this interaction to the web interface, which cancels the terminal session and starts a web session with the same request/options.
 
 ### Requirement: Web Bridge Flow
-The system SHALL provide a transient FastAPI-based web portal as a fallback or when explicitly requested, exposing a local URL (e.g., `http://localhost:<port>/choice/<id>`), opening the browser when possible, collecting the choice via WebSocket or long-poll, and shutting down after completion. **The system SHALL use WebSocket to synchronize the remaining timeout duration between the server and the client in real-time, SHALL support browser notifications for timeout alerts, and SHALL render a left-side interaction list (temporarily replacing the standalone dashboard) that surfaces active interactions plus the five most recent completed ones with their status (pending, submitted, auto-submitted, cancelled, timeout) and transport type (web, terminal), supports filters such as active vs completed, and supports multiple concurrent agent-triggered interactions without cross-contamination.**
+The system SHALL provide a transient FastAPI-based web portal as a fallback or when explicitly requested, exposing a local URL (e.g., `http://localhost:<port>/choice/<id>`), opening the browser when possible, collecting the choice via WebSocket or long-poll, and shutting down after completion. **The system SHALL use WebSocket to synchronize the remaining timeout duration between the server and the client in real-time, SHALL support browser notifications for timeout alerts, and SHALL render a left-side interaction list (temporarily replacing the standalone dashboard) that surfaces active interactions plus the five most recent completed ones with their status (pending, submitted, auto-submitted, cancelled, timeout) and interface type (web, terminal), supports filters such as active vs completed, and supports multiple concurrent agent-triggered interactions without cross-contamination.**
 
 #### Scenario: WebSocket synchronization succeeds
 - **WHEN** the web portal is loaded and a WebSocket connection is established
@@ -46,7 +46,7 @@ The system SHALL provide a transient FastAPI-based web portal as a fallback or w
 
 #### Scenario: Interaction list shows status and type
 - **WHEN** the choice page renders
-- **THEN** the left-side list displays each active interaction and the five most recent completed interactions with badges for status (pending, submitted, auto-submitted, cancelled, timeout) and transport type (web or terminal), including started time or relative age so users can pick the correct session.
+- **THEN** the left-side list displays each active interaction and the five most recent completed interactions with badges for status (pending, submitted, auto-submitted, cancelled, timeout) and interface type (web or terminal), including started time or relative age so users can pick the correct session.
 
 #### Scenario: Filtering interactions
 - **WHEN** a user switches the interaction list filter (e.g., active vs completed)
@@ -65,7 +65,7 @@ The interaction list endpoint MUST include persisted historical sessions.
 - **Then**: Response includes both active and historical sessions (limited to configured count)
 
 ### Requirement: Timeout and Cancel Handling
-The system SHALL enforce a bounded wait with a configurable timeout (default 5 minutes) for user input across transports, SHALL honor cancellations with cancel always visible/enabled (no toggle to hide it), and SHALL return `timeout` or `cancelled` action statuses without executing further actions. **In the web transport, the timeout deadline SHALL be dynamically adjustable, and the server SHALL maintain the authoritative expiration time.**
+The system SHALL enforce a bounded wait with a configurable timeout (default 5 minutes) for user input across transports, SHALL honor cancellations with cancel always visible/enabled (no toggle to hide it), and SHALL return `timeout` or `cancelled` action statuses without executing further actions. **In the web interface, the timeout deadline SHALL be dynamically adjustable, and the server SHALL maintain the authoritative expiration time.**
 
 #### Scenario: Dynamic timeout update in web portal
 - **WHEN** a user adjusts the timeout value in the web portal configuration panel
@@ -79,10 +79,10 @@ The orchestration layer SHALL require callers to include current task context an
 - **THEN** it triggers `provide_choice` with contextual prompting instead of selecting a default, ensuring the subsequent action follows the returned selection.
 
 ### Requirement: Interaction Configuration Surfaces
-The configuration surface SHALL be reachable from the terminal UI, persist updates to the configuration store, and apply immediately to the current session when switching transport (terminal→web). Settings include transport selection, timeout override, annotation availability (default on), and terminal UI controls (navigation hints, annotation focus behavior).
+The configuration surface SHALL be reachable from the terminal UI, persist updates to the configuration store, and apply immediately to the current session when switching interface (terminal→web). Settings include interface selection, timeout override, annotation availability (default on), and terminal UI controls (navigation hints, annotation focus behavior).
 
 #### Scenario: Terminal-accessible configuration persistence
-- **WHEN** a user opens settings from the terminal UI and modifies transport, timeout, or annotation/navigation toggles
+- **WHEN** a user opens settings from the terminal UI and modifies interface, timeout, or annotation/navigation toggles
 - **THEN** the changes are saved to the config store, affect the current interaction (including when switching to web), and become defaults for subsequent sessions.
 
 ### Requirement: Choice Interaction Settings
@@ -93,7 +93,7 @@ The system SHALL present interaction settings before prompting that let users sw
 - **THEN** subsequent prompts SHALL NOT show annotation input fields until the setting is re-enabled, and this preference SHALL survive server restarts.
 
 ### Requirement: Reduce large file size and enforce single-responsibility
-- Description: The `choice` package MUST be organized so that individual source files are small and focused. Files that implement more than one high-level concern (data modeling, validation, transport runtime, template rendering, UI prompts) MUST be split into separate modules.
+- Description: The `choice` package MUST be organized so that individual source files are small and focused. Files that implement more than one high-level concern (data modeling, validation, interface runtime, template rendering, UI prompts) MUST be split into separate modules.
 
 #### Scenario: Adding a new web feature (e.g., dashboard filter)
 - Given an engineer needs to add a UI-only change to the web dashboard,

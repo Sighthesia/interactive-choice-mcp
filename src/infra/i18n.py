@@ -32,7 +32,7 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Chinese",
         "zh": "中文",
     },
-    "settings.transport": {
+    "settings.interface": {
         "en": "Interaction Interface",
         "zh": "交互界面",
     },
@@ -332,7 +332,7 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Auto-select AI recommended options on timeout",
         "zh": "超时时自动选择 AI 推荐的选项",
     },
-    "desc.transport": {
+    "desc.interface": {
         "en": "Interfaces for interactions",
         "zh": "交互界面选择",
     },

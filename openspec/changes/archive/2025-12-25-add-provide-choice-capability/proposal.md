@@ -2,7 +2,7 @@
 
 ## Why
 - AI flows currently guess user intent when multiple paths exist, leading to incorrect actions.
-- We need a schema-first `provide_choice` tool and transport strategy so MCP calls can defer branching decisions to users reliably.
+- We need a schema-first `provide_choice` tool and interface strategy so MCP calls can defer branching decisions to users reliably.
 
 ## What Changes
 - Define the `provide_choice` tool contract with strict input schema and deterministic `action_status` outputs.
@@ -12,4 +12,4 @@
 
 ## Impact
 - Affected specs: choice-orchestration (new)
-- Affected code: server.py, main.py, new transport/orchestration modules for terminal and web portal, schema validation and timeout handling
+- Affected code: server.py, main.py, new interface/orchestration modules for terminal and web portal, schema validation and timeout handling

@@ -40,7 +40,7 @@ class TestInteractionEntry:
         entry = InteractionEntry(
             session_id="abc123",
             title="Test Choice",
-            transport=TRANSPORT_WEB,
+            interface=TRANSPORT_WEB,
             status=InteractionStatus.PENDING,
             started_at="2025-12-28 10:00:00",
             url="http://localhost:17863/choice/abc123",
@@ -49,7 +49,7 @@ class TestInteractionEntry:
         assert result == {
             "session_id": "abc123",
             "title": "Test Choice",
-            "transport": "web",
+            "interface": "web",
             "status": "pending",
             "started_at": "2025-12-28 10:00:00",
             "url": "http://localhost:17863/choice/abc123",
@@ -59,7 +59,7 @@ class TestInteractionEntry:
         entry = InteractionEntry(
             session_id="def456",
             title="Terminal Choice",
-            transport=TRANSPORT_TERMINAL,
+            interface=TRANSPORT_TERMINAL,
             status=InteractionStatus.SUBMITTED,
             started_at="2025-12-28 11:00:00",
             url=None,
@@ -68,7 +68,7 @@ class TestInteractionEntry:
         assert result == {
             "session_id": "def456",
             "title": "Terminal Choice",
-            "transport": "terminal",
+            "interface": "terminal",
             "status": "submitted",
             "started_at": "2025-12-28 11:00:00",
             "url": None,
@@ -80,7 +80,7 @@ class TestInteractionEntry:
             entry = InteractionEntry(
                 session_id="test",
                 title="Test",
-                transport=TRANSPORT_WEB,
+                interface=TRANSPORT_WEB,
                 status=status,
                 started_at="2025-12-28 12:00:00",
             )
@@ -106,7 +106,7 @@ class TestSessionToInteractionEntry:
             options=[ProvideChoiceOption(id="A", description="Option A", recommended=True)],
             timeout_seconds=300,
         )
-        config = ProvideChoiceConfig(transport=TRANSPORT_WEB, timeout_seconds=300)
+        config = ProvideChoiceConfig(interface=TRANSPORT_WEB, timeout_seconds=300)
         loop = asyncio.new_event_loop()
         result_future = loop.create_future()
 
@@ -127,7 +127,7 @@ class TestSessionToInteractionEntry:
         entry = session.to_interaction_entry()
         assert entry.session_id == "web123"
         assert entry.title == "Web Test"
-        assert entry.transport == TRANSPORT_WEB
+        assert entry.interface == TRANSPORT_WEB
         assert entry.status == InteractionStatus.PENDING
         assert entry.url == "http://localhost:17863/choice/web123"
 
@@ -145,7 +145,7 @@ class TestSessionToInteractionEntry:
             options=[ProvideChoiceOption(id="B", description="Option B", recommended=False)],
             timeout_seconds=60,
         )
-        config = ProvideChoiceConfig(transport=TRANSPORT_TERMINAL, timeout_seconds=60)
+        config = ProvideChoiceConfig(interface=TRANSPORT_TERMINAL, timeout_seconds=60)
 
         session = TerminalSession(
             session_id="term456",
@@ -157,6 +157,6 @@ class TestSessionToInteractionEntry:
         entry = session.to_interaction_entry()
         assert entry.session_id == "term456"
         assert entry.title == "Terminal Test"
-        assert entry.transport == TRANSPORT_TERMINAL
+        assert entry.interface == TRANSPORT_TERMINAL
         assert entry.status == InteractionStatus.PENDING
         assert entry.url is None

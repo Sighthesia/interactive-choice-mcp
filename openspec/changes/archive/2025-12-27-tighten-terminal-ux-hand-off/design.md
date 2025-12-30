@@ -2,7 +2,7 @@
 
 ## Current State
 - Hand-off response uses `selection.summary` to embed a CLI command plus `selection.url`; agents must parse text and may skip execution. Polling returns pending immediately, leading to repeated agent calls.
-- Terminal UI (questionary) shows title/prompt only; no invocation timestamp or timeout display. Annotation prompts are optional and disabled by default; cancel does not request global annotation. No in-flow settings or transport switch. Navigation relies on arrow keys/space/enter only.
+- Terminal UI (questionary) shows title/prompt only; no invocation timestamp or timeout display. Annotation prompts are optional and disabled by default; cancel does not request global annotation. No in-flow settings or interface switch. Navigation relies on arrow keys/space/enter only.
 - Terminal client requires the base URL to fetch the session payload; removing URL entirely would break standalone clients unless embedded in the command.
 
 ## Decisions
@@ -16,9 +16,9 @@
    - Display invocation timestamp and timeout countdown in the header.
    - Navigation: support `j`/`k` as aliases for down/up; `Tab` moves focus to annotation input when annotations are shown.
    - Annotations always available; empty input means no note. Cancel action triggers a global-annotation prompt before finalizing cancel.
-   - Add a settings entry in the terminal UI to edit global/terminal UI settings and choose to switch this session to web transport (hand-off to web portal with same request/options).
+   - Add a settings entry in the terminal UI to edit global/terminal UI settings and choose to switch this session to web interface (hand-off to web portal with same request/options).
 4) **Configuration surface**
-   - Settings reachable from terminal UI; updates persist to existing config store and apply to the current session when switching transport.
+   - Settings reachable from terminal UI; updates persist to existing config store and apply to the current session when switching interface.
    - Switching to web should reuse existing request/options and start a web session; terminal session should be cancelled/closed when switching.
 
 ## Open Questions / Clarifications

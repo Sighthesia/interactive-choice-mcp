@@ -6,10 +6,10 @@ The MCP server currently exposes no functional tools beyond a FastMCP stub. We n
 - Non-Goals: Building a persistent web dashboard; adding additional tools beyond `provide_choice`; advanced theming or localization of the portal; implementing full e2e automation beyond manual smoke for transports.
 
 ## Decisions
-- Decision: Default to terminal transport using questionary, falling back to a short-lived FastAPI portal when stdin is unavailable or the caller opts into web. This keeps local CLIs fast while preserving usability in GUI-only contexts.
+- Decision: Default to terminal interface using questionary, falling back to a short-lived FastAPI portal when stdin is unavailable or the caller opts into web. This keeps local CLIs fast while preserving usability in GUI-only contexts.
 - Decision: Enforce a schema-first contract (`title`, `prompt`, `type`, `options[id,label,description]`, `allow_cancel`, `placeholder`) with deterministic `action_status` values (`selected|custom_input|cancelled|timeout`) and ordered selections to simplify downstream automation.
 - Decision: Apply a bounded wait with a configurable timeout (default 5 minutes) for user responses across transports; on timeout return `timeout` and shut down any transient servers to avoid zombie processes.
-- Decision: Provide an explicit transport selector override for callers while preserving environment-based detection so web can be forced in GUI-only contexts and terminal remains the default where available.
+- Decision: Provide an explicit interface selector override for callers while preserving environment-based detection so web can be forced in GUI-only contexts and terminal remains the default where available.
 - Decision: Orchestration layer must include current task context in prompts and must invoke `provide_choice` whenever branching paths exceed two, when operations are destructive, or when required config is missing, eliminating speculative defaults.
 
 ## Risks / Trade-offs

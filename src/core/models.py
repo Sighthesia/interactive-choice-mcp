@@ -115,7 +115,7 @@ class ProvideChoiceRequest:
 class ProvideChoiceConfig:
     """Represents user-configurable interaction settings."""
 
-    transport: str
+    interface: str
     timeout_seconds: int
     # Extended settings
     single_submit_mode: bool = True
@@ -147,7 +147,7 @@ class ProvideChoiceSelection:
     """The actual data selected or entered by the user."""
     # Note: selected_indices now holds option IDs (strings) instead of numeric indices.
     selected_indices: List[str] = field(default_factory=list)
-    transport: str = TRANSPORT_TERMINAL
+    interface: str = TRANSPORT_TERMINAL
     summary: str = ""
     url: Optional[str] = None
     # Annotation fields (keys are option IDs)
@@ -173,7 +173,7 @@ class InteractionEntry:
     """
     session_id: str
     title: str
-    transport: str  # "web" or "terminal"
+    interface: str  # "web" or "terminal"
     status: InteractionStatus
     started_at: str  # ISO 8601 formatted datetime string
     url: Optional[str] = None
@@ -185,7 +185,7 @@ class InteractionEntry:
         payload = {
             "session_id": self.session_id,
             "title": self.title,
-            "transport": self.transport,
+            "interface": self.interface,
             "status": self.status.value,
             "started_at": self.started_at,
             "url": self.url,

@@ -1,7 +1,7 @@
 # Change: Refactor terminal launch flow
 
 ## Why
-- Terminal transport currently blocks inside the MCP invocation, preventing the AI from triggering an external terminal UI command when `transport=terminal` is requested.
+- Terminal interface currently blocks inside the MCP invocation, preventing the AI from triggering an external terminal UI command when `interface=terminal` is requested.
 - We need the tool to return a launch address immediately so the AI can run a terminal command that opens the interactive UI for the user to make the selection.
 
 ## What Changes

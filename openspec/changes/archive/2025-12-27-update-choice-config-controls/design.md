@@ -9,7 +9,7 @@ User feedback asks for more control over how choices are captured: toggling sing
 - Enforce cancel as always available: remove the toggle from configuration panels and treat any `allow_cancel` input as true to keep parity across transports.
 - Extend the request/response schema with `default_selection_ids`, `min_selections`, `max_selections`, `placeholder_enabled`, `option_annotations` (per-option), and `global_annotation`, plus a `single_submit_mode` flag to express auto-submit vs batch-submit flows.
 - Validate selection counts against min/max before submission; clamp defaults to allowed options and reject payloads whose limits are inverted (min > max) or non-positive.
-- Surface UI controls in both terminal and web panels for selection mode, default selections, min/max limits, placeholder visibility, and annotation capture; persist these settings alongside existing transport/timeout defaults for reuse.
+- Surface UI controls in both terminal and web panels for selection mode, default selections, min/max limits, placeholder visibility, and annotation capture; persist these settings alongside existing interface/timeout defaults for reuse.
 
 ## Risks / Trade-offs
 - Additional UI controls could slow interaction; mitigate with sensible defaults (single submit on, placeholders derived from prompt) and concise labels.

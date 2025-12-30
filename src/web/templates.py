@@ -88,7 +88,7 @@ def _render_html(
         req: The choice request with title, prompt, and options.
         choice_id: Unique session identifier.
         defaults: Configuration defaults for the UI.
-        allow_terminal: Whether terminal transport option is available.
+        allow_terminal: Whether terminal interface option is available.
         session_state: Current session state for restoration.
         invocation_time: Human-readable timestamp.
         use_modular: Use new modular template (default) vs legacy monolithic.
@@ -101,7 +101,7 @@ def _render_html(
     ]
 
     defaults_payload = {
-        "transport": defaults.transport,
+        "interface": defaults.interface,
         "timeout_seconds": defaults.timeout_seconds,
         "single_submit_mode": defaults.single_submit_mode,
         "timeout_default_enabled": defaults.timeout_default_enabled,
@@ -121,14 +121,14 @@ def _render_html(
 
     transport_options = [
         "<option value='web' {sel}>{label}</option>".format(
-            sel="selected" if defaults.transport == TRANSPORT_WEB else "",
+            sel="selected" if defaults.interface == TRANSPORT_WEB else "",
             label=get_text("settings.transport_web", lang),
         )
     ]
     # Terminal option is always available as a global setting
     transport_options.append(
         "<option value='terminal' {sel}>{label}</option>".format(
-            sel="selected" if defaults.transport != TRANSPORT_WEB else "",
+            sel="selected" if defaults.interface != TRANSPORT_WEB else "",
             label=get_text("settings.transport_terminal", lang),
         )
     )

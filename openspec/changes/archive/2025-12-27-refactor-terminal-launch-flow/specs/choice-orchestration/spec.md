@@ -7,15 +7,15 @@ The MCP server SHALL expose a `provide_choice` tool with a schema-first request 
 - **THEN** the server validates the payload (rejecting inverted limits, invalid defaults, or unsupported flags for the chosen type) and rejects malformed requests before starting any user interaction.
 
 #### Scenario: Deterministic response payload with annotations
-- **WHEN** a user completes the interaction across any transport
+- **WHEN** a user completes the interaction across any interface
 - **THEN** the tool returns `action_status (selected|custom_input|cancelled|timeout)` with a normalized selection payload that orders option ids, enforces min/max counts, preserves default selections when untouched, and includes any option-level or global annotations alongside optional custom input.
 
 #### Scenario: Terminal hand-off response
-- **WHEN** the caller requests terminal transport and the server enables the hand-off launch mode
+- **WHEN** the caller requests terminal interface and the server enables the hand-off launch mode
 - **THEN** the tool responds immediately with `action_status=pending_terminal_launch`, populates `selection.url` and `selection.summary` with the launch address/command for the terminal UI (including the session/process id), and records that session id so a follow-up `provide_choice` call (using that session id) can return the finalized `ProvideChoiceResponse` once the user completes the interaction.
 
 ### Requirement: Terminal Choice Flow
-The system SHALL default to an interactive terminal transport using questionary when stdin is available, rendering an ANSI list, supporting arrow/space/enter, clearing the UI after submission, and printing only a concise summary. The system SHALL also support a terminal hand-off flow where the MCP request allocates a session, returns immediately with a launch address/command for the external terminal client (to be executed by the AI via the terminal command tool), and keeps the session pending until the client posts the result or the session times out, enforcing the same timeout/cancel/default-selection rules as the in-process terminal flow. Sessions are single-use; reconnect attempts require launching a new session/command.
+The system SHALL default to an interactive terminal interface using questionary when stdin is available, rendering an ANSI list, supporting arrow/space/enter, clearing the UI after submission, and printing only a concise summary. The system SHALL also support a terminal hand-off flow where the MCP request allocates a session, returns immediately with a launch address/command for the external terminal client (to be executed by the AI via the terminal command tool), and keeps the session pending until the client posts the result or the session times out, enforcing the same timeout/cancel/default-selection rules as the in-process terminal flow. Sessions are single-use; reconnect attempts require launching a new session/command.
 
 #### Scenario: Terminal selection succeeds
 - **WHEN** terminal mode is available and the user confirms a selection via questionary

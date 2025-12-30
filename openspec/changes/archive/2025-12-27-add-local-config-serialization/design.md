@@ -32,7 +32,7 @@ The serialization feature will be implemented as a standalone service to decoupl
 ## Storage Format
 ```json
 {
-  "transport": "terminal",
+  "interface": "terminal",
   "timeout_seconds": 300,
   "single_submit_mode": true,
   "timeout_default_index": 0,

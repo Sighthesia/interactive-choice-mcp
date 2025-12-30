@@ -7,11 +7,11 @@ The MCP server SHALL expose a `provide_choice` tool with a schema-first request 
 - **THEN** the server validates the payload and rejects malformed requests before starting any user interaction.
 
 #### Scenario: Deterministic response payload
-- **WHEN** a user completes the interaction across any transport
+- **WHEN** a user completes the interaction across any interface
 - **THEN** the tool returns `action_status (selected|custom_input|cancelled|timeout)` with a normalized selection payload, ordering option ids for multi/hybrid modes and capturing freeform text when applicable.
 
 ### Requirement: Terminal Choice Flow
-The system SHALL default to an interactive terminal transport using questionary when stdin is available, rendering an ANSI list, supporting arrow/space/enter, clearing the UI after submission, and printing only a concise summary.
+The system SHALL default to an interactive terminal interface using questionary when stdin is available, rendering an ANSI list, supporting arrow/space/enter, clearing the UI after submission, and printing only a concise summary.
 
 #### Scenario: Terminal selection succeeds
 - **WHEN** terminal mode is available and the user confirms a selection via questionary

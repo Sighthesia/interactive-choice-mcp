@@ -7,12 +7,12 @@ from src.core import response as r
 
 # Section: Terminal Hand-off Tests
 def test_orchestrator_terminal_handoff_returns_pending(monkeypatch, tmp_path):
-    """When terminal transport is configured, orchestrator returns pending_terminal_launch."""
-    # Pre-set config to terminal transport
+    """When terminal interface is configured, orchestrator returns pending_terminal_launch."""
+    # Pre-set config to terminal interface
     from src.infra.storage import ConfigStore
     store = ConfigStore(path=tmp_path / "cfg.json")
     store.save(models.ProvideChoiceConfig(
-        transport=models.TRANSPORT_TERMINAL,
+        interface=models.TRANSPORT_TERMINAL,
         timeout_seconds=300,
     ))
 
@@ -52,7 +52,7 @@ def test_orchestrator_session_polling_returns_result(monkeypatch, tmp_path):
                 timeout_seconds=300,
             ),
             selected_indices=["A"],
-            transport=models.TRANSPORT_WEB,
+            interface=models.TRANSPORT_WEB,
         )
 
     monkeypatch.setattr("src.core.orchestrator.poll_terminal_session_result", fake_poll)
@@ -98,14 +98,14 @@ def test_orchestrator_session_polling_pending(monkeypatch, tmp_path):
 
 # Section: Web Transport Tests
 def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
-    """When web transport is configured, uses web portal."""
+    """When web interface is configured, uses web portal."""
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
     
-    # Pre-set config to web transport
+    # Pre-set config to web interface
     from src.infra.storage import ConfigStore
     store = ConfigStore(path=tmp_path / "cfg.json")
     store.save(models.ProvideChoiceConfig(
-        transport=models.TRANSPORT_WEB,
+        interface=models.TRANSPORT_WEB,
         timeout_seconds=300,
     ))
     orch = ChoiceOrchestrator(config_path=tmp_path / "cfg.json")
@@ -115,7 +115,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
             r.normalize_response(
                 req=req,
                 selected_indices=["B"],
-                transport=models.TRANSPORT_WEB,
+                interface=models.TRANSPORT_WEB,
             ),
             defaults,
         )
@@ -131,7 +131,7 @@ def test_orchestrator_falls_back_to_web(monkeypatch, tmp_path):
         )
     )
 
-    assert result.selection.transport == models.TRANSPORT_WEB
+    assert result.selection.interface == models.TRANSPORT_WEB
     assert result.selection.selected_indices == ["B"]
 
 

@@ -29,7 +29,7 @@ __all__ = [
 class TerminalSession:
     """Represents a pending terminal hand-off session.
     
-    The session is created when the MCP tool is invoked with terminal transport,
+    The session is created when the MCP tool is invoked with terminal interface,
     and the tool returns immediately with a launch command. The external terminal
     client then attaches to this session, renders the questionary UI, and posts
     the result back.
@@ -80,7 +80,7 @@ class TerminalSession:
         return InteractionEntry(
             session_id=self.session_id,
             title=self.req.title,
-            transport=TRANSPORT_TERMINAL,
+            interface=TRANSPORT_TERMINAL,
             status=status,
             started_at=self.started_at_iso,
             url=None,

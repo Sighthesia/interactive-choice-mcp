@@ -13,7 +13,7 @@ The current configuration persistence is tightly coupled with the `ChoiceOrchest
 4.  **UI Synchronization**: Ensure both Terminal and Web transports correctly load, display, and update the expanded configuration.
 
 ## Impact
-- **User Experience**: Users will have their full interaction preferences (not just transport and timeout) remembered between prompts.
+- **User Experience**: Users will have their full interaction preferences (not just interface and timeout) remembered between prompts.
 - **Maintainability**: Serialization logic is isolated, making it easier to add new settings or change the storage format (e.g., to YAML or a database) in the future.
 - **Robustness**: Centralized error handling for file I/O operations.
 

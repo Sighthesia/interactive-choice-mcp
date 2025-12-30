@@ -66,7 +66,7 @@ class ChoiceSession:
     config_used: ProvideChoiceConfig
     created_at: float  # monotonic time when session was created
     invocation_time: str  # formatted datetime string when session was created
-    transport: str = TRANSPORT_WEB  # "web" or "terminal" - the interface used
+    interface: str = TRANSPORT_WEB  # "web" or "terminal" - the interface used
     status: str = "pending"
     final_result: Optional[ProvideChoiceResponse] = None
     completed_at: Optional[float] = None
@@ -161,7 +161,7 @@ class ChoiceSession:
         return InteractionEntry(
             session_id=self.choice_id,
             title=self.req.title,
-            transport=self.transport,
+            interface=self.interface,
             status=status,
             started_at=self.invocation_time,
             url=self.url,
@@ -199,7 +199,7 @@ class ChoiceSession:
 
                     logger.info("Timeout reached, applying timeout action")
                     adjusted_req = apply_configuration(self.req, self.config_used)
-                    response = timeout_response(req=adjusted_req, transport=TRANSPORT_WEB, url=self.url)
+                    response = timeout_response(req=adjusted_req, interface=TRANSPORT_WEB, url=self.url)
                     self.set_result(response)
                     await self.broadcast_status("timeout", action_status=response.action_status)
                     logger.info(f"Timeout action completed: {response.action_status}")

@@ -43,7 +43,7 @@ function isPlaceholderVisible() {
 
 // Section: Settings Persistence
 /**
- * Track if transport was explicitly changed by user
+ * Track if interface was explicitly changed by user
  */
 let transportExplicitlyChanged = false;
 
@@ -66,9 +66,9 @@ async function saveGlobalSettings() {
         notify_if_background: document.getElementById('notifyIfBackground')?.checked ?? true,
         notify_sound: document.getElementById('notifySound')?.checked ?? true,
     };
-    // Only include transport if it was explicitly changed by the user
+    // Only include interface if it was explicitly changed by the user
     if (transportExplicitlyChanged) {
-        config.transport = document.getElementById('transportSelect')?.value || 'web';
+        config.interface = document.getElementById('transportSelect')?.value || 'web';
     }
     console.log('[Settings] Saving config:', config);
     try {
@@ -127,11 +127,11 @@ function collectConfig() {
     const rawTimeout = parseInt(document.getElementById('timeoutInput')?.value || defaults.timeout_seconds, 10);
     const timeout = Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : defaults.timeout_seconds;
     const transportSelect = document.getElementById('transportSelect');
-    const transport = transportSelect ? transportSelect.value : 'web';
+    const interface = transportSelect ? transportSelect.value : 'web';
     const timeoutActionSelect = document.getElementById('timeoutActionSelect');
     const timeoutAction = timeoutActionSelect ? timeoutActionSelect.value : 'submit';
     return {
-        transport,
+        interface,
         timeout_seconds: timeout,
         single_submit_mode: isSingleSubmit(),
         use_default_option: isUseDefaultOption(),

@@ -58,7 +58,7 @@ def sample_response() -> ProvideChoiceResponse:
         action_status="selected",
         selection=ProvideChoiceSelection(
             selected_indices=["opt1"],
-            transport="web",
+            interface="web",
             summary="ids=['opt1']",
             url="http://localhost:17863/choice/abc123",
             option_annotations={"opt1": "Good choice"},
@@ -75,7 +75,7 @@ class TestPersistedSession:
             session_id="abc123",
             title="Test",
             prompt="Test prompt",
-            transport="web",
+            interface="web",
             selection_mode="single",
             options=[],
             result={"action_status": "selected"},
@@ -93,7 +93,7 @@ class TestPersistedSession:
             session_id="def456",
             title="Test",
             prompt="Test prompt",
-            transport="terminal",
+            interface="terminal",
             selection_mode="single",
             options=[],
             result={"action_status": "timeout_auto_submitted"},
@@ -110,7 +110,7 @@ class TestPersistedSession:
             session_id="abc123",
             title="Test",
             prompt="Test prompt",
-            transport="web",
+            interface="web",
             selection_mode="single",
             options=[{"id": "opt1", "description": "Option 1", "recommended": True}],
             result={"action_status": "selected", "selection": {}},
@@ -146,7 +146,7 @@ class TestInteractionStore:
             started_at="2025-01-01T12:00:00",
             completed_at="2025-01-01T12:05:00",
             url="http://localhost/test",
-            transport="web",
+            interface="web",
         )
 
         # Create new store and load
@@ -170,7 +170,7 @@ class TestInteractionStore:
             started_at="2025-01-01T12:00:00",
             completed_at="2025-01-01T12:05:00",
             url="http://localhost/test",
-            transport="web",
+            interface="web",
         )
 
         # Save pending session (no result)
@@ -181,7 +181,7 @@ class TestInteractionStore:
             started_at="2025-01-01T12:10:00",
             completed_at=None,
             url="http://localhost/test2",
-            transport="web",
+            interface="web",
         )
 
         recent = store.get_recent(limit=10)
@@ -203,7 +203,7 @@ class TestInteractionStore:
                 started_at=f"2025-01-01T12:{i:02d}:00",
                 completed_at=f"2025-01-01T12:{i:02d}:30",
                 url=f"http://localhost/test{i}",
-                transport="web",
+                interface="web",
             )
 
         recent = store.get_recent(limit=3)
@@ -225,7 +225,7 @@ class TestInteractionStore:
             started_at=old_date,
             completed_at=old_date,
             url="http://localhost/old",
-            transport="web",
+            interface="web",
         )
 
         # Save recent session
@@ -237,7 +237,7 @@ class TestInteractionStore:
             started_at=recent_date,
             completed_at=recent_date,
             url="http://localhost/recent",
-            transport="web",
+            interface="web",
         )
 
         removed = store.cleanup(retention_days=3)
@@ -262,7 +262,7 @@ class TestInteractionStore:
                 started_at=f"2025-01-01T12:0{i}:00",
                 completed_at=f"2025-01-01T12:0{i}:30",
                 url=f"http://localhost/test{i}",
-                transport="web",
+                interface="web",
             )
 
         assert len(store._index) == 3
@@ -285,7 +285,7 @@ class TestInteractionStore:
             started_at="2025-01-01T12:00:00",
             completed_at="2025-01-01T12:05:00",
             url="http://localhost/test",
-            transport="web",
+            interface="web",
         )
 
         found = store.get_by_id("find_me")
@@ -309,7 +309,7 @@ class TestInteractionStore:
             started_at="2025-01-01T12:00:00",
             completed_at="2025-01-01T12:05:00",
             url="http://localhost/test",
-            transport="web",
+            interface="web",
         )
 
         assert store.remove("to_remove") is True
