@@ -4,26 +4,26 @@
  */
 
 :root {
-    --primary: #4f46e5;
-    --primary-hover: #4338ca;
+    --primary: #00BFFF;
+    --primary-hover: #0096c7;
     --danger: #ef4444;
     --danger-hover: #dc2626;
     --success: #22c55e;
     --warning: #f59e0b;
-    --bg: #f9fafb;
+    --bg: #f2fbff;
     --card-bg: #ffffff;
     --border: #e5e7eb;
     --text: #1f2937;
     --text-muted: #6b7280;
     --radius: 8px;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.25);
+    --focus-ring: 0 0 0 3px rgba(0, 191, 255, 0.25);
 
     /* Header bar colors */
-    --header-bg: #1e293b;
-    --header-text: #f8fafc;
-    --header-title: #818cf8;
-    --header-muted: #94a3b8;
+    --header-bg: #e6f7ff;
+    --header-text: #0b2540;
+    --header-title: #007acc;
+    --header-muted: #6aa0c9;
 
     /* Pending: Blue - awaiting user action */
     --status-pending-bg: #dbeafe;
@@ -35,20 +35,25 @@
     --status-submitted-text: #166534;
     --status-submitted-border: #86efac;
 
-    /* Auto-submitted: Purple - system auto-completed */
-    --status-auto-bg: #f3e8ff;
-    --status-auto-text: #6b21a8;
-    --status-auto-border: #d8b4fe;
+    /* Auto-submitted: use theme blue */
+    --status-auto-bg: #e6f9ff;
+    --status-auto-text: #03324a;
+    --status-auto-border: #99e6ff;
 
     /* Cancelled: Gray - user cancelled */
     --status-cancelled-bg: #f3f4f6;
     --status-cancelled-text: #4b5563;
     --status-cancelled-border: #d1d5db;
 
-    /* Timeout: Orange/Red - time expired */
-    --status-timeout-bg: #ffedd5;
-    --status-timeout-text: #c2410c;
-    --status-timeout-border: #fed7aa;
+    /* Interrupted (unexpected/timeout interruption): use danger/red (same as error/danger) */
+    --status-warning-bg: #fee2e2;
+    --status-warning-text: #991b1b;
+    --status-warning-border: #fecaca;
+
+    /* Timeout: set to yellow (auto-submit / retry) */
+    --status-timeout-bg: #fef3c7;
+    --status-timeout-text: #92400e;
+    --status-timeout-border: #f59e0b;
 
     /* Legacy status colors (for backward compat) */
     --success-bg: var(--status-submitted-bg);
@@ -68,12 +73,12 @@
     --text: #f8fafc;
     --text-muted: #94a3b8;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.3);
+    --focus-ring: 0 0 0 3px rgba(0, 191, 255, 0.18);
 
-    --header-bg: #020617;
+    --header-bg: #0b1222;
     --header-text: #f8fafc;
-    --header-title: #818cf8;
-    --header-muted: #94a3b8;
+    --header-title: #4db0ff;
+    --header-muted: #7aaecd;
 
     /* Unified Status Colors - Dark mode */
     --status-pending-bg: #1e3a8a;
@@ -84,17 +89,23 @@
     --status-submitted-text: #86efac;
     --status-submitted-border: #166534;
 
-    --status-auto-bg: #581c87;
-    --status-auto-text: #d8b4fe;
-    --status-auto-border: #7c3aed;
+    --status-auto-bg: #08314a;
+    --status-auto-text: #cfeeff;
+    --status-auto-border: #175a87;
 
     --status-cancelled-bg: #374151;
     --status-cancelled-text: #d1d5db;
     --status-cancelled-border: #4b5563;
 
-    --status-timeout-bg: #7c2d12;
-    --status-timeout-text: #fed7aa;
-    --status-timeout-border: #c2410c;
+    /* Interrupted (dark): map to error/danger dark */
+    --status-warning-bg: #7f1d1d;
+    --status-warning-text: #f87171;
+    --status-warning-border: #991b1b;
+
+    /* Timeout (dark): use yellow-like tones for visibility in dark mode */
+    --status-timeout-bg: #7c5a00;
+    --status-timeout-text: #fff7cc;
+    --status-timeout-border: #c08400;
 
     --success-bg: var(--status-submitted-bg);
     --success-text: var(--status-submitted-text);

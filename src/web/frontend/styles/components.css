@@ -30,14 +30,14 @@
 
 .main-column.transitioning {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(40px);
 }
 
 /* Fade-in animation when content loads */
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(40px);
     }
 
     to {
@@ -447,7 +447,7 @@ body.submitted .status {
 }
 
 .interaction-progress-bar.warning {
-    background: #f59e0b;
+    background: var(--warning);
 }
 
 .interaction-progress-bar.danger {
@@ -517,53 +517,53 @@ body.submitted .status {
 }
 
 .badge-interrupted {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--status-warning-bg);
+    color: var(--status-warning-text);
 }
 
 .dark .badge-interrupted {
-    background: #78350f;
-    color: #fde68a;
+    background: var(--status-warning-bg);
+    color: var(--status-warning-text);
 }
 
 .badge-web {
-    background: #e0e7ff;
-    color: #3730a3;
+    background: var(--status-auto-bg);
+    color: var(--status-auto-text);
 }
 
 .dark .badge-web {
-    background: #312e81;
-    color: #a5b4fc;
+    background: var(--status-auto-bg);
+    color: var(--status-auto-text);
 }
 
 .badge-terminal {
-    background: #f0fdf4;
-    color: #15803d;
+    background: var(--status-submitted-bg);
+    color: var(--status-submitted-text);
 }
 
 .dark .badge-terminal {
-    background: #14532d;
-    color: #86efac;
+    background: var(--status-submitted-bg);
+    color: var(--status-submitted-text);
 }
 
 .badge-terminal-only {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--status-timeout-bg);
+    color: var(--status-timeout-text);
 }
 
 .dark .badge-terminal-only {
-    background: #78350f;
-    color: #fcd34d;
+    background: var(--status-timeout-bg);
+    color: var(--status-timeout-text);
 }
 
 .badge-terminal-web {
-    background: linear-gradient(135deg, #f0fdf4 50%, #e0e7ff 50%);
-    color: #15803d;
+    background: linear-gradient(135deg, var(--status-submitted-bg) 50%, var(--status-auto-bg) 50%);
+    color: var(--status-submitted-text);
 }
 
 .dark .badge-terminal-web {
-    background: linear-gradient(135deg, #14532d 50%, #312e81 50%);
-    color: #86efac;
+    background: linear-gradient(135deg, var(--status-submitted-bg) 50%, var(--status-auto-bg) 50%);
+    color: var(--status-submitted-text);
 }
 
 /* Section: Config Items */
