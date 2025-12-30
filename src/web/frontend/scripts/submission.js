@@ -43,6 +43,9 @@ async function postSelection(payload, statusType = 'manual') {
                 statusEl.className = 'status error';
                 statusEl.innerText = t('status_message.server_error') + ' (' + res.status + '): ' + errorDetail;
                 statusEl.style.display = 'block';
+                setTimeout(() => {
+                    statusEl.style.opacity = '1';
+                }, 10);
             }
             // On error, update connection status to indicate issue
             updateConnectionStatus(t('status.error'), 'offline');
@@ -71,6 +74,9 @@ async function postSelection(payload, statusType = 'manual') {
             statusEl.className = 'status error';
             statusEl.innerText = 'Network error. Please try again.';
             statusEl.style.display = 'block';
+            setTimeout(() => {
+                statusEl.style.opacity = '1';
+            }, 10);
         }
         // Network error means connection issue
         updateConnectionStatus(t('status.offline'), 'offline');
@@ -113,6 +119,9 @@ function submitPayload(base, statusType = 'manual') {
             statusEl.className = 'status error';
             statusEl.innerText = t('status_message.sever_offline');
             statusEl.style.display = 'block';
+            setTimeout(() => {
+                statusEl.style.opacity = '1';
+            }, 10);
         }
         updateConnectionStatus(t('status.offline'), 'offline');
         return;

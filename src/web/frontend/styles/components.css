@@ -315,6 +315,8 @@ input[type="checkbox"] {
     border-radius: var(--radius);
     font-weight: 500;
     text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .status.success {
@@ -372,6 +374,7 @@ body.submitted .option.selected {
     background: rgba(34, 197, 94, 0.05);
     cursor: default;
     pointer-events: none;
+    transition: border-color 0.3s ease-in-out;
 }
 
 body.submitted .annotation-section:not(.has-content) {

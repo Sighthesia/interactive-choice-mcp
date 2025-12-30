@@ -144,8 +144,13 @@ function applyFinalizedState(stateData) {
         statusEl.className = 'status ' + config.class;
         statusEl.innerText = config.text;
         statusEl.style.display = 'block';
+        setTimeout(() => {
+            statusEl.style.opacity = '1';
+        }, 10);
     }
-    document.body.classList.add('submitted');
+    setTimeout(() => {
+        document.body.classList.add('submitted');
+    }, 10);
 
     // Update header status based on session state
     if (actionKey === 'interrupted') {
