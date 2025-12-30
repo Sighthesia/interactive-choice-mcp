@@ -73,7 +73,7 @@ function updateUITexts() {
     const connectionDot = document.getElementById('connectionDot');
     if (statusText && connectionDot) {
         if (connectionDot.classList.contains('success')) {
-            statusText.textContent = t('status.session_completed');
+            statusText.textContent = t('status.completed');
         } else if (connectionDot.classList.contains('error')) {
             statusText.textContent = t('status.interrupted');
         } else if (connectionDot.classList.contains('offline')) {

@@ -46,11 +46,11 @@ TEXTS: Dict[str, Dict[str, str]] = {
     },
     "settings.timeout": {
         "en": "Timeout (seconds)",
-        "zh": "超时 (秒)",
+        "zh": "超时时间 (秒)",
     },
     "settings.single_submit": {
-        "en": "Single Submit Mode",
-        "zh": "单选即提交模式",
+        "en": "Single Selection Auto Submit",
+        "zh": "单选自动提交",
     },
     "settings.timeout_default": {
         "en": "Timeout Default",
@@ -225,48 +225,22 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "服务器错误",
     },
     "status_message.sever_offline": {
-        "en": "Unable to reach MCP server. Please reconnect and retry.",
-        "zh": "无法连接到 MCP 服务器。请重新连接并重试。",
+        "en": "Unable to reach MCP server",
+        "zh": "无法连接到 MCP 服务器",
     },
     "status_message.interrupted": {
-        "en": "⚠️ Session interrupted: Connection lost unexpectedly.",
-        "zh": "⚠️ 进程意外中断：连接已丢失。",
-    },
-
-    # Section: Messages
-    "msg.select_option": {
-        "en": "Please select an option",
-        "zh": "请选择一个选项",
-    },
-    "msg.select_options": {
-        "en": "Please select one or more options",
-        "zh": "请选择一个或多个选项",
-    },
-    "msg.no_options": {
-        "en": "No options available",
-        "zh": "无可用选项",
-    },
-    "msg.timeout_warning": {
-        "en": "Session will timeout soon",
-        "zh": "会话即将超时",
-    },
-    "msg.session_expired": {
-        "en": "Session has expired",
-        "zh": "会话已过期",
-    },
-    "msg.cancel_confirm": {
-        "en": "Are you sure you want to cancel?",
-        "zh": "确定要取消吗？",
-    },
-    "msg.invalid_language_env": {
-        "en": "Invalid CHOICE_LANG value, falling back to English",
-        "zh": "无效的 CHOICE_LANG 值，回退到英文",
+        "en": "⚠️ Session interrupted: Connection lost unexpectedly",
+        "zh": "⚠️ 进程意外中断：连接已丢失",
     },
 
     # Section: Interaction List
     "list.title": {
         "en": "Interactions",
         "zh": "交互列表",
+    },
+    "list.all": {
+        "en": "All",
+        "zh": "全部",
     },
     "list.active": {
         "en": "Active",
@@ -280,9 +254,9 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "No interactions",
         "zh": "暂无交互",
     },
-    "badge.terminal_only": {
-        "en": "Terminal Only",
-        "zh": "仅限终端",
+    "list.loading": {
+        "en": "Loading interactions...",
+        "zh": "加载交互列表...",
     },
 
     # Section: Terminal UI
@@ -340,22 +314,6 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "System",
         "zh": "跟随系统",
     },
-    "web.keyboard_shortcuts": {
-        "en": "Keyboard Shortcuts",
-        "zh": "快捷键",
-    },
-    "web.selection_mode": {
-        "en": "Selection Mode",
-        "zh": "选择模式",
-    },
-    "web.mode_single": {
-        "en": "Single",
-        "zh": "单选",
-    },
-    "web.mode_multi": {
-        "en": "Multi",
-        "zh": "多选",
-    },
 
     # Section: Web Descriptions
     "desc.language": {
@@ -375,8 +333,8 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "超时时自动选择 AI 推荐的选项",
     },
     "desc.transport": {
-        "en": "The communication protocol used by the MCP server",
-        "zh": "MCP 服务器使用的通信协议",
+        "en": "Interfaces for interactions",
+        "zh": "交互界面选择",
     },
     "desc.timeout": {
         "en": "Time limit for making a choice before auto-action",
@@ -391,10 +349,6 @@ TEXTS: Dict[str, Dict[str, str]] = {
     "hint.select": {
         "en": "Select",
         "zh": "选择",
-    },
-    "hint.select_all": {
-        "en": "Select/Deselect All",
-        "zh": "全选/取消全选",
     },
     "hint.submit": {
         "en": "Submit",
@@ -448,43 +402,13 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "In Progress",
         "zh": "进行中",
     },
-    "status.disconnected": {
-        "en": "Disconnected",
-        "zh": "已断开",
-    },
-    "status.session_completed": {
-        "en": "Completed",
-        "zh": "已完成",
-    },
     "status.interrupted": {
         "en": "Interrupted",
         "zh": "意外中断",
     },
     "status.connecting": {
         "en": "Connecting...",
-        "zh": "连接中...",
-    },
-    "status.offline": {
-        "en": "Offline",
-        "zh": "离线",
-    },
-    "status.error": {
-        "en": "Error",
-        "zh": "错误",
-    },
-    "status.submitting": {
-        "en": "Submitting...",
-        "zh": "提交中...",
-    },
-
-    # Section: Interaction List Additional
-    "list.all": {
-        "en": "All",
-        "zh": "全部",
-    },
-    "list.loading": {
-        "en": "Loading interactions...",
-        "zh": "加载交互列表...",
+        "zh": "连接中",
     },
 }
 
