@@ -276,7 +276,7 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Add annotation (optional):",
         "zh": "添加备注 (可选)：",
     },
-    "hint.additional_annotation": {
+    "terminal.additional_annotation": {
         "en": "Additional annotation (optional):",
         "zh": "额外备注（可选）：",
     },

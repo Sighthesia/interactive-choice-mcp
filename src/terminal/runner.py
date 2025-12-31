@@ -82,7 +82,7 @@ def _run_prompt_sync(
                 try:
                     global_instruction = get_text("terminal.global_annotation_prompt", lang) if placeholder_visible else ""
                     global_annotation = questionary.text(
-                        get_text("label.global_annotation", lang),
+                        get_text("terminal.additional_annotation", lang),
                         default="",
                         instruction=global_instruction,
                     ).unsafe_ask()
@@ -134,7 +134,7 @@ def _run_prompt_sync(
                 try:
                     global_instruction = get_text("terminal.global_annotation_prompt", lang) if placeholder_visible else ""
                     global_annotation = questionary.text(
-                        get_text("label.global_annotation", lang),
+                        get_text("terminal.additional_annotation", lang),
                         default="",
                         instruction=global_instruction,
                     ).unsafe_ask()
