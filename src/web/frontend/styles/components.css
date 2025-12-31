@@ -244,17 +244,9 @@ input[type="checkbox"] {
     margin-top: 16px;
 }
 
-.annotation-label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-}
-
 .annotation-section textarea {
     width: 100%;
-    padding: 8px 12px;
+    padding: 12px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     font-size: 0.875rem;
