@@ -108,12 +108,12 @@ def test_normalize_response_selection():
         selected_indices=["A"],
         interface=models.TRANSPORT_WEB,
         url="http://localhost",
-        global_annotation="some note",
+        additional_annotation="some note",
     )
     assert resp.action_status == "selected"
     assert resp.selection.selected_indices == ["A"]
     assert resp.selection.interface == models.TRANSPORT_WEB
-    assert resp.selection.global_annotation == "some note"
+    assert resp.selection.additional_annotation == "some note"
 
 
 def test_normalize_response_rejects_invalid_action_status():

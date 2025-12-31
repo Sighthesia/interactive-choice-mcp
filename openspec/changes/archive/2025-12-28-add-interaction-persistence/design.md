@@ -49,7 +49,7 @@ This document describes the technical design for persisting completed interactio
     "action_status": "selected",
     "selected_indices": ["opt1"],
     "option_annotations": {"opt1": "Good choice"},
-    "global_annotation": "Done"
+    "additional_annotation": "Done"
   },
   "started_at": "2025-01-01T12:00:00Z",
   "completed_at": "2025-01-01T12:05:00Z",

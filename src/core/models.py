@@ -152,7 +152,7 @@ class ProvideChoiceSelection:
     url: Optional[str] = None
     # Annotation fields (keys are option IDs)
     option_annotations: dict[str, str] = field(default_factory=dict)
-    global_annotation: Optional[str] = None
+    additional_annotation: Optional[str] = None
 
 
 @dataclass

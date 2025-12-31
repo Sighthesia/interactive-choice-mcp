@@ -22,7 +22,7 @@ def format_mcp_response(
 
     Returns:
         Dictionary with keys: action_status, [session_id, url, terminal_command,
-        summary, selected_indices, option_annotations, global_annotation]
+        summary, selected_indices, option_annotations, additional_annotation]
     """
     selection = result.selection
     out: dict[str, object] = {"action_status": result.action_status}
@@ -70,6 +70,6 @@ def _format_standard_response(
         out["selected_indices"] = list(selection.selected_indices)
     if selection.option_annotations:
         out["option_annotations"] = selection.option_annotations
-    if selection.global_annotation:
-        out["global_annotation"] = selection.global_annotation
+    if selection.additional_annotation:
+        out["additional_annotation"] = selection.additional_annotation
     return out

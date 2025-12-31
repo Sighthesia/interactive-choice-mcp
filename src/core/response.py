@@ -24,7 +24,7 @@ def normalize_response(
     interface: str,
     url: Optional[str] = None,
     option_annotations: Optional[dict[str, str]] = None,
-    global_annotation: Optional[str] = None,
+    additional_annotation: Optional[str] = None,
     action_status: str = "selected",
 ) -> "ProvideChoiceResponse":
     """Normalize response and validate selected option ids."""
@@ -56,8 +56,8 @@ def normalize_response(
         summary_parts.append(f"ids={ordered_ids}")
     if option_annotations:
         summary_parts.append(f"option_annotations={option_annotations}")
-    if global_annotation:
-        summary_parts.append(f"global_annotation={global_annotation}")
+    if additional_annotation:
+        summary_parts.append(f"additional_annotation={additional_annotation}")
     summary = ", ".join(summary_parts) if summary_parts else "no selection"
 
     selection = ProvideChoiceSelection(
@@ -66,7 +66,7 @@ def normalize_response(
         summary=summary,
         url=url,
         option_annotations=option_annotations or {},
-        global_annotation=global_annotation,
+        additional_annotation=additional_annotation,
     )
 
     return ProvideChoiceResponse(action_status=action_status, selection=selection)
@@ -77,7 +77,7 @@ def cancelled_response(
     interface: str,
     url: Optional[str] = None,
     option_annotations: Optional[dict[str, str]] = None,
-    global_annotation: Optional[str] = None,
+    additional_annotation: Optional[str] = None,
     summary: str = "cancelled",
 ) -> "ProvideChoiceResponse":
     from .models import ProvideChoiceResponse, ProvideChoiceSelection
@@ -88,7 +88,7 @@ def cancelled_response(
         summary=summary,
         url=url,
         option_annotations=option_annotations or {},
-        global_annotation=global_annotation,
+        additional_annotation=additional_annotation,
     )
     return ProvideChoiceResponse(action_status="cancelled", selection=selection)
 

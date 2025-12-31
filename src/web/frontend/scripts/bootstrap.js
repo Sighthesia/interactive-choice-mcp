@@ -168,10 +168,10 @@ window.mcpState = {
     if (sessionState.option_annotations) {
         state.optionAnnotations = sessionState.option_annotations;
     }
-    if (typeof sessionState.global_annotation === 'string') {
+    if (typeof sessionState.additional_annotation === 'string') {
         const globalEl = document.getElementById('globalAnnotation');
         if (globalEl) {
-            globalEl.value = sessionState.global_annotation || '';
+            globalEl.value = sessionState.additional_annotation || '';
         }
     }
 })();

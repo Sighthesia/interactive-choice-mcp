@@ -362,6 +362,10 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Annotation",
         "zh": "备注",
     },
+    "hint.additional_annotation": {
+        "en": "Additional annotation",
+        "zh": "额外备注",
+    },
 
     # Section: Settings Additional
     "settings.timeout_action": {

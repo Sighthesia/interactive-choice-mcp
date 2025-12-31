@@ -294,7 +294,7 @@ function initializeRender() {
     // Set placeholder text
     const globalAnnotation = document.getElementById('globalAnnotation');
     if (globalAnnotation) {
-        globalAnnotation.placeholder = t('terminal.global_annotation_prompt');
+        globalAnnotation.placeholder = t('hint.additional_annotation');
     }
 
 
@@ -431,13 +431,13 @@ function refreshFullUI() {
     // Update global annotation
     const globalAnnotation = document.getElementById('globalAnnotation');
     if (globalAnnotation) {
-        globalAnnotation.value = sessionState.global_annotation || '';
+        globalAnnotation.value = sessionState.additional_annotation || '';
         globalAnnotation.disabled = state.hasFinalResult;
 
         // Update annotation section styling based on content
         const annotationSection = globalAnnotation.closest('.annotation-section');
         if (annotationSection) {
-            const hasContent = !!(sessionState.global_annotation && sessionState.global_annotation.trim());
+            const hasContent = !!(sessionState.additional_annotation && sessionState.additional_annotation.trim());
             annotationSection.classList.toggle('has-content', hasContent);
         }
     }

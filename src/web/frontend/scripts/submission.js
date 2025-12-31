@@ -67,7 +67,7 @@ async function postSelection(payload, statusType = 'manual') {
             action_status: actionKey,
             selected_indices: payload.selected_indices || Array.from(state.selectedIndices),
             option_annotations: payload.option_annotations || state.optionAnnotations,
-            global_annotation: payload.global_annotation || document.getElementById('globalAnnotation')?.value || null
+            additional_annotation: payload.additional_annotation || document.getElementById('globalAnnotation')?.value || null
         });
     } catch (e) {
         if (statusEl) {
@@ -92,7 +92,7 @@ function submitBatch(statusType = 'manual') {
     };
     if (isAnnotationEnabled()) {
         payload.option_annotations = state.optionAnnotations;
-        payload.global_annotation = document.getElementById('globalAnnotation')?.value || null;
+        payload.additional_annotation = document.getElementById('globalAnnotation')?.value || null;
     }
     submitPayload(payload, statusType);
 }
@@ -102,7 +102,7 @@ function submitCancel() {
     const payload = { action_status: hasAnnotations() ? 'cancel_with_annotation' : 'cancelled' };
     if (hasAnnotations()) {
         payload.option_annotations = state.optionAnnotations;
-        payload.global_annotation = document.getElementById('globalAnnotation')?.value || null;
+        payload.additional_annotation = document.getElementById('globalAnnotation')?.value || null;
     }
     submitPayload(payload, payload.action_status);
 }

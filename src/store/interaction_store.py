@@ -217,7 +217,7 @@ class InteractionStore:
                     "summary": result.selection.summary,
                     "url": result.selection.url,
                     "option_annotations": result.selection.option_annotations,
-                    "global_annotation": result.selection.global_annotation,
+                    "additional_annotation": result.selection.additional_annotation,
                 },
             }
 

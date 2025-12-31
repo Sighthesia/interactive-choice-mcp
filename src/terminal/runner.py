@@ -48,7 +48,7 @@ def _run_prompt_sync(
     visible_options = list(req.options)
     choices = _build_choices(visible_options, lang=lang)
     option_annotations: dict[str, str] = {}
-    global_annotation: Optional[str] = None
+    additional_annotation: Optional[str] = None
     annotation_enabled = True
     placeholder_visible = True
 
@@ -80,8 +80,8 @@ def _run_prompt_sync(
                 if opt_note:
                     option_annotations[answer] = opt_note
                 try:
-                    global_instruction = get_text("terminal.global_annotation_prompt", lang) if placeholder_visible else ""
-                    global_annotation = questionary.text(
+                    global_instruction = get_text("hint.additional_annotation", lang) if placeholder_visible else ""
+                    additional_annotation = questionary.text(
                         get_text("terminal.additional_annotation", lang),
                         default="",
                         instruction=global_instruction,
@@ -97,7 +97,7 @@ def _run_prompt_sync(
                 selected_indices=[answer],
                 interface=TRANSPORT_TERMINAL,
                 option_annotations=option_annotations,
-                global_annotation=global_annotation or None if annotation_enabled else None,
+                additional_annotation=additional_annotation or None if annotation_enabled else None,
             )
 
         if req.selection_mode == "multi" or (req.selection_mode == "single" and not req.single_submit_mode):
@@ -132,8 +132,8 @@ def _run_prompt_sync(
                     if opt_note:
                         option_annotations[opt_id] = opt_note
                 try:
-                    global_instruction = get_text("terminal.global_annotation_prompt", lang) if placeholder_visible else ""
-                    global_annotation = questionary.text(
+                    global_instruction = get_text("hint.additional_annotation", lang) if placeholder_visible else ""
+                    additional_annotation = questionary.text(
                         get_text("terminal.additional_annotation", lang),
                         default="",
                         instruction=global_instruction,
@@ -149,7 +149,7 @@ def _run_prompt_sync(
                 selected_indices=answer,
                 interface=TRANSPORT_TERMINAL,
                 option_annotations=option_annotations,
-                global_annotation=global_annotation or None if annotation_enabled else None,
+                additional_annotation=additional_annotation or None if annotation_enabled else None,
             )
 
         return cancelled_response(interface=TRANSPORT_TERMINAL)

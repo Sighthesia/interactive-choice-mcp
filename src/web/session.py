@@ -139,7 +139,7 @@ class ChoiceSession:
                 "action_status": None,
                 "selected_indices": [],
                 "option_annotations": {},
-                "global_annotation": None,
+                "additional_annotation": None,
             }
         selection = self.final_result.selection
         return {
@@ -147,7 +147,7 @@ class ChoiceSession:
             "action_status": self.final_result.action_status,
             "selected_indices": selection.selected_indices,
             "option_annotations": selection.option_annotations,
-            "global_annotation": selection.global_annotation,
+            "additional_annotation": selection.additional_annotation,
         }
 
     def to_interaction_entry(self) -> InteractionEntry:

@@ -62,7 +62,7 @@ def sample_response() -> ProvideChoiceResponse:
             summary="ids=['opt1']",
             url="http://localhost:9999/choice/abc123",
             option_annotations={"opt1": "Good choice"},
-            global_annotation="Done",
+            additional_annotation="Done",
         ),
     )
 

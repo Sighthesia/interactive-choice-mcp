@@ -46,7 +46,7 @@ class TestSingleChoiceInteraction:
                     "action_status": "selected",
                     "selected_indices": ["opt1"],
                     "option_annotations": {},
-                    "global_annotation": None,
+                    "additional_annotation": None,
                 },
             )
 
@@ -77,7 +77,7 @@ class TestSingleChoiceInteraction:
                     "action_status": "selected",
                     "selected_indices": ["opt2"],
                     "option_annotations": {"opt2": "Selected this option"},
-                    "global_annotation": "User provided feedback",
+                    "additional_annotation": "User provided feedback",
                 },
             )
 
@@ -85,7 +85,7 @@ class TestSingleChoiceInteraction:
         assert session.final_result is not None
         assert session.final_result.selection.selected_indices == ["opt2"]
         assert session.final_result.selection.option_annotations == {"opt2": "Selected this option"}
-        assert session.final_result.selection.global_annotation == "User provided feedback"
+        assert session.final_result.selection.additional_annotation == "User provided feedback"
 
 
 class TestMultiChoiceInteraction:
@@ -114,7 +114,7 @@ class TestMultiChoiceInteraction:
                     "action_status": "selected",
                     "selected_indices": ["opt1", "opt2"],
                     "option_annotations": {},
-                    "global_annotation": None,
+                    "additional_annotation": None,
                 },
             )
 
@@ -145,7 +145,7 @@ class TestMultiChoiceInteraction:
                     "action_status": "selected",
                     "selected_indices": ["opt1", "opt2", "opt3"],
                     "option_annotations": {},
-                    "global_annotation": None,
+                    "additional_annotation": None,
                 },
             )
 
@@ -198,7 +198,7 @@ class TestTimeoutHandling:
                     "action_status": "selected",
                     "selected_indices": ["opt1"],
                     "option_annotations": {},
-                    "global_annotation": None,
+                    "additional_annotation": None,
                 },
             )
 
@@ -231,14 +231,14 @@ class TestCancellationScenarios:
                     "action_status": "cancelled",
                     "selected_indices": [],
                     "option_annotations": {},
-                    "global_annotation": "User cancelled",
+                    "additional_annotation": "User cancelled",
                 },
             )
 
         assert response.status_code == 200
         assert session.final_result is not None
         assert session.final_result.action_status == "cancelled"
-        assert session.final_result.selection.global_annotation == "User cancelled"
+        assert session.final_result.selection.additional_annotation == "User cancelled"
         assert session.status == InteractionStatus.CANCELLED
 
     @pytest.mark.asyncio
@@ -258,14 +258,14 @@ class TestCancellationScenarios:
                     "action_status": "cancel_with_annotation",
                     "selected_indices": [],
                     "option_annotations": {},
-                    "global_annotation": "Reason for cancellation",
+                    "additional_annotation": "Reason for cancellation",
                 },
             )
 
         assert response.status_code == 200
         assert session.final_result is not None
         assert session.final_result.action_status == "cancel_with_annotation"
-        assert session.final_result.selection.global_annotation == "Reason for cancellation"
+        assert session.final_result.selection.additional_annotation == "Reason for cancellation"
 
 
 class TestErrorHandling:
@@ -281,7 +281,7 @@ class TestErrorHandling:
                     "action_status": "selected",
                     "selected_indices": ["opt1"],
                     "option_annotations": {},
-                    "global_annotation": None,
+                    "additional_annotation": None,
                 },
             )
 
@@ -305,7 +305,7 @@ class TestErrorHandling:
                     "action_status": "selected",
                     "selected_indices": ["invalid_option"],
                     "option_annotations": {},
-                    "global_annotation": None,
+                    "additional_annotation": None,
                 },
             )
 
@@ -331,7 +331,7 @@ class TestErrorHandling:
                 json={
                     # Missing action_status and selected_indices
                     "option_annotations": {},
-                    "global_annotation": None,
+                    "additional_annotation": None,
                 },
             )
 
@@ -355,7 +355,7 @@ class TestErrorHandling:
                     "action_status": "selected",
                     "selected_indices": ["opt1"],
                     "option_annotations": {},
-                    "global_annotation": None,
+                    "additional_annotation": None,
                 },
             )
 
@@ -369,7 +369,7 @@ class TestErrorHandling:
                     "action_status": "selected",
                     "selected_indices": ["opt2"],
                     "option_annotations": {},
-                    "global_annotation": None,
+                    "additional_annotation": None,
                 },
             )
 
@@ -397,7 +397,7 @@ class TestResponseStructure:
                     "action_status": "selected",
                     "selected_indices": ["opt1"],
                     "option_annotations": {},
-                    "global_annotation": None,
+                    "additional_annotation": None,
                 },
             )
 
@@ -407,7 +407,7 @@ class TestResponseStructure:
         assert result.selection is not None
         assert hasattr(result.selection, "selected_indices")
         assert hasattr(result.selection, "option_annotations")
-        assert hasattr(result.selection, "global_annotation")
+        assert hasattr(result.selection, "additional_annotation")
 
     @pytest.mark.asyncio
     async def test_cancelled_response_structure(
@@ -425,7 +425,7 @@ class TestResponseStructure:
                     "action_status": "cancelled",
                     "selected_indices": [],
                     "option_annotations": {},
-                    "global_annotation": None,
+                    "additional_annotation": None,
                 },
             )
 
@@ -631,7 +631,7 @@ class TestWebSocketCommunication:
                         "action_status": "selected",
                         "selected_indices": ["opt1"],
                         "option_annotations": {},
-                        "global_annotation": None,
+                        "additional_annotation": None,
                     },
                 )
 

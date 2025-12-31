@@ -261,7 +261,7 @@ class WebChoiceServer:
                     "action_status": action_status,
                     "selected_indices": selection.get("selected_indices", []),
                     "option_annotations": selection.get("option_annotations", {}),
-                    "global_annotation": selection.get("global_annotation"),
+                    "additional_annotation": selection.get("additional_annotation"),
                 }
                 allow_terminal = False
                 invocation_time = persisted.started_at
@@ -297,7 +297,7 @@ class WebChoiceServer:
                 "action_status": status_payload.get("action_status"),
                 "selected_indices": status_payload.get("selected_indices"),
                 "option_annotations": status_payload.get("option_annotations"),
-                "global_annotation": status_payload.get("global_annotation"),
+                "additional_annotation": status_payload.get("additional_annotation"),
                 "remaining_seconds": _remaining_seconds(session.deadline),
                 "timeout_seconds": session.config_used.timeout_seconds,
             })
@@ -361,15 +361,15 @@ class WebChoiceServer:
                 option_annotations: dict[str, str] = {}
                 if isinstance(option_annotations_raw, dict):
                     option_annotations = {str(k): str(v) for k, v in option_annotations_raw.items() if v}
-                global_annotation_raw = payload.get("global_annotation")
-                global_annotation: str | None = str(global_annotation_raw) if global_annotation_raw else None
+                additional_annotation_raw = payload.get("additional_annotation")
+                additional_annotation: str | None = str(additional_annotation_raw) if additional_annotation_raw else None
 
                 if action == "cancelled" or action == "cancel_with_annotation":
                     response = cancelled_response_fn(
                         interface=TRANSPORT_WEB,
                         url=session.url,
                         option_annotations=option_annotations,
-                        global_annotation=global_annotation,
+                        additional_annotation=additional_annotation,
                     )
                     # Update action_status if it's cancel_with_annotation
                     if action == "cancel_with_annotation":
@@ -401,7 +401,7 @@ class WebChoiceServer:
                         interface=TRANSPORT_WEB,
                         url=session.url,
                         option_annotations=option_annotations,
-                        global_annotation=global_annotation,
+                        additional_annotation=additional_annotation,
                     )
                     result_set = session.set_result(response)
                     _logger.debug(f"Session {incoming_id[:8]} set_result returned: {result_set}")
@@ -577,7 +577,7 @@ class WebChoiceServer:
             action = str(payload.get("action_status", ""))
             selected_indices = payload.get("selected_indices", [])
             option_annotations = payload.get("option_annotations", {})
-            global_annotation = payload.get("global_annotation")
+            additional_annotation = payload.get("additional_annotation")
             config_payload = payload.get("config") or {}
             if not isinstance(config_payload, dict):
                 raise HTTPException(status_code=400, detail="config must be object")
@@ -651,7 +651,7 @@ class WebChoiceServer:
                         interface=TRANSPORT_WEB,
                         url=url,
                         option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
-                        global_annotation=str(global_annotation) if global_annotation else None,
+                        additional_annotation=str(additional_annotation) if additional_annotation else None,
                     )
                 elif action == "selected":
                     if not isinstance(selected_indices, list):
@@ -666,7 +666,7 @@ class WebChoiceServer:
                         interface=TRANSPORT_WEB,
                         url=url,
                         option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
-                        global_annotation=str(global_annotation) if global_annotation else None,
+                        additional_annotation=str(additional_annotation) if additional_annotation else None,
                     )
                 elif action.startswith("timeout"):
                     response = timeout_response(req=req, interface=TRANSPORT_WEB, url=url)
@@ -754,7 +754,7 @@ class WebChoiceServer:
                     interface=TRANSPORT_WEB,
                     url=f"http://{self.host}:{self.port}/terminal/{session_id}",
                     option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
-                    global_annotation=str(global_annotation) if global_annotation else None,
+                    additional_annotation=str(additional_annotation) if additional_annotation else None,
                 )
             elif action == "selected":
                 if not isinstance(selected_indices, list):
@@ -769,7 +769,7 @@ class WebChoiceServer:
                     interface=TRANSPORT_WEB,
                     url=f"http://{self.host}:{self.port}/terminal/{session_id}",
                     option_annotations=option_annotations if isinstance(option_annotations, dict) else {},
-                    global_annotation=str(global_annotation) if global_annotation else None,
+                    additional_annotation=str(additional_annotation) if additional_annotation else None,
                 )
             elif action.startswith("timeout"):
                 response = timeout_response(
@@ -899,7 +899,7 @@ class WebChoiceServer:
                     "action_status": action_status,
                     "selected_indices": selection.get("selected_indices", []),
                     "option_annotations": selection.get("option_annotations", {}),
-                    "global_annotation": selection.get("global_annotation"),
+                    "additional_annotation": selection.get("additional_annotation"),
                 },
                 "config": config_dict,
                 "remaining_seconds": None,

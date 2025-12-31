@@ -95,7 +95,7 @@ def _build_choice_label(opt: dict) -> str:
     return opt_id
 
 
-def _prompt_global_annotation() -> Optional[str]:
+def _prompt_additional_annotation() -> Optional[str]:
     try:
         note = questionary.text(
             "全局备注 (可选):",
@@ -178,13 +178,13 @@ def _submit_result(
     session_id: str,
     selected: list[str],
     option_annotations: dict[str, str],
-    global_annotation: Optional[str],
+    additional_annotation: Optional[str],
 ) -> None:
     payload = {
         "action_status": "selected",
         "selected_indices": selected,
         "option_annotations": option_annotations,
-        "global_annotation": global_annotation,
+        "additional_annotation": additional_annotation,
     }
     try:
         httpx.post(f"{base_url}/terminal/{session_id}/submit", json=payload, timeout=10)
@@ -195,11 +195,11 @@ def _submit_result(
 def _submit_cancelled(
     base_url: str,
     session_id: str,
-    global_annotation: Optional[str] = None,
+    additional_annotation: Optional[str] = None,
 ) -> None:
     payload = {
         "action_status": "cancelled",
-        "global_annotation": global_annotation,
+        "additional_annotation": additional_annotation,
     }
     try:
         httpx.post(f"{base_url}/terminal/{session_id}/submit", json=payload, timeout=10)
@@ -208,12 +208,12 @@ def _submit_cancelled(
 
 
 def _handle_cancel(base_url: str, session_id: str) -> int:
-    global_annotation = _prompt_global_annotation()
-    _submit_cancelled(base_url, session_id, global_annotation)
+    additional_annotation = _prompt_additional_annotation()
+    _submit_cancelled(base_url, session_id, additional_annotation)
     print("\n\033[33m⚠ Cancelled\033[0m")
-    # Output a structured marker - only include global_annotation if non-empty
-    if global_annotation:
-        print(f"[CANCELLED] global_annotation={global_annotation}")
+    # Output a structured marker - only include additional_annotation if non-empty
+    if additional_annotation:
+        print(f"[CANCELLED] additional_annotation={additional_annotation}")
     else:
         print("[CANCELLED]")
     return 0
@@ -350,28 +350,28 @@ Keyboard shortcuts:
                 if note and note.strip():
                     option_annotations[opt_id] = note.strip()
 
-            global_annotation = questionary.text(
+            additional_annotation = questionary.text(
                 "全局备注 (可选):",
                 default="",
                 style=CUSTOM_STYLE,
             ).unsafe_ask()
-            if global_annotation:
-                global_annotation = global_annotation.strip() or None
+            if additional_annotation:
+                additional_annotation = additional_annotation.strip() or None
 
-            _submit_result(base_url, session_id, selected, option_annotations, global_annotation)
+            _submit_result(base_url, session_id, selected, option_annotations, additional_annotation)
             print()
             print(f"\033[32m✓ Selection submitted:\033[0m {selected}")
             if option_annotations:
                 print(f"  Annotations: {option_annotations}")
-            if global_annotation:
-                print(f"  Global note: {global_annotation}")
+            if additional_annotation:
+                print(f"  Global note: {additional_annotation}")
             # Output a structured marker that the agent can parse
             # Only include non-empty fields
             marker_parts = [f"selected={','.join(selected)}"]
             if option_annotations:
                 marker_parts.append(f"annotations={json.dumps(option_annotations)}")
-            if global_annotation:
-                marker_parts.append(f"global_annotation={global_annotation}")
+            if additional_annotation:
+                marker_parts.append(f"additional_annotation={additional_annotation}")
             print(f"[SELECTION_COMPLETE] {' '.join(marker_parts)}")
             print()
             return 0

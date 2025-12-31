@@ -59,7 +59,7 @@ function updateUITexts() {
 
     // Update annotation placeholder
     const globalAnnotation = document.getElementById('globalAnnotation');
-    if (globalAnnotation) globalAnnotation.placeholder = t('terminal.global_annotation_prompt');
+    if (globalAnnotation) globalAnnotation.placeholder = t('hint.additional_annotation');
 
     // Update interaction loading text
     const interactionEmpty = document.querySelector('.interaction-empty');
