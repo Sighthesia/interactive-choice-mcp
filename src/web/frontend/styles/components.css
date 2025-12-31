@@ -242,21 +242,37 @@ input[type="checkbox"] {
 /* Section: Annotation */
 .annotation-section {
     margin-top: 16px;
-    padding: 8px;
 }
 
-.annotation-section .card-header {
+.annotation-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted);
     margin-bottom: 6px;
-    padding-bottom: 6px;
-    font-size: 0.75rem;
 }
 
 .annotation-section textarea {
     width: 100%;
-    min-height: 24px;
-    padding: 6px 8px;
-    resize: vertical;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     font-size: 0.875rem;
+    background: var(--card-bg);
+    color: var(--text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    resize: vertical;
+}
+
+.annotation-section textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: var(--focus-ring);
+}
+
+.annotation-section.has-content textarea {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.02);
 }
 
 .annotation-section.has-content {
@@ -395,13 +411,16 @@ body.submitted .option.selected {
 
 body.submitted .annotation-section:not(.has-content) {
     opacity: 0.5;
-    filter: grayscale(1);
     pointer-events: none;
 }
 
-body.submitted .annotation-section.has-content {
+body.submitted .annotation-section:not(.has-content) textarea {
+    filter: grayscale(1);
+}
+
+body.submitted .annotation-section.has-content textarea {
     border-color: var(--success);
-    background: rgba(34, 197, 94, 0.05);
+    background: rgba(34, 197, 94, 0.02);
     pointer-events: none;
 }
 
