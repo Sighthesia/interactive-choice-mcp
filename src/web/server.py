@@ -104,6 +104,8 @@ def _find_free_port(host: str, port: int) -> int:
         OSError: If the port is already in use.
     """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # Enable SO_REUSEADDR to handle TIME_WAIT state from previous runs
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind((host, port))
         _logger.info(f"Successfully bound to port {port}")
         return int(s.getsockname()[1])
@@ -957,6 +959,35 @@ class WebChoiceServer:
         if self._cleanup_task is None or self._cleanup_task.done():
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
         await asyncio.sleep(0.1)
+
+    async def shutdown(self) -> None:
+        """Shutdown the web server and cleanup resources.
+        
+        This method properly stops the uvicorn server and all background tasks.
+        """
+        # Cancel cleanup task
+        if self._cleanup_task and not self._cleanup_task.done():
+            self._cleanup_task.cancel()
+            try:
+                await self._cleanup_task
+            except asyncio.CancelledError:
+                pass
+
+        # Shutdown uvicorn server
+        if self._server and not self._server.should_exit:
+            self._server.should_exit = True
+            if self._server_task and not self._server_task.done():
+                try:
+                    await asyncio.wait_for(self._server_task, timeout=2.0)
+                except asyncio.TimeoutError:
+                    _logger.warning("Server shutdown timed out, cancelling task")
+                    self._server_task.cancel()
+                    try:
+                        await self._server_task
+                    except asyncio.CancelledError:
+                        pass
+
+        _logger.info(f"Web server on http://{self.host}:{self.port} shutdown complete")
 
     async def create_session(self, req: ProvideChoiceRequest, defaults: ProvideChoiceConfig, allow_terminal: bool) -> ChoiceSession:
         await self.ensure_running()

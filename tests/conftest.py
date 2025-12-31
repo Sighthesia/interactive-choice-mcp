@@ -47,17 +47,12 @@ async def web_server():
     
     yield server
     
-    # Cleanup: remove all sessions and stop the server
+    # Cleanup: remove all sessions
     for session_id in list(server.sessions.keys()):
         await server._remove_session(session_id)
     
-    # Cancel cleanup task
-    if server._cleanup_task and not server._cleanup_task.done():
-        server._cleanup_task.cancel()
-        try:
-            await server._cleanup_task
-        except asyncio.CancelledError:
-            pass
+    # Shutdown the server properly to release the port
+    await server.shutdown()
 
 
 @pytest.fixture
