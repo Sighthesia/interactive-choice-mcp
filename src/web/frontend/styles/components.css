@@ -242,12 +242,21 @@ input[type="checkbox"] {
 /* Section: Annotation */
 .annotation-section {
     margin-top: 16px;
+    padding: 8px;
+}
+
+.annotation-section .card-header {
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    font-size: 0.75rem;
 }
 
 .annotation-section textarea {
     width: 100%;
-    min-height: 60px;
+    min-height: 24px;
+    padding: 6px 8px;
     resize: vertical;
+    font-size: 0.875rem;
 }
 
 .annotation-section.has-content {
