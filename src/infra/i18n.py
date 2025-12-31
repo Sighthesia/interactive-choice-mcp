@@ -160,10 +160,6 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Annotation",
         "zh": "备注",
     },
-    "label.global_annotation": {
-        "en": "Global Annotation",
-        "zh": "全局备注",
-    },
     "label.timeout_remaining": {
         "en": "Time Remaining",
         "zh": "剩余时间",
@@ -225,8 +221,8 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "服务器错误",
     },
     "status_message.sever_offline": {
-        "en": "Unable to reach MCP server",
-        "zh": "无法连接到 MCP 服务器",
+        "en": "Unable to reach MCP server, please try again",
+        "zh": "无法连接到 MCP 服务器，请重试",
     },
     "status_message.interrupted": {
         "en": "⚠️ Session interrupted: Connection lost unexpectedly",
@@ -280,9 +276,9 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Add annotation (optional):",
         "zh": "添加备注 (可选)：",
     },
-    "terminal.global_annotation_prompt": {
-        "en": "Add global annotation (optional):",
-        "zh": "添加全局备注 (可选)：",
+    "hint.additional_annotation": {
+        "en": "Additional annotation (optional):",
+        "zh": "额外备注（可选）：",
     },
 
     # Section: Web Portal Settings
