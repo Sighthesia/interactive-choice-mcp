@@ -194,9 +194,13 @@ Web 界面自动显示最近的交互历史，支持查看详情和重新使用�
 
 ```
 interactive-choice-mcp/
-├── server.py              # MCP 服务器入口（provide_choice, poll_selection）
+├── server.py              # MCP 服务器入口
 ├── main.py                # CLI 入口
 ├── src/
+│   ├── mcp/               # MCP 工具注册
+│   │   ├── server.py      # MCP 服务器初始化
+│   │   ├── tools.py       # provide_choice, poll_selection 工具
+│   │   └── response_formatter.py # 响应格式转换
 │   ├── core/              # 核心业务逻辑
 │   │   ├── models.py      # 数据模型、验证、状态枚举
 │   │   ├── orchestrator.py # 会话调度协调器

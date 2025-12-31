@@ -19,7 +19,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 # Interactive Choice MCP – Guide
 
-- **Entry & scope**: MCP tools `provide_choice` and `poll_selection` live in [../server.py](../server.py); both delegate to [../src/core/orchestrator.py](../src/core/orchestrator.py) and return normalized envelopes from [../src/core/response.py](../src/core/response.py).
+- **Entry & scope**: MCP tools `provide_choice` and `poll_selection` live in [../src/mcp/tools.py](../src/mcp/tools.py); both delegate to [../src/core/orchestrator.py](../src/core/orchestrator.py) and return normalized envelopes from [../src/core/response.py](../src/core/response.py).
 - **Request rules**: Validation in [../src/core/validation.py](../src/core/validation.py) enforces `selection_mode` ∈ {single,multi}, non-empty title/prompt, unique option ids, boolean `recommended`, at least one recommended option, positive `timeout_seconds`, single mode allows only one recommended.
 - **Transport selection**: Orchestrator builds defaults from persisted config and chooses terminal hand-off when config.interface == "terminal" (returns `pending_terminal_launch`) or web otherwise; `session_id` short-circuits to poll existing terminal/web session.
 - **Terminal hand-off**: Terminal sessions reuse the unified ChoiceSession via [../src/web/server.py](../src/web/server.py). Agent runs the returned command (`uv run python -m src.terminal.client --session <id> --url http://<host>:<port>`); terminal output emits markers `[SELECTION_COMPLETE]`, `[CANCELLED]`, `[SWITCH_TO_WEB]` for parsing (see [../src/terminal/client.py](../src/terminal/client.py)).

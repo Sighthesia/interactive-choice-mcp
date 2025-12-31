@@ -1,9 +1,14 @@
 import asyncio
 
-from server import provide_choice
+from src.core.orchestrator import ChoiceOrchestrator
+from src.mcp.tools import provide_choice, set_orchestrator_for_testing
 
 
 def test_provide_choice_returns_validation_summary():
+    # Initialize orchestrator for testing
+    orchestrator = ChoiceOrchestrator()
+    set_orchestrator_for_testing(orchestrator)
+
     result = asyncio.run(
         provide_choice(
             title="Title",
