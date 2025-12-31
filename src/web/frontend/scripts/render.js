@@ -111,6 +111,27 @@ function renderOptions() {
 
     updateSubmitBtn();
     updateCancelBtn();
+    adjustPromptMinHeight();
+}
+
+// Section: Prompt Height Adjustment
+function adjustPromptMinHeight() {
+    const promptContainer = document.querySelector('.prompt-container');
+    const optionsContainer = document.getElementById('options');
+
+    if (!promptContainer || !optionsContainer) return;
+
+    // Calculate minimum height (2 options: padding 12px * 2 + content ~72px)
+    const minHeight = 96;
+    const currentHeight = promptContainer.offsetHeight;
+
+    // If prompt is shorter than minimum, reduce options container height
+    if (currentHeight < minHeight) {
+        const heightDiff = minHeight - currentHeight;
+        optionsContainer.style.marginTop = `-${heightDiff}px`;
+    } else {
+        optionsContainer.style.marginTop = '0';
+    }
 }
 
 // Section: Option Selection
@@ -320,7 +341,7 @@ function initializeRender() {
     if (globalAnnotation) {
         globalAnnotation.addEventListener('input', () => {
             updateCancelBtn();
-            const section = globalAnnotation.closest('.annotation-section');
+            const section = globalAnnotation.closest('.additional-annotation-section');
             if (section) {
                 section.classList.toggle('has-content', globalAnnotation.value.trim());
             }
@@ -366,6 +387,7 @@ function initializeRender() {
     }
 
     syncAnnotationVisibility();
+    adjustPromptMinHeight();
 
     // Auto-focus options for keyboard navigation
     setTimeout(() => {
@@ -435,10 +457,10 @@ function refreshFullUI() {
         globalAnnotation.disabled = state.hasFinalResult;
 
         // Update annotation section styling based on content
-        const annotationSection = globalAnnotation.closest('.annotation-section');
-        if (annotationSection) {
+        const additionalAnnotationSection = globalAnnotation.closest('.additional-annotation-section');
+        if (additionalAnnotationSection) {
             const hasContent = !!(sessionState.additional_annotation && sessionState.additional_annotation.trim());
-            annotationSection.classList.toggle('has-content', hasContent);
+            additionalAnnotationSection.classList.toggle('has-content', hasContent);
         }
     }
 
@@ -522,5 +544,6 @@ function refreshFullUI() {
     }
 
     syncAnnotationVisibility();
+    adjustPromptMinHeight();
     debugLog('Render', 'refreshFullUI complete');
 }
