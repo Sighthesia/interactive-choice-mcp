@@ -11,6 +11,12 @@ dependencies = [
     "questionary>=2.1.1",
     "uvicorn>=0.40.0",
     "pytest>=7.4",
+    "pytest-asyncio>=0.23.0",
+    "websockets>=13.0",
     "marked>=0.9.1",
     "markdown>=3.10",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
