@@ -93,8 +93,8 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "通知触发条件",
     },
     "settings.notify_if_foreground": {
-        "en": "Browser in foreground",
-        "zh": "浏览器处于前台时",
+        "en": "Foreground and tab not focused",
+        "zh": "浏览器处于前台而焦点不在标签页时",
     },
     "settings.notify_if_focused": {
         "en": "Tab focused",

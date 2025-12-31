@@ -109,9 +109,31 @@ function renderTimeout() {
     const alreadyNotified = state.notifiedThreshold || sessionStorage.getItem(notifiedKey) === 'true';
 
     if (shouldNotifyUpcoming && state.timeoutRemaining <= upcomingThreshold && state.timeoutRemaining > 0 && !alreadyNotified) {
-        // Only notify if page is hidden or notify_if_focused is enabled
-        const notifyIfFocused = window.mcpData.defaults?.notify_if_focused !== false;
-        if (document.hidden || notifyIfFocused) {
+        // Get notification visibility settings from config
+        const notifyIfForeground = window.mcpData.defaults?.notify_if_foreground === true;
+        const notifyIfFocused = window.mcpData.defaults?.notify_if_focused === true;
+        const notifyIfBackground = window.mcpData.defaults?.notify_if_background === true;
+
+        // Determine page visibility and focus state
+        const isBackground = document.hidden;
+        const isTabFocused = document.hasFocus();
+
+        let shouldNotify = false;
+
+        // Background (tab hidden): notify_if_background
+        if (isBackground && notifyIfBackground) {
+            shouldNotify = true;
+        }
+        // Foreground + tab focused: notify_if_focused
+        else if (!isBackground && isTabFocused && notifyIfFocused) {
+            shouldNotify = true;
+        }
+        // Foreground + tab NOT focused (user is on another tab): notify_if_foreground
+        else if (!isBackground && !isTabFocused && notifyIfForeground) {
+            shouldNotify = true;
+        }
+
+        if (shouldNotify) {
             requestNotificationPermission();
             notifyEvent('Timeout approaching', '~' + state.timeoutRemaining + 's remaining');
             state.notifiedThreshold = true;
@@ -208,10 +230,36 @@ function handleTimeoutReached() {
     const sessionId = window.mcpData.choiceId;
     const timeoutNotifiedKey = 'mcp_notified_timeout_' + sessionId;
     if (!state.notifiedTimeout && sessionStorage.getItem(timeoutNotifiedKey) !== 'true') {
-        requestNotificationPermission();
-        notifyEvent('Interaction timed out', 'The choice session has expired.');
-        state.notifiedTimeout = true;
-        sessionStorage.setItem(timeoutNotifiedKey, 'true');
+        // Get notification visibility settings from config
+        const notifyIfForeground = window.mcpData.defaults?.notify_if_foreground === true;
+        const notifyIfFocused = window.mcpData.defaults?.notify_if_focused === true;
+        const notifyIfBackground = window.mcpData.defaults?.notify_if_background === true;
+
+        // Determine page visibility and focus state
+        const isBackground = document.hidden;
+        const isTabFocused = document.hasFocus();
+
+        let shouldNotify = false;
+
+        // Background (tab hidden): notify_if_background
+        if (isBackground && notifyIfBackground) {
+            shouldNotify = true;
+        }
+        // Foreground + tab focused: notify_if_focused
+        else if (!isBackground && isTabFocused && notifyIfFocused) {
+            shouldNotify = true;
+        }
+        // Foreground + tab NOT focused (user is on another tab): notify_if_foreground
+        else if (!isBackground && !isTabFocused && notifyIfForeground) {
+            shouldNotify = true;
+        }
+
+        if (shouldNotify) {
+            requestNotificationPermission();
+            notifyEvent('Interaction timed out', 'The choice session has expired.');
+            state.notifiedTimeout = true;
+            sessionStorage.setItem(timeoutNotifiedKey, 'true');
+        }
     }
 }
 

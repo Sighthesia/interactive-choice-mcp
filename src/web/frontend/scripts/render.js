@@ -478,10 +478,13 @@ function refreshFullUI() {
         timeoutText.innerText = '';
     }
 
-    // Reset notification flags to prevent duplicate notifications
-    state.notifiedThreshold = true;  // Set to true to prevent threshold notification
-    state.notifiedTimeout = true;    // Set to true to prevent timeout notification
-    state.timeoutExpired = state.hasFinalResult;  // Mark as expired if finalized
+    // Reset notification flags only when session is finalized
+    if (state.hasFinalResult) {
+        state.notifiedThreshold = true;
+        state.notifiedTimeout = true;
+        state.timeoutExpired = true;
+    }
+    // Otherwise, preserve notification state across session switches
 
     // Stop any existing timeout timer
     if (typeof stopTimeout === 'function') {
