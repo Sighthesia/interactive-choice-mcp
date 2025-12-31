@@ -69,42 +69,44 @@ def _resolve_host() -> str:
 
 
 def _resolve_port() -> int:
-    """Resolve web port from environment variable or use default."""
+    """Resolve web port from environment variable or use default.
+    
+    No automatic fallback - port is locked to either env var or default.
+    """
     raw = os.environ.get("CHOICE_WEB_PORT")
     if raw:
         try:
-            return int(raw)
+            port = int(raw)
+            if port > 0:
+                _logger.info(f"Using web port from environment: {port}")
+                return port
         except ValueError:
-            pass
+            _logger.warning(f"Invalid CHOICE_WEB_PORT: {raw}, using default")
+    
+    _logger.info(f"Using default web port: {_DEFAULT_WEB_PORT}")
     return _DEFAULT_WEB_PORT
 
 
-def _find_free_port(host: str, port: int, max_retries: int = 3, retry_delay: float = 1.0) -> int:
-    """Find a free port, retrying if the port is occupied.
+def _find_free_port(host: str, port: int) -> int:
+    """Try to bind to the specified port.
+    
+    Unlike before, this function no longer automatically falls back to a random port.
+    If the port is occupied, it raises an error. This ensures port stability.
     
     Args:
         host: The host address to bind to.
         port: The desired port to bind to.
-        max_retries: Maximum number of retries if the port is occupied.
-        retry_delay: Delay in seconds between retries.
         
     Returns:
         The port number that was successfully bound.
+        
+    Raises:
+        OSError: If the port is already in use.
     """
-    for attempt in range(max_retries + 1):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind((host, port))
-                _logger.info(f"Successfully bound to port {port} on attempt {attempt + 1}")
-                return int(s.getsockname()[1])
-            except OSError:
-                if attempt < max_retries:
-                    _logger.warning(f"Port {port} is occupied, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries})")
-                    time.sleep(retry_delay)
-                else:
-                    _logger.warning(f"Port {port} is occupied after {max_retries} retries, selecting a random free port")
-                    s.bind((host, 0))
-                    return int(s.getsockname()[1])
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((host, port))
+        _logger.info(f"Successfully bound to port {port}")
+        return int(s.getsockname()[1])
 
 
 # Section: Constants
@@ -118,6 +120,7 @@ class WebChoiceServer:
         _logger.info(f"Attempting to bind to host {self.host} and port {resolved_port}")
         self.port = _find_free_port(self.host, resolved_port)
         _logger.info(f"Server will use port {self.port}")
+        
         self.app = FastAPI()
         self.sessions: Dict[str, ChoiceSession] = {}
         self._server: Optional[uvicorn.Server] = None
