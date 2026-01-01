@@ -235,7 +235,7 @@ async def prompt_configuration(
                 return None
 
             use_default_option = questionary.confirm(
-                get_text("settings.timeout_default", lang), default=defaults.use_default_option
+                get_text("settings.adopt_recommended_options", lang), default=defaults.use_default_option
             ).unsafe_ask()
             if use_default_option is None:
                 return None
@@ -253,7 +253,7 @@ async def prompt_configuration(
                 return None
 
             timeout_default_enabled = questionary.confirm(
-                get_text("settings.timeout_default", lang), default=defaults.timeout_default_enabled
+                get_text("settings.adopt_recommended_options", lang), default=defaults.timeout_default_enabled
             ).unsafe_ask()
             timeout_default_idx = defaults.timeout_default_index
             if timeout_default_enabled:
@@ -263,7 +263,7 @@ async def prompt_configuration(
                     default_val = choices[timeout_default_idx]
 
                 timeout_default_idx = questionary.select(
-                    get_text("settings.timeout_default", lang),
+                    get_text("settings.adopt_recommended_options", lang),
                     choices=choices,
                     default=default_val
                 ).unsafe_ask()

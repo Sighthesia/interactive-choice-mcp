@@ -52,9 +52,9 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Single Selection Auto Submit",
         "zh": "单选自动提交",
     },
-    "settings.timeout_default": {
-        "en": "Timeout Default",
-        "zh": "超时默认选项",
+    "settings.adopt_recommended_options": {
+        "en": "Adopt Recommended Options",
+        "zh": "采用推荐选项",
     },
     "settings.save": {
         "en": "Save",
@@ -348,9 +348,9 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Automatically submit when an option is clicked",
         "zh": "选中选项后自动提交",
     },
-    "desc.timeout_default": {
-        "en": "Auto-select AI recommended options on timeout",
-        "zh": "超时时自动选择 AI 推荐的选项",
+    "desc.adpot_recommended_options": {
+        "en": "Auto-select AI recommended options",
+        "zh": "自动选择 AI 推荐的选项",
     },
     "desc.interface": {
         "en": "Interfaces for interactions",
