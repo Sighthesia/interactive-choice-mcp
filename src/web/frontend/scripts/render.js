@@ -312,10 +312,10 @@ function initializeRender() {
     debugLog('Render', 'hasFinalResult:', state.hasFinalResult);
     debugLog('Render', 'defaults.use_default_option:', defaults.use_default_option);
 
-    // Set placeholder text
+    // Set placeholder text: first line is hint, second line is keyboard shortcuts
     const globalAnnotation = document.getElementById('globalAnnotation');
     if (globalAnnotation) {
-        globalAnnotation.placeholder = t('hint.additional_annotation');
+        globalAnnotation.placeholder = t('hint.additional_annotation') + '\n' + t('hint.placeholder');
     }
 
 

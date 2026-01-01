@@ -383,8 +383,8 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "按键提示: ↑↓ / kj 浏览 | Enter 选择 | Ctrl+Enter 提交 | Shift+A 聚焦到选项备注 | Esc 取消文本框聚焦",
     },
     "hint.additional_annotation": {
-        "en": "Additional annotation",
-        "zh": "额外备注",
+        "en": "Add additional annotation here",
+        "zh": "此处可添加额外备注",
     },
 
     # Section: Settings Additional
