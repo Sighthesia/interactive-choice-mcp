@@ -59,15 +59,19 @@ uv run pytest
 
 有关测试的详细帮助信息，请参阅 [tests/README.md](tests/README.md)。
 
-1. 快速运行 Web 交互界面交互式测试
-```bash
-uv run pytest tests/integration/test_interaction_web.py::TestWebInteractionManual::test_web_e2e_manual_interaction --interactive -v -s
-```
+### 运行交互式测试
 
-1. 快速运行终端交互界面交互式测试
-```bash
-uv run pytest tests/integration/test_interaction_terminal.py::TestTerminalInteractionManual::test_terminal_e2e_manual_interaction --interactive -v -s
-```
+1. 打开 Web 交互界面
+
+  ```bash
+  uv run pytest tests/integration/test_interaction_web.py::TestWebInteractionManual::test_web_e2e_manual_interaction --interactive -v -s
+  ```
+
+2. 打开终端交互界面
+
+  ```bash
+  uv run pytest tests/integration/test_interaction_terminal.py::TestTerminalInteractionManual::test_terminal_e2e_manual_interaction --interactive -v -s
+  ```
 
 
 ## 💖 感谢
