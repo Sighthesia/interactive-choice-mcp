@@ -23,7 +23,7 @@
 
 .header-bar .title {
     font-weight: 700;
-    margin-right: 24px;
+    margin-right: 0;
     color: var(--header-title);
     line-height: 1;
 }
@@ -40,7 +40,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-right: 20px;
+    margin: 10px;
     color: var(--header-muted);
 }
 

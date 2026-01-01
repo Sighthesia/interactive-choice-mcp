@@ -51,6 +51,19 @@
     animation: fadeInUp 0.3s ease-out forwards;
 }
 
+/* Fade to gray animation for unselected items in submitted state */
+@keyframes fadeToGray {
+    from {
+        opacity: 1;
+        filter: grayscale(0);
+    }
+
+    to {
+        opacity: 0.5;
+        filter: grayscale(1);
+    }
+}
+
 /* Section: Form Elements */
 .config-grid {
     display: grid;
@@ -365,6 +378,7 @@ body.submitted .option:not(.selected) {
     filter: grayscale(1);
     cursor: not-allowed;
     pointer-events: none;
+    animation: fadeToGray 0.3s ease-in-out;
 }
 
 body.submitted .option.selected {
@@ -378,6 +392,7 @@ body.submitted .option.selected {
 body.submitted .annotation-section:not(.has-content) {
     opacity: 0.5;
     pointer-events: none;
+    animation: fadeToGray 0.3s ease-in-out;
 }
 
 body.submitted .annotation-section:not(.has-content) textarea {
@@ -676,6 +691,7 @@ body.submitted .status {
     border-radius: var(--radius);
     cursor: pointer;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .test-sound-btn:hover {
