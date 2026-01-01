@@ -120,6 +120,10 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Notification sound",
         "zh": "通知音效",
     },
+    "settings.test_sound": {
+        "en": "Test",
+        "zh": "测试",
+    },
 
     # Section: Actions
     "action.submit": {

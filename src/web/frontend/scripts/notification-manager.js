@@ -183,9 +183,80 @@ class NotificationManager {
         }
     }
 
+    // Section: Sound Generation (Web Audio API)
+    /**
+     * Generate and play a notification sound using Web Audio API
+     * Creates a pleasant two-tone chime sound without external files
+     */
+    playWebAudioSound() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) {
+                console.debug('[NotificationManager] Web Audio API not supported');
+                return;
+            }
+
+            const audioContext = new AudioContext();
+            const masterGain = audioContext.createGain();
+            masterGain.connect(audioContext.destination);
+            masterGain.gain.setValueAtTime(0.3, audioContext.currentTime);
+
+            // Function to play a tone
+            const playTone = (frequency, startTime, duration, type = 'sine') => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(frequency, startTime);
+
+                // Envelope: attack, decay
+                gainNode.gain.setValueAtTime(0, startTime);
+                gainNode.gain.linearRampToValueAtTime(0.5, startTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(masterGain);
+
+                oscillator.start(startTime);
+                oscillator.stop(startTime + duration);
+            };
+
+            const now = audioContext.currentTime;
+
+            // Play a pleasant two-tone chime: C5 -> E5
+            // First tone: C5 (523.25 Hz)
+            playTone(523.25, now, 0.15, 'sine');
+
+            // Second tone: E5 (659.25 Hz) - starts shortly after first
+            playTone(659.25, now + 0.1, 0.2, 'sine');
+
+            // Auto-stop context after sound finishes
+            setTimeout(() => {
+                audioContext.close();
+            }, 500);
+
+            console.debug('[NotificationManager] Web Audio sound played');
+        } catch (error) {
+            console.warn('[NotificationManager] Failed to play Web Audio sound:', error);
+        }
+    }
+
     playSound() {
         if (!this.soundEnabled) return;
 
+        // If custom sound path is configured, use audio element
+        if (this.customSoundPath) {
+            this.playAudioElementSound();
+        } else {
+            // Use Web Audio API for default sound
+            this.playWebAudioSound();
+        }
+    }
+
+    /**
+     * Play sound using audio element (for custom sound files)
+     */
+    playAudioElementSound() {
         try {
             const soundPath = this.customSoundPath || '/static/sounds/notification.mp3';
 
@@ -207,7 +278,7 @@ class NotificationManager {
                 console.debug('[NotificationManager] Sound playback blocked:', e.message);
             });
         } catch (error) {
-            console.warn('[NotificationManager] Failed to play sound:', error);
+            console.warn('[NotificationManager] Failed to play audio element sound:', error);
         }
     }
 

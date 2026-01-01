@@ -9,6 +9,35 @@ function requestNotificationPermission() {
     if (manager) {
         manager.requestPermission();
     }
+
+    // Warm up Web Audio API on user interaction
+    warmUpWebAudio();
+}
+
+/**
+ * Warm up Web Audio API by creating a silent context
+ * This is required by browsers to allow audio playback without user interaction
+ */
+function warmUpWebAudio() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+
+        // Create a temporary context and resume it to unlock audio
+        const tempContext = new AudioContext();
+        if (tempContext.state === 'suspended') {
+            tempContext.resume().then(() => {
+                console.debug('[Web Audio] AudioContext resumed');
+                tempContext.close();
+            }).catch(err => {
+                console.debug('[Web Audio] Failed to resume AudioContext:', err);
+            });
+        } else {
+            tempContext.close();
+        }
+    } catch (error) {
+        console.debug('[Web Audio] Warm-up failed:', error);
+    }
 }
 
 function playNotificationSound() {
@@ -22,6 +51,16 @@ function notifyEvent(title, body) {
     const manager = getNotificationManager();
     if (manager) {
         manager.showNotification(title, body);
+    }
+}
+
+/**
+ * Test notification sound playback
+ */
+function testNotificationSound() {
+    const manager = getNotificationManager();
+    if (manager) {
+        manager.playSound();
     }
 }
 

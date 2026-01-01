@@ -661,3 +661,38 @@ body.submitted .status {
     font-weight: 600;
     font-style: italic;
 }
+
+/* Section: Test Sound Button */
+.test-sound-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--primary);
+    background-color: rgba(79, 70, 229, 0.08);
+    border: 1px solid rgba(79, 70, 229, 0.2);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.test-sound-btn:hover {
+    background-color: rgba(79, 70, 229, 0.15);
+    border-color: rgba(79, 70, 229, 0.3);
+}
+
+.test-sound-btn:active {
+    transform: scale(0.98);
+}
+
+.dark .test-sound-btn {
+    background-color: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.dark .test-sound-btn:hover {
+    background-color: rgba(99, 102, 241, 0.25);
+    border-color: rgba(99, 102, 241, 0.4);
+}
