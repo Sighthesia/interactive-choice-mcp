@@ -43,14 +43,43 @@
 
 #### 环境变量（可选）
 
-可以通过向 MCP 配置中的 `env` 添加以下环境变量自定义配置：
+可以通过向 MCP 配置中的 `env` 添加以下环境变量以覆盖保存的配置：
 
-- `CHOICE_WEB_HOST`：Web 服务器主机（默认：`127.0.0.1`）
-- `CHOICE_WEB_PORT`：Web 服务器端口（默认：`9999`）
-- `CHOICE_LANG`：界面语言（`en` 或 `zh`，默认根据系统语言自动选择）
-- `CHOICE_LOG_LEVEL`：日志级别（`DEBUG`、`INFO`、`WARNING`、`ERROR`，默认：`INFO`）
-- `CHOICE_LOG_FILE`：日志文件路径（可选）
-- `CHOICE_MCP_DATA_DIR`：数据存储目录（默认：`.mcp-data/`）
+| 环境变量              | 说明           | 可选值                              | 默认值               |
+| --------------------- | -------------- | ----------------------------------- | -------------------- |
+| `CHOICE_WEB_HOST`     | Web 服务器主机 | 任意有效 IP 或主机名                | `127.0.0.1`          |
+| `CHOICE_WEB_PORT`     | Web 服务器端口 | 任意可用端口号                      | `9999`               |
+| `CHOICE_LANG`         | 界面语言       | `en`, `zh`                          | 根据系统语言自动选择 |
+| `CHOICE_LOG_LEVEL`    | 日志级别       | `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO`               |
+| `CHOICE_LOG_FILE`     | 日志文件路径   | 任意有效文件路径                    | 可选                 |
+| `CHOICE_MCP_DATA_DIR` | 数据存储目录   | 任意有效目录路径                    | `.mcp-data/`         |
+
+##### 配置示例
+
+以下是一个包含环境变量的完整 MCP 配置示例：
+
+```json
+{
+  "mcpServers": {
+    "interactive-choice": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/Sighthesia/interactive-choice-mcp",
+        "interactive-choice-mcp"
+      ],
+      "env": {
+        "CHOICE_WEB_HOST": "127.0.0.1",
+        "CHOICE_WEB_PORT": "8080",
+        "CHOICE_LANG": "en",
+        "CHOICE_LOG_LEVEL": "DEBUG",
+        "CHOICE_LOG_FILE": "~/.mcp-data/interactive-choice.log",
+        "CHOICE_MCP_DATA_DIR": "~/.mcp-data/interactive-choice"
+      }
+    }
+  }
+}
+```
 
 ## 🤝 贡献
 
