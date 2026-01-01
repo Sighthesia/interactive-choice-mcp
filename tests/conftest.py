@@ -46,6 +46,13 @@ def pytest_addoption(parser):
         default=False,
         help="Enable manual interactive tests (off by default).",
     )
+    parser.addoption(
+        "--selection-mode",
+        action="store",
+        default="single",
+        choices=["single", "multi"],
+        help="Selection mode for interactive tests: single or multi (default: single).",
+    )
 
 
 def _build_default_config(interface: str) -> ProvideChoiceConfig:
@@ -71,6 +78,12 @@ def _build_default_config(interface: str) -> ProvideChoiceConfig:
 def interactive(request) -> bool:
     """Flag to enable manual interactive tests."""
     return bool(request.config.getoption("--interactive"))
+
+
+@pytest.fixture
+def selection_mode(request) -> str:
+    """Selection mode for interactive tests: single or multi."""
+    return str(request.config.getoption("selection_mode"))
 
 
 @pytest.fixture
@@ -179,3 +192,20 @@ def sample_multi_choice_request():
         ],
         timeout_seconds=300,
     )
+
+
+@pytest.fixture
+def sample_request(selection_mode: str, sample_single_choice_request, sample_multi_choice_request):
+    """Provide a test request based on selection_mode parameter.
+    
+    Args:
+        selection_mode: Either "single" or "multi"
+        sample_single_choice_request: Single choice request fixture
+        sample_multi_choice_request: Multi choice request fixture
+    
+    Returns:
+        ProvideChoiceRequest: Single or multi choice request based on selection_mode.
+    """
+    if selection_mode == "multi":
+        return sample_multi_choice_request
+    return sample_single_choice_request

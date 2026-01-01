@@ -81,13 +81,13 @@ AI 驱动开发可参考 [AGENTS.md](AGENTS.md) 与 [openspec](openspec) 。
 
 临时运行 Web 服务器进行交互式测试，检验用户端交互效果：
 
-1. 打开 Web 交互界面
+1. 打开 Web 交互界面并测试默认的单选模式
 
   ```bash
   uv run pytest tests/integration/test_interaction_web.py::TestWebInteractionManual::test_web_e2e_manual_interaction --interactive -v -s
   ```
 
-2. 打开终端交互界面
+2. 打开终端交互界面并测试默认的单选模式
 
   ```bash
   uv run pytest tests/integration/test_interaction_terminal.py::TestTerminalInteractionManual::test_terminal_e2e_manual_interaction --interactive -v -s
@@ -101,6 +101,8 @@ AI 驱动开发可参考 [AGENTS.md](AGENTS.md) 与 [openspec](openspec) 。
 uv run mcp dev server.py
 ```
 
+### 计划
+由于各类 AI IDE 与 Cli 倾向于将 AI 运行的终端命令静默化，终端模式的交互体验可能受限，还需要考虑可行性。
 
 ## 💖 感谢
 

@@ -15,11 +15,11 @@ class TestTerminalHandOff:
     async def test_terminal_handoff_launch_command(
         self,
         web_server,
-        sample_single_choice_request,
+        sample_request,
         sample_terminal_config,
     ):
         response = await create_terminal_handoff_session(
-            sample_single_choice_request,
+            sample_request,
             sample_terminal_config,
         )
 
@@ -35,7 +35,7 @@ class TestTerminalHandOff:
     async def test_terminal_handoff_end_to_end(
         self,
         web_server,
-        sample_single_choice_request,
+        sample_request,
         sample_terminal_config,
     ):
 
@@ -60,7 +60,7 @@ class TestTerminalHandOff:
         )
 
         response = await create_terminal_handoff_session(
-            sample_single_choice_request,
+            sample_request,
             test_config,
         )
         selection_url = response.selection.url or ""
@@ -101,7 +101,7 @@ class TestTerminalInteractionManual:
     async def test_terminal_e2e_manual_interaction(
         self,
         web_server,
-        sample_single_choice_request,
+        sample_request,
         sample_terminal_config,
         interactive,
     ):
@@ -112,6 +112,8 @@ class TestTerminalInteractionManual:
         2. Display the terminal command to run
         3. Wait for you to execute the command and make a selection
         4. Verify the selection was properly submitted
+        
+        Use --selection-mode multi to test multi-choice interactions.
         """
         if not interactive:
             pytest.skip(
@@ -121,7 +123,7 @@ class TestTerminalInteractionManual:
 
         # Create a terminal hand-off session
         response = await create_terminal_handoff_session(
-            sample_single_choice_request,
+            sample_request,
             sample_terminal_config,
         )
 
@@ -134,10 +136,10 @@ class TestTerminalInteractionManual:
         print("💻 TERMINAL COMMAND FOR E2E TESTING")
         print(f"{'='*60}")
         print(f"Session ID: {session_id}")
-        print(f"Title: {sample_single_choice_request.title}")
-        print(f"Prompt: {sample_single_choice_request.prompt}")
+        print(f"Title: {sample_request.title}")
+        print(f"Prompt: {sample_request.prompt}")
         print(f"Options:")
-        for opt in sample_single_choice_request.options:
+        for opt in sample_request.options:
             marker = "⭐" if opt.recommended else "  "
             print(f"  {marker} [{opt.id}] {opt.description}")
         print(f"{'='*60}")

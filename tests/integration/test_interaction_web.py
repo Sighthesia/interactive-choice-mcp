@@ -721,7 +721,7 @@ class TestWebInteractionManual:
     async def test_web_e2e_manual_interaction(
         self,
         web_server,
-        sample_single_choice_request,
+        sample_request,
         sample_web_config,
         interactive,
     ):
@@ -732,6 +732,8 @@ class TestWebInteractionManual:
         2. Open the browser automatically with the session URL
         3. Wait for you to make a selection in the browser
         4. Verify the selection was properly submitted
+        
+        Use --selection-mode multi to test multi-choice interactions.
         """
         if not interactive:
             pytest.skip(
@@ -741,7 +743,7 @@ class TestWebInteractionManual:
 
         # Create a session using the web server
         session = await web_server.create_session(
-            sample_single_choice_request,
+            sample_request,
             sample_web_config,
             allow_terminal=False,
         )
@@ -756,10 +758,10 @@ class TestWebInteractionManual:
         print("🌐 BROWSER OPENED FOR E2E TESTING")
         print(f"{'='*60}")
         print(f"Session URL: {session.url}")
-        print(f"Title: {sample_single_choice_request.title}")
-        print(f"Prompt: {sample_single_choice_request.prompt}")
+        print(f"Title: {sample_request.title}")
+        print(f"Prompt: {sample_request.prompt}")
         print(f"Options:")
-        for opt in sample_single_choice_request.options:
+        for opt in sample_request.options:
             marker = "⭐" if opt.recommended else "  "
             print(f"  {marker} [{opt.id}] {opt.description}")
         print(f"{'='*60}")
