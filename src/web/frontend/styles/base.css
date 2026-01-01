@@ -150,7 +150,8 @@ h1 {
     padding: 12px;
     background-color: var(--card-bg);
     min-height: 96px;
-    /* Minimum height of 2 options (padding: 12px * 2 + content ~72px) */
+    max-height: 50%;
+    /* Cap at 50% height, shrink if needed, don't grow unnecessarily */
 }
 
 .prompt {
