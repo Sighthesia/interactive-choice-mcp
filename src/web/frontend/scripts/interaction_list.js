@@ -12,6 +12,7 @@ const maxWsRetries = 3;
 let listCountdownTimer = null;
 let pollingInterval = null;
 let knownSessionIds = new Set(); // Track known sessions to detect new ones
+let isInteractionSwitching = false;
 
 // Section: WebSocket Connection
 function connectInteractionListWs() {
@@ -312,9 +313,12 @@ function renderInteractionList() {
         if (element) element.remove();
     });
 
-    // Add click handlers for in-page navigation
+    // Add click handlers for in-page navigation (only for new elements without handler)
     container.querySelectorAll('.interaction-item[data-session-id]').forEach(el => {
-        el.addEventListener('click', handleInteractionClick);
+        if (!el.dataset.clickBound) {
+            el.addEventListener('click', handleInteractionClick);
+            el.dataset.clickBound = 'true';
+        }
     });
 }
 
@@ -330,14 +334,30 @@ function handleInteractionClick(event) {
 async function navigateToInteraction(sessionId) {
     debugLog('InteractionList', 'Navigating to interaction:', sessionId);
 
+    // Prevent overlapping navigation/animation
+    if (isInteractionSwitching) return;
+    isInteractionSwitching = true;
+
     // Start transition animation
     const mainColumn = document.querySelector('.main-column');
     if (mainColumn) {
+        // Reset classes to allow animation replay and suppress base transitions during switch
+        mainColumn.classList.add('interaction-animating');
+        mainColumn.classList.remove('fade-in');
+        mainColumn.classList.remove('transitioning');
+        void mainColumn.offsetWidth;
         mainColumn.classList.add('transitioning');
     }
 
+    // Ensure minimum transition time for visual continuity
+    const minTransitionTime = new Promise(resolve => setTimeout(resolve, 220));
+
     try {
-        const response = await fetch('/api/interaction/' + sessionId);
+        const [response] = await Promise.all([
+            fetch('/api/interaction/' + sessionId),
+            minTransitionTime
+        ]);
+
         if (!response.ok) {
             console.error('[InteractionList] Failed to load interaction:', response.status);
             // Fallback to full page navigation
@@ -376,17 +396,18 @@ async function navigateToInteraction(sessionId) {
         // Fallback to full page navigation
         window.location.href = '/choice/' + sessionId;
     } finally {
-        // End transition animation with fade-in effect
+        // End transition animation - remove transitioning class to restore default state
         if (mainColumn) {
-            // Small delay to allow the new content to be rendered
+            void mainColumn.offsetWidth;
+            mainColumn.classList.remove('transitioning');
+
+            // Clean up guard class and reset state after animation completes
             setTimeout(() => {
-                mainColumn.classList.remove('transitioning');
-                mainColumn.classList.add('fade-in');
-                // Remove fade-in class after animation completes
-                setTimeout(() => {
-                    mainColumn.classList.remove('fade-in');
-                }, 350);
-            }, 50);
+                mainColumn.classList.remove('interaction-animating');
+                isInteractionSwitching = false;
+            }, 700);
+        } else {
+            isInteractionSwitching = false;
         }
     }
 }

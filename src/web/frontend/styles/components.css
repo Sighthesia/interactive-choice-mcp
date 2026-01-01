@@ -88,6 +88,56 @@
     opacity: 0;
 }
 
+/* Interaction transition animations */
+@keyframes interactionSwitchOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0px);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-24px);
+        filter: blur(2px);
+    }
+}
+
+/* Fade-out animation when switching interactions */
+.main-column.transitioning {
+    animation: interactionSwitchOut 0.22s ease-out forwards;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+
+@keyframes interactionSwitchIn {
+    0% {
+        opacity: 0;
+        transform: translateY(32px);
+    }
+
+    60% {
+        opacity: 1;
+        transform: translateY(-8px);
+    }
+
+    80% {
+        transform: translateY(4px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Fade-in animation using same elastic effect as page load */
+.main-column.fade-in {
+    animation: interactionSwitchIn 0.65s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    transition: none;
+    will-change: transform, opacity;
+}
+
 /* Fade-in animation when content loads */
 @keyframes fadeInUp {
     from {
