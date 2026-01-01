@@ -201,14 +201,56 @@ function renderInteractionList() {
         return;
     }
 
-    container.innerHTML = filtered.map(item => {
+    // Clear loading state if present
+    const loadingElement = container.querySelector('.interaction-empty');
+    if (loadingElement) {
+        loadingElement.remove();
+    }
+
+    // Get current session IDs in container for incremental updates
+    const existingSessionIds = new Set();
+    container.querySelectorAll('.interaction-item').forEach(el => {
+        const sessionId = el.dataset.sessionId;
+        if (sessionId) existingSessionIds.add(sessionId);
+    });
+
+    // Update or create items incrementally to preserve DOM for transitions
+    filtered.forEach(item => {
+        let element = container.querySelector(`.interaction-item[data-session-id="${item.session_id}"]`);
+
         const isCurrent = item.session_id === choiceId;
         const isTerminalOnly = item.interface === 'terminal';
         const isTerminalWeb = item.interface === 'terminal-web';
+        const isClickable = item.url && (!isTerminalOnly || item.status !== 'pending');
+
+        // Update progress bar and meta if exists
+        if (element) {
+            const progressBar = element.querySelector('.interaction-progress-bar');
+            const metaElement = element.querySelector('.interaction-item-meta');
+
+            // Update progress bar
+            if (progressBar && item.status === 'pending' && typeof item.remaining_seconds === 'number' && typeof item.timeout_seconds === 'number' && item.timeout_seconds > 0) {
+                const pct = Math.max(0, Math.min(100, (item.remaining_seconds / item.timeout_seconds) * 100));
+                const barClass = pct < 20 ? 'danger' : (pct < 50 ? 'warning' : '');
+                progressBar.style.width = pct + '%';
+                progressBar.className = 'interaction-progress-bar ' + barClass;
+            }
+
+            // Update timeout hint in meta
+            if (metaElement) {
+                const timeoutHint = item.status === 'pending' && typeof item.remaining_seconds === 'number'
+                    ? ' · timeout ~' + Math.ceil(item.remaining_seconds) + 's'
+                    : '';
+                metaElement.textContent = item.started_at + timeoutHint;
+            }
+
+            existingSessionIds.delete(item.session_id);
+            return;
+        }
+
+        // Create new element if doesn't exist
         const statusBadge = '<span class="interaction-badge badge-' + item.status + '">' + item.status.replace('_', ' ') + '</span>';
         const transportBadge = '<span class="interaction-badge badge-' + item.interface + '">' + item.interface + '</span>';
-        // Terminal sessions are only clickable if completed (have URL), or if terminal-web
-        const isClickable = item.url && (!isTerminalOnly || item.status !== 'pending');
         const clickAttr = isClickable ? 'data-session-id="' + item.session_id + '"' : '';
         const timeoutHint = item.status === 'pending' && typeof item.remaining_seconds === 'number'
             ? ' · timeout ~' + Math.ceil(item.remaining_seconds) + 's'
@@ -221,7 +263,6 @@ function renderInteractionList() {
             progressBar = '<div class="interaction-progress"><div class="interaction-progress-bar ' + barClass + '" style="width:' + pct + '%"></div></div>';
         }
 
-        // Add disabled class for non-clickable sessions
         const disabledClass = !isClickable ? ' disabled' : '';
 
         // Add prompt preview if available
@@ -241,26 +282,39 @@ function renderInteractionList() {
             promptPreview = '<div class="interaction-item-preview">' + previewText + '</div>';
         }
 
-        return '<div class="interaction-item' + (isCurrent ? ' current' : '') + disabledClass + '" ' + clickAttr + '>' +
+        const newElement = document.createElement('div');
+        newElement.className = 'interaction-item' + (isCurrent ? ' current' : '') + disabledClass;
+        if (clickAttr) newElement.dataset.sessionId = item.session_id;
+        newElement.innerHTML =
             '<div class="interaction-item-header">' +
             '<span class="interaction-item-title">' + (item.title || 'Untitled') + '</span>' +
             statusBadge + transportBadge +
             '</div>' +
             '<div class="interaction-item-meta">' + item.started_at + timeoutHint + '</div>' +
             promptPreview +
-            progressBar +
-            '</div>';
-    }).join('');
+            progressBar;
+
+        container.appendChild(newElement);
+    });
+
+    // Remove items that no longer exist
+    existingSessionIds.forEach(sessionId => {
+        const element = container.querySelector(`.interaction-item[data-session-id="${sessionId}"]`);
+        if (element) element.remove();
+    });
 
     // Add click handlers for in-page navigation
     container.querySelectorAll('.interaction-item[data-session-id]').forEach(el => {
-        el.addEventListener('click', () => {
-            const sessionId = el.dataset.sessionId;
-            if (sessionId && sessionId !== window.mcpData.choiceId) {
-                navigateToInteraction(sessionId);
-            }
-        });
+        el.addEventListener('click', handleInteractionClick);
     });
+}
+
+// Section: Click Handler
+function handleInteractionClick(event) {
+    const sessionId = event.currentTarget.dataset.sessionId;
+    if (sessionId && sessionId !== window.mcpData.choiceId) {
+        navigateToInteraction(sessionId);
+    }
 }
 
 // Section: In-Page Navigation
