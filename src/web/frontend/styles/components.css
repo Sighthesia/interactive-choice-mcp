@@ -200,6 +200,7 @@ input[type="checkbox"] {
     max-height: calc(100vh - 320px);
     overflow-y: auto;
     padding-right: 4px;
+    outline: none;
 }
 
 .option {
