@@ -256,7 +256,17 @@ input[type="checkbox"] {
 .recommended-label {
     color: var(--primary);
     opacity: 0.6;
-    font-weight: 400;
+    font-weight: 600;
+    animation: breathe 2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+    0%, 100% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 0.8;
+    }
 }
 
 .option-desc {
