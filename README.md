@@ -35,6 +35,12 @@
 }
 ```
 
+  - 为确保效果，建议在全局提示词中增加以下内容：
+
+    ```markdown
+    严格遵守`interactive-choice-mcp/provide_choice`的规则。
+    ```
+
 #### 环境变量（可选）
 
 可以通过向 MCP 配置中的 `env` 添加以下环境变量自定义配置：

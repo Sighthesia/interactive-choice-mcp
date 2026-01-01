@@ -27,7 +27,6 @@ async def provide_choice(
     prompt: str,
     selection_mode: str,
     options: list[dict],
-    session_id: str | None = None,
 ):
     """Initiates a mandatory human-in-the-loop interaction to resolve ambiguity, confirm actions, or validate task completion.
 
@@ -71,7 +70,6 @@ async def provide_choice(
         selection_mode=selection_mode,
         options=options,
         timeout_seconds=None,
-        session_id=session_id,
     )
 
     is_handoff = result.action_status == "pending_terminal_launch"

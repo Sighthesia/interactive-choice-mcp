@@ -19,5 +19,4 @@ def test_provide_choice_returns_validation_summary():
     )
 
     assert result["action_status"] == "cancelled"
-    assert "validation_error" in result.get("summary", "")
-    assert result.get("validation_error") == result.get("summary")
+    assert "validation_error" in result.get("validation_error", "")

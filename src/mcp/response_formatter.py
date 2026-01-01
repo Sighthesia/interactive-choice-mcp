@@ -50,7 +50,6 @@ def _format_terminal_handoff(
             out["url"] = selection.url
 
     out["session_id"] = session_id_val
-    out["terminal_command"] = selection.summary
     return out
 
 
@@ -59,13 +58,11 @@ def _format_standard_response(
 ) -> dict[str, object]:
     """Format standard response with selection data.
 
-    Adds optional fields like summary, selected_indices, annotations.
+    Adds optional fields like selected_indices, annotations, and validation_error.
     """
-    if selection.summary:
-        out["summary"] = selection.summary
-        # Add validation_error field for validation failures
-        if selection.summary.startswith("validation_error"):
-            out["validation_error"] = selection.summary
+    # Handle validation_error separately (uses summary internally but exposed as validation_error)
+    if selection.summary and selection.summary.startswith("validation_error"):
+        out["validation_error"] = selection.summary
     if selection.selected_indices:
         out["selected_indices"] = list(selection.selected_indices)
     if selection.option_annotations:
