@@ -25,7 +25,9 @@ tests/
 │       ├── test_static_bundle.py
 │       └── test_web_timeout.py
 └── integration/        # Integration tests (full system flow)
-    └── test_server.py
+    ├── test_server.py
+    ├── test_interaction_web.py
+    └── test_interaction_terminal.py
 ```
 
 ## Running Tests
@@ -43,6 +45,12 @@ uv run pytest tests/integration/
 
 # Run with coverage report
 uv run pytest --cov=src --cov-report=html
+
+# Run end-to-end interactive test (opens browser for manual testing)
+uv run pytest tests/integration/test_interaction_web.py::TestWebInteractionManual::test_web_e2e_manual_interaction --interactive -v -s
+
+# Run end-to-end terminal test (displays command for manual terminal testing)
+uv run pytest tests/integration/test_interaction_terminal.py::TestTerminalInteractionManual::test_terminal_e2e_manual_interaction --interactive -v -s
 ```
 
 ## Test Categories
@@ -61,9 +69,25 @@ Fast, isolated tests that mock external dependencies:
 
 Tests that verify complete interaction flows:
 
-- MCP server endpoint behavior
-- Full session lifecycle
-- Transport switching (terminal ↔ web)
+- **test_server.py**: Web server basic functionality
+- **test_interaction_web.py**: Web-based interactive flows
+  - Single/multi choice selection
+  - Timeout handling
+  - Cancellation scenarios
+  - Error handling
+  - HTML rendering
+  - WebSocket communication
+- **test_interaction_terminal.py**: Terminal-based interactive flows
+  - Terminal hand-off launch
+  - End-to-end terminal selection
+
+**Interactive Testing**:
+
+Integration tests include manual interactive tests that require human interaction:
+- Use `--interactive` flag to enable manual testing
+- Without `--interactive`, manual tests are skipped
+- Web tests automatically open the browser with the session URL
+- Terminal tests display the command to run in a separate terminal
 
 ## Writing New Tests
 
@@ -76,5 +100,12 @@ Tests that verify complete interaction flows:
 
 Common fixtures are defined in `conftest.py`:
 
-- Repository root path is automatically added to `sys.path`
-- Additional fixtures can be added as needed
+- `web_server`: Provides a running web server instance for integration tests
+- `sample_single_choice_request`: Provides a sample single-choice request
+- `sample_multi_choice_request`: Provides a sample multi-choice request
+- `sample_web_config`: Provides a sample web configuration
+- `sample_terminal_config`: Provides a sample terminal configuration
+- `interactive`: Returns True if `--interactive` flag is set
+- `persisted_config`: Loads config.json (creates one if missing) for shared test settings
+
+Repository root path is automatically added to `sys.path`. Interactive tests share settings loaded from `.mcp-data/config.json`; if the file is missing a default payload (600s timeout, zh language, single-submit) is created and reused for both web and terminal flows.

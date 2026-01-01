@@ -1,4 +1,4 @@
-"""Integration tests for interactive choice flows.
+"""Integration tests for web-based interactive choice flows.
 
 This module tests end-to-end interactions with the web server, including:
 - Single choice selection
@@ -171,8 +171,6 @@ class TestTimeoutHandling:
         )
 
         # Verify that the deadline was set correctly
-        # Note: The session monitor task fails due to import issues in the codebase
-        # We'll verify the deadline is set instead
         now = time.monotonic()
         remaining_timeout = session.deadline - now
         # Should be approximately 1 second remaining just after creation
@@ -310,7 +308,6 @@ class TestErrorHandling:
             )
 
         # The server should accept the submission but validation may fail
-        # This test verifies the endpoint is reachable
         assert response.status_code in [200, 400]
 
     @pytest.mark.asyncio
@@ -447,8 +444,6 @@ class TestResponseStructure:
         )
 
         # Verify session structure for timeout handling
-        # Note: The session monitor task fails due to import issues in codebase
-        # We'll verify the deadline is set correctly
         assert session.deadline is not None
         assert session.deadline > time.monotonic()
         assert session.deadline <= time.monotonic() + 1.5
@@ -596,7 +591,6 @@ class TestWebSocketCommunication:
             # Receive initial status message
             message = await websocket.recv()
             data = json.loads(message)
-
             assert data["type"] == "status"
             assert data["status"] == "pending"
 
@@ -717,6 +711,75 @@ class TestWebSocketCommunication:
             await web_server._remove_session(session.choice_id)
 
             # Connection may or may not be closed immediately
-            # The important thing is that the session is removed
             assert session.choice_id not in web_server.sessions
 
+
+class TestWebInteractionManual:
+    """Manual interactive tests for web interface."""
+
+    @pytest.mark.asyncio
+    async def test_web_e2e_manual_interaction(
+        self,
+        web_server,
+        sample_single_choice_request,
+        sample_web_config,
+        interactive,
+    ):
+        """End-to-end test with manual browser interaction.
+        
+        When --interactive is provided, this test will:
+        1. Create a web session
+        2. Open the browser automatically with the session URL
+        3. Wait for you to make a selection in the browser
+        4. Verify the selection was properly submitted
+        """
+        if not interactive:
+            pytest.skip(
+                "Run with --interactive to enable interactive browser testing. "
+                "Example: uv run pytest tests/integration/test_interaction_web.py::TestWebInteractionManual::test_web_e2e_manual_interaction --interactive -v -s"
+            )
+
+        # Create a session using the web server
+        session = await web_server.create_session(
+            sample_single_choice_request,
+            sample_web_config,
+            allow_terminal=False,
+        )
+
+        # Open browser for interactive testing
+        import webbrowser
+        webbrowser.open(session.url)
+
+        timeout_seconds = sample_web_config.timeout_seconds
+
+        print(f"\n{'='*60}")
+        print("🌐 BROWSER OPENED FOR E2E TESTING")
+        print(f"{'='*60}")
+        print(f"Session URL: {session.url}")
+        print(f"Title: {sample_single_choice_request.title}")
+        print(f"Prompt: {sample_single_choice_request.prompt}")
+        print(f"Options:")
+        for opt in sample_single_choice_request.options:
+            marker = "⭐" if opt.recommended else "  "
+            print(f"  {marker} [{opt.id}] {opt.description}")
+        print(f"{'='*60}")
+        print(f"Please make a selection in the browser...")
+        print(f"The test will wait up to {timeout_seconds} seconds (from config) for your selection.")
+        print(f"{'='*60}\n")
+
+        # Wait for the user to make a selection
+        try:
+            result = await asyncio.wait_for(session.wait_for_result(), timeout=float(timeout_seconds))
+        except asyncio.TimeoutError:
+            pytest.fail(f"Timeout: No selection made within {timeout_seconds} seconds")
+
+        # Verify the result
+        assert result is not None
+        assert result.action_status in ["selected", "cancelled"]
+        
+        if result.action_status == "selected":
+            print(f"\n✅ Selection received: {result.selection.selected_indices}")
+        else:
+            print(f"\n❌ Interaction was cancelled")
+
+        assert session.final_result is not None

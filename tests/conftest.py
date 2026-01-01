@@ -21,38 +21,105 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import pytest
+from dataclasses import replace
 import asyncio
+import webbrowser
+
+import pytest
 from src.web.server import WebChoiceServer
 from src.core.models import (
     ProvideChoiceRequest,
     ProvideChoiceOption,
     ProvideChoiceConfig,
+    TRANSPORT_TERMINAL,
+    TRANSPORT_WEB,
+    NotificationTriggerMode,
 )
+from src.infra import ConfigStore
+
+
+def pytest_addoption(parser):
+    """Register CLI options to toggle interactive testing."""
+    parser.addoption(
+        "--interactive",
+        action="store_true",
+        default=False,
+        help="Enable manual interactive tests (off by default).",
+    )
+
+
+def _build_default_config(interface: str) -> ProvideChoiceConfig:
+    """Construct a config payload matching config.json defaults."""
+    return ProvideChoiceConfig(
+        interface=interface,
+        timeout_seconds=600,
+        single_submit_mode=True,
+        timeout_default_index=None,
+        timeout_default_enabled=False,
+        use_default_option=False,
+        timeout_action="submit",
+        language="zh",
+        notify_new=True,
+        notify_upcoming=True,
+        upcoming_threshold=60,
+        notify_timeout=True,
+        notify_trigger_mode=NotificationTriggerMode.default(),
+    )
 
 
 @pytest.fixture
-async def web_server():
+def interactive(request) -> bool:
+    """Flag to enable manual interactive tests."""
+    return bool(request.config.getoption("--interactive"))
+
+
+@pytest.fixture
+def persisted_config() -> ProvideChoiceConfig:
+    """Load config.json (creates one if missing) for shared test settings."""
+    store = ConfigStore()
+    config = store.load()
+    if config is None:
+        config = _build_default_config(TRANSPORT_WEB)
+        store.save(config)
+    return config
+
+
+@pytest.fixture
+def sample_web_config(persisted_config: ProvideChoiceConfig) -> ProvideChoiceConfig:
+    """Provide web config derived from persisted config.json data."""
+    return replace(persisted_config, interface=TRANSPORT_WEB)
+
+
+@pytest.fixture
+def sample_terminal_config(persisted_config: ProvideChoiceConfig) -> ProvideChoiceConfig:
+    """Provide terminal config derived from persisted config.json data."""
+    return replace(persisted_config, interface=TRANSPORT_TERMINAL)
+
+
+@pytest.fixture
+async def web_server(interactive: bool, monkeypatch):
     """Start a test web server and clean up after the test.
     
-    This fixture creates a WebChoiceServer instance, ensures it's running,
-    and provides it to tests. After the test completes, it cleans up
-    all sessions and shuts down the server.
-    
-    Yields:
-        WebChoiceServer: The running web server instance.
+    Ensures global server helpers reuse this instance. Browser opening
+    is suppressed for automated test runs but allowed in interactive mode.
     """
+    from src.web import server as server_module
+
+    # Only suppress browser opening for automated tests
+    if not interactive:
+        monkeypatch.setattr(webbrowser, "open", lambda url: False)
+
     server = WebChoiceServer()
+    server_module._WEB_SERVER = server
     await server.ensure_running()
     
     yield server
     
-    # Cleanup: remove all sessions
     for session_id in list(server.sessions.keys()):
         await server._remove_session(session_id)
     
-    # Shutdown the server properly to release the port
     await server.shutdown()
+    server_module._WEB_SERVER = None
 
 
 @pytest.fixture
@@ -110,18 +177,5 @@ def sample_multi_choice_request():
                 recommended=False,
             ),
         ],
-        timeout_seconds=300,
-    )
-
-
-@pytest.fixture
-def sample_web_config():
-    """Provide a standard web configuration for tests.
-    
-    Returns:
-        ProvideChoiceConfig: A config with web interface and default timeout.
-    """
-    return ProvideChoiceConfig(
-        interface="web",
         timeout_seconds=300,
     )
