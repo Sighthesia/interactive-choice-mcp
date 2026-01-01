@@ -34,6 +34,59 @@
     transform: translateY(40px);
 }
 
+/* Initial page load animations */
+/* Elastic slide-in animation for main column */
+@keyframes slideInElasticMain {
+    0% {
+        opacity: 0;
+        transform: translateY(-100px);
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(10px);
+    }
+    80% {
+        transform: translateY(-5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.main-column.page-load {
+    animation: slideInElasticMain 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Elastic slide-in animation for sidebars */
+@keyframes slideInElasticSidebar {
+    0% {
+        opacity: 0;
+        transform: translateY(-80px);
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(8px);
+    }
+    80% {
+        transform: translateY(-4px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.interaction-list.page-load {
+    animation: slideInElasticSidebar 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.1s forwards;
+    opacity: 0;
+}
+
+.sidebar.page-load {
+    animation: slideInElasticSidebar 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.2s forwards;
+    opacity: 0;
+}
+
 /* Fade-in animation when content loads */
 @keyframes fadeInUp {
     from {

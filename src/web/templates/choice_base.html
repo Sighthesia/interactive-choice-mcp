@@ -71,7 +71,7 @@
 
     <div class="layout">
         <!-- Interaction List (Left Sidebar) -->
-        <div class="interaction-list">
+        <div class="interaction-list page-load">
             <div class="card collapsible" tabindex="0" aria-expanded="false">
                 <div class="card-header config-toggle" onclick="toggleInteractionList()" id="interactionToggle"
                     role="button" tabindex="0" aria-controls="interactionListContent" data-i18n="list.title">
@@ -91,7 +91,7 @@
         </div>
 
         <!-- Main Content (Center) -->
-        <div class="main-column">
+        <div class="main-column page-load">
             <h1>${title}</h1>
             <div class="prompt-container">
                 <div id="prompt" class="prompt">${prompt}</div>
@@ -122,7 +122,7 @@
         </div>
 
         <!-- Sidebar (Right) - Configuration Panel -->
-        <div class="sidebar">
+        <div class="sidebar page-load">
             <div class="card collapsible" tabindex="0" aria-expanded="false">
                 <div class="card-header config-toggle" onclick="toggleConfig()" id="configToggle" role="button"
                     tabindex="0" aria-controls="configContent" data-i18n="web.configuration">Configuration</div>
