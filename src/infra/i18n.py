@@ -169,8 +169,8 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "已选择",
     },
     "label.recommended": {
-        "en": "Recommended",
-        "zh": "推荐",
+        "en": "AI Recommended",
+        "zh": "由 AI 推荐",
     },
     "label.annotation": {
         "en": "Annotation",

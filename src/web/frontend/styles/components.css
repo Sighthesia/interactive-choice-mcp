@@ -200,6 +200,12 @@ input[type="checkbox"] {
     margin-bottom: 2px;
 }
 
+.recommended-label {
+    color: var(--primary);
+    opacity: 0.6;
+    font-weight: 400;
+}
+
 .option-desc {
     font-size: 0.8125rem;
     color: var(--text-muted);

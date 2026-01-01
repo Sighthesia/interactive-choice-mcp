@@ -90,7 +90,7 @@ function renderOptions() {
         const content = document.createElement('div');
         content.className = 'option-content';
         const recommendedLabel = t('label.recommended');
-        const labelText = opt.recommended ? opt.id + ' (' + recommendedLabel + ')' : opt.id;
+        const labelText = opt.recommended ? opt.id + ' <span class="recommended-label">' + recommendedLabel + '</span>' : opt.id;
         content.innerHTML = '<div class="option-label">' + labelText + '</div><div class="option-desc">' + opt.description + '</div>';
         block.appendChild(content);
 
