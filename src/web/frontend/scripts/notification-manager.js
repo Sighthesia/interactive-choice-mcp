@@ -348,7 +348,10 @@ class NotificationManager {
         this.lastSessionId = sessionId;
 
         const truncatedPath = this.truncatePath(projectPath);
-        const title = this.t('notification.session.title', 'MCP Choice - New Session');
+        // Get prompt title from window.mcpData
+        const promptTitle = window.mcpData?.prompt?.title || '';
+        let title = this.t('notification.session.title', 'Interactive Choice - New Session');
+        title = title.replace('{prompt_title}', promptTitle);
         const body = `${this.t('notification.session.ready', 'Ready')}: ${truncatedPath}`;
 
         this.showNotification(title, body, {
@@ -363,8 +366,14 @@ class NotificationManager {
             return;
         }
 
-        const title = this.t('notification.timeout.upcomingTitle', 'Timeout Approaching');
-        const body = this.t('notification.timeout.upcomingBody', `Timeout in ${secondsRemaining} seconds`);
+        // Get prompt title from window.mcpData
+        const promptTitle = window.mcpData?.prompt?.title || '';
+        let title = this.t('notification.timeout.upcomingTitle', 'Timeout Approaching');
+        title = title.replace('{prompt_title}', promptTitle);
+
+        // Format body with parameter substitution
+        let body = this.t('notification.timeout.upcomingBody', 'Timeout in {seconds} seconds');
+        body = body.replace('{seconds}', secondsRemaining);
 
         this.showNotification(title, body, {
             tag: 'mcp-timeout-upcoming',
@@ -377,16 +386,22 @@ class NotificationManager {
             return;
         }
 
+        // Get prompt title from window.mcpData
+        const promptTitle = window.mcpData?.prompt?.title || '';
+
         let title, body;
 
         if (timeoutAction === 'submit') {
-            title = this.t('notification.timeout.submittedTitle', 'Auto Submitted');
+            let rawTitle = this.t('notification.timeout.submittedTitle', 'Auto Submitted');
+            title = rawTitle.replace('{prompt_title}', promptTitle);
             body = this.t('notification.timeout.submittedBody', 'Your selection was automatically submitted due to timeout');
         } else if (timeoutAction === 'cancel') {
-            title = this.t('notification.timeout.cancelledTitle', 'Timeout Cancelled');
+            let rawTitle = this.t('notification.timeout.cancelledTitle', 'Timeout Cancelled');
+            title = rawTitle.replace('{prompt_title}', promptTitle);
             body = this.t('notification.timeout.cancelledBody', 'The interaction was cancelled due to timeout');
         } else {
-            title = this.t('notification.timeout.reachedTitle', 'Timeout Reached');
+            let rawTitle = this.t('notification.timeout.reachedTitle', 'Timeout Reached');
+            title = rawTitle.replace('{prompt_title}', promptTitle);
             body = this.t('notification.timeout.reachedBody', 'The interaction has timed out');
         }
 
@@ -413,7 +428,9 @@ let notificationManagerInstance = null;
 
 function getNotificationManager() {
     if (!notificationManagerInstance) {
-        notificationManagerInstance = new NotificationManager();
+        // Pass the global t() function from i18n.js if available
+        const tFunc = typeof window.t === 'function' ? window.t : null;
+        notificationManagerInstance = new NotificationManager({ t: tFunc });
         notificationManagerInstance.initialize();
     }
     return notificationManagerInstance;

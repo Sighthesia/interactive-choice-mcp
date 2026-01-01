@@ -142,6 +142,14 @@ def _render_html(
     session_state['prompt_html'] = prompt_html
     session_state['prompt_text'] = req.prompt
     
+    # Build prompt object for frontend use (including title for notifications)
+    prompt_payload = {
+        "title": req.title,
+        "text": req.prompt,
+        "type": req.selection_mode,
+        "html": prompt_html,
+    }
+    
     # Build substitution dict based on template type
     subs = {
         "title": req.title,
@@ -157,7 +165,7 @@ def _render_html(
         "mcp_version": "0.1.0",
         "invocation_time": invocation_time,
         "i18n_json": json.dumps(_build_i18n_payload()),
-        "prompt_json": json.dumps(req.prompt),  
+        "prompt_json": json.dumps(prompt_payload),
         "lang": lang,
     }
     

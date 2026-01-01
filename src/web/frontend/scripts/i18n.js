@@ -7,15 +7,19 @@
 /**
  * Get translated text for the given key
  * @param {string} key - The i18n key to look up
+ * @param {string} defaultValue - Default value if key not found (optional)
  * @returns {string} The translated text or the key if not found
  */
-function t(key) {
+function t(key, defaultValue) {
     const entry = window.mcpData.i18nTexts[key];
     if (entry && typeof entry === 'object') {
-        return entry[window.mcpState.currentLang] || entry['en'] || key;
+        return entry[window.mcpState.currentLang] || entry['en'] || defaultValue || key;
     }
-    return key;
+    return defaultValue || key;
 }
+
+// Export t() to global scope for use in other modules
+window.t = t;
 
 // Section: Language Application
 /**

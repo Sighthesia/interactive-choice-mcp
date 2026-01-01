@@ -56,6 +56,51 @@ class TestGetText:
         assert get_text("status_message.cancel_with_annotation", "en").startswith("🚫")
         assert get_text("status_message.cancel_with_annotation", "zh").startswith("🚫")
 
+    def test_notification_session_texts(self):
+        """Ensure notification session texts are present and localized."""
+        assert "New Session" in get_text("notification.session.title", "en")
+        assert "{prompt_title}" in get_text("notification.session.title", "en")
+        assert "新交互" in get_text("notification.session.title", "zh")
+        assert "{prompt_title}" in get_text("notification.session.title", "zh")
+        assert get_text("notification.session.ready", "en") == "Ready"
+        assert get_text("notification.session.ready", "zh") == "就绪"
+
+    def test_notification_timeout_upcoming_texts(self):
+        """Ensure notification timeout upcoming texts are present and localized."""
+        assert "Timeout Approaching" in get_text("notification.timeout.upcomingTitle", "en")
+        assert "{prompt_title}" in get_text("notification.timeout.upcomingTitle", "en")
+        assert "即将超时" in get_text("notification.timeout.upcomingTitle", "zh")
+        assert "{prompt_title}" in get_text("notification.timeout.upcomingTitle", "zh")
+        assert "{seconds}" in get_text("notification.timeout.upcomingBody", "en")
+        assert "{seconds}" in get_text("notification.timeout.upcomingBody", "zh")
+
+    def test_notification_timeout_submitted_texts(self):
+        """Ensure notification timeout submitted texts are present and localized."""
+        assert "Auto Submitted" in get_text("notification.timeout.submittedTitle", "en")
+        assert "{prompt_title}" in get_text("notification.timeout.submittedTitle", "en")
+        assert "已自动提交" in get_text("notification.timeout.submittedTitle", "zh")
+        assert "{prompt_title}" in get_text("notification.timeout.submittedTitle", "zh")
+        assert "timeout" in get_text("notification.timeout.submittedBody", "en").lower()
+        assert "超时" in get_text("notification.timeout.submittedBody", "zh")
+
+    def test_notification_timeout_cancelled_texts(self):
+        """Ensure notification timeout cancelled texts are present and localized."""
+        assert "Timeout Cancelled" in get_text("notification.timeout.cancelledTitle", "en")
+        assert "{prompt_title}" in get_text("notification.timeout.cancelledTitle", "en")
+        assert "超时已取消" in get_text("notification.timeout.cancelledTitle", "zh")
+        assert "{prompt_title}" in get_text("notification.timeout.cancelledTitle", "zh")
+        assert "timeout" in get_text("notification.timeout.cancelledBody", "en").lower()
+        assert "超时" in get_text("notification.timeout.cancelledBody", "zh")
+
+    def test_notification_timeout_reached_texts(self):
+        """Ensure notification timeout reached texts are present and localized."""
+        assert "Timeout Reached" in get_text("notification.timeout.reachedTitle", "en")
+        assert "{prompt_title}" in get_text("notification.timeout.reachedTitle", "en")
+        assert "已超时" in get_text("notification.timeout.reachedTitle", "zh")
+        assert "{prompt_title}" in get_text("notification.timeout.reachedTitle", "zh")
+        assert "timed out" in get_text("notification.timeout.reachedBody", "en").lower()
+        assert "超时" in get_text("notification.timeout.reachedBody", "zh")
+
 
 class TestGetLanguageFromEnv:
     """Tests for get_language_from_env function."""

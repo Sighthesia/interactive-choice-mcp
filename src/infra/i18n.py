@@ -430,6 +430,48 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Connecting...",
         "zh": "连接中",
     },
+
+    # Section: Notifications
+    "notification.session.title": {
+        "en": "Interactive Choice - New Session - {prompt_title}",
+        "zh": "Interactive Choice - 新交互 - {prompt_title}",
+    },
+    "notification.session.ready": {
+        "en": "Ready",
+        "zh": "就绪",
+    },
+    "notification.timeout.upcomingTitle": {
+        "en": "Timeout Approaching - {prompt_title}",
+        "zh": "即将超时 - {prompt_title}",
+    },
+    "notification.timeout.upcomingBody": {
+        "en": "Timeout in {seconds} seconds",
+        "zh": "剩余 {seconds} 秒超时",
+    },
+    "notification.timeout.submittedTitle": {
+        "en": "Auto Submitted - {prompt_title}",
+        "zh": "已自动提交 - {prompt_title}",
+    },
+    "notification.timeout.submittedBody": {
+        "en": "Your selection was automatically submitted due to timeout",
+        "zh": "因超时已自动提交您的选择",
+    },
+    "notification.timeout.cancelledTitle": {
+        "en": "Timeout Cancelled - {prompt_title}",
+        "zh": "超时已取消 - {prompt_title}",
+    },
+    "notification.timeout.cancelledBody": {
+        "en": "The interaction was cancelled due to timeout",
+        "zh": "因超时交互已取消",
+    },
+    "notification.timeout.reachedTitle": {
+        "en": "Timeout Reached - {prompt_title}",
+        "zh": "已超时 - {prompt_title}",
+    },
+    "notification.timeout.reachedBody": {
+        "en": "The interaction has timed out",
+        "zh": "交互已超时",
+    },
 }
 
 
