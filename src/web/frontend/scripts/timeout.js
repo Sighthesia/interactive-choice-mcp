@@ -129,7 +129,11 @@ function renderTimeout() {
 
 function startTick() {
     const state = window.mcpState;
-    if (state.timeoutTimerId !== null) return;
+    // Stop existing timer if any, to ensure accurate synchronization with server time
+    if (state.timeoutTimerId !== null) {
+        clearInterval(state.timeoutTimerId);
+        state.timeoutTimerId = null;
+    }
     state.timeoutTimerId = setInterval(() => {
         if (state.submitting) {
             stopTimeout();
@@ -241,6 +245,18 @@ function initializeTimeout() {
         if (sessionStorage.getItem(timeoutNotifiedKey) === 'true') {
             window.mcpState.notifiedTimeout = true;
         }
+    }
+
+    // Start timeout with initial value from defaults
+    // This ensures timeout is displayed immediately, even before WebSocket connects
+    const state = window.mcpState;
+    const defaults = window.mcpData.defaults;
+    if (!state.hasFinalResult && defaults && typeof defaults.timeout_seconds === 'number' && defaults.timeout_seconds > 0) {
+        debugLog('Timeout', 'Starting initial timeout:', defaults.timeout_seconds, 'seconds');
+        state.timeoutTotal = defaults.timeout_seconds;
+        state.timeoutRemaining = defaults.timeout_seconds;
+        renderTimeout();
+        startTick();
     }
 
     document.addEventListener('visibilitychange', () => {
