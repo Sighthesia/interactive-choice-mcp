@@ -206,6 +206,14 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Timeout",
         "zh": "已超时",
     },
+    "status.error": {
+        "en": "Error",
+        "zh": "错误",
+    },
+    "status.offline": {
+        "en": "Offline",
+        "zh": "离线",
+    },
 
     # Section: Status Messages
     "status_message.manual": {
