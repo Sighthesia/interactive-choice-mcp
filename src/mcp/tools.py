@@ -29,21 +29,35 @@ async def provide_choice(
     options: list[dict],
     session_id: str | None = None,
 ):
-    """Initiates a human-in-the-loop interaction to resolve ambiguity.
+    """Initiates a mandatory human-in-the-loop interaction to resolve ambiguity, confirm actions, or validate task completion.
 
-    This tool allows the LLM to present options to a human user and
-    wait for their selection. Useful for confirming actions, making
-    decisions, or gathering user input.
+    MANDATORY USAGE RULES:
+    1.  **Continuous Validation**: You MUST call this tool repeatedly at the end of every major step or when the task seems complete. Do not stop until the user explicitly selects an option indicating "Task Completed" or "End Session".
+    2.  **Contextual Summary**: In the `prompt` argument, you MUST summarize what has been done so far and what specific decision is needed now.
+    3.  **No Assumptions**: Never guess the user's preference. If multiple technical paths exist, ask. If a destructive action (delete/overwrite) is required, ask.
+    4.  **Feedback Loop**: If the user selects an option with annotations (feedback), you must adjust your plan and call this tool again to confirm the new direction.
+
+    Workflow & State Handling:
+    This tool supports both Web and Terminal interfaces. You must handle the `action_status` in the return value strictly:
+
+    [CASE A: Web Mode / Direct Result]
+    If `action_status` is "selected" or "cancelled":
+        - Action: Proceed immediately based on `selected_indices` and `option_annotations`.
+
+    [CASE B: Terminal Mode]
+    If `action_status` is "pending_terminal_launch":
+        - Action: Use the `terminal` tool to execute the command provided in `terminal_command`.
+        - **CRITICAL**: You must read the terminal output and parse for these markers:
+            1. `[SELECTION_COMPLETE] selected=...`: Interaction finished in terminal. Use these values.
+            2. `[CANCELLED]`: User cancelled in terminal.
+            3. `[SWITCH_TO_WEB] session_id=...`: User requested to move to Web.
+               -> **IMMEDIATE ACTION**: Call `poll_selection(session_id=...)` and wait for the result.
 
     Args:
-        title: Short title for the choice dialog
-        prompt: Detailed description of what is being decided
-        selection_mode: Either 'single' or 'multi'
-        options: List of option dicts with 'id' and 'description'
-        session_id: Optional session ID for existing interaction
-
-    Returns:
-        Dictionary with action_status and selection details.
+        title: Short title for the decision context.
+        prompt: Detailed context summary and the specific question/request for the user.
+        selection_mode: "single" or "multi".
+        options: List of dicts, e.g., [{"id": "opt1", "description": "Deploy to Prod", "recommended": True}].
     """
     from ..core.orchestrator import safe_handle
 
@@ -65,18 +79,18 @@ async def provide_choice(
 
 
 async def poll_selection(session_id: str) -> dict[str, object]:
-    """Blocks and polls for the result of an ongoing interaction.
+    """Blocks and polls for the result of an ongoing interaction session that was switched from Terminal to Web.
 
-    Use this tool when provide_choice returns action_status='pending_terminal_launch'
-    and you have executed the terminal_command. This tool waits for the user
-    to complete the interaction and returns the final result.
+    WHEN TO USE:
+    - ONLY call this tool if you executed a command from `provide_choice` and the terminal output contained the marker: `[SWITCH_TO_WEB] session_id=...`.
+    - Do not call this tool directly without a preceding `provide_choice` interaction.
+
+    BEHAVIOR:
+    - This tool acts as a blocking wait. It will pause execution until the user completes the selection in the browser or the session times out.
+    - If the result implies further feedback (annotations), you must loop back and use `provide_choice` again after addressing the feedback.
 
     Args:
-        session_id: The session ID from the previous provide_choice call
-
-    Returns:
-        Dictionary with action_status ('selected', 'cancelled', etc.) and
-        selection details including summary, selected_indices, and annotations.
+        session_id: The ID extracted from the `[SWITCH_TO_WEB]` terminal marker.
     """
     from ..web import poll_session_result
 
