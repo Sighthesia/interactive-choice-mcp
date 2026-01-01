@@ -56,7 +56,7 @@ async def provide_choice(
         title: Short title for the decision context.
         prompt: Detailed context summary and the specific question/request for the user.
         selection_mode: "single" or "multi".
-        options: List of dicts, e.g., [{"id": "opt1", "description": "Deploy to Prod", "recommended": True}].
+        options: List of dicts, e.g., [{"id": "opt1", "description": "Deploy to Prod", "recommended": True}]. At least one option must be marked as recommended.
     """
     from ..core.orchestrator import safe_handle
 
