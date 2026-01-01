@@ -1,6 +1,6 @@
 # Interactive Choice MCP
 
-一个让 AI 在遇到选择问题时，能让 AI 提供选项并开启交互界面以进行选择，并反馈的 MCP Server。灵感来源于 [mcp-feedback-enhanced](https://github.com/astral-sh/mcp-feedback-enhanced)。
+一个让 AI 在遇到选择问题时，能让 AI 提供选项并开启交互界面以进行选择，并反馈的 MCP Server。灵感来源于 [mcp-feedback-enhanced](https://github.com/astral-sh/mcp-feedback-enhanced), 使用 [FastMCP](https://github.com/jlowin/fastmcp) 开发。
 
 ## ✨ 主要功能
 
@@ -14,47 +14,28 @@
 
 ### 前置要求
 - Python 3.12 或更高版本
-- [uv](https://github.com/astral-sh/uv) 包管理器（推荐）
+- [uv](https://github.com/astral-sh/uv) 包管理器
 
-### 快速开始
+### 🚀 快速配置
 
-```bash
-# 克隆仓库
-git clone https://github.com/Sighthesia/interactive-choice-mcp.git
-cd interactive-choice-mcp
-
-# 同步依赖
-uv sync
-
-# 验证安装
-uv run pytest
-```
-
-## 🚀 快速配置
-
-### 1. 基本配置
-
-在 MCP 配置文件中添加 `"interactive-choice"`：
+在 MCP 配置文件中添加：
 
 ```json
 {
   "mcpServers": {
     "interactive-choice": {
-      "command": "uv",
+      "command": "uvx",
       "args": [
-        "--directory",
-        "/path/to/interactive-choice-mcp",
-        "run",
-        "server.py"
+        "--from",
+        "git+https://github.com/Sighthesia/interactive-choice-mcp",
+        "interactive-choice-mcp"
       ]
     }
   }
 }
 ```
 
-**提示**：将 `/path/to/interactive-choice-mcp` 替换为实际路径，如 `~/interactive-choice-mcp`。
-
-### 2. 环境变量（可选）
+#### 环境变量（可选）
 
 可以通过向 MCP 配置中的 `env` 添加以下环境变量自定义配置：
 
@@ -70,6 +51,41 @@ uv run pytest
 欢迎任何的贡献！无论是报告问题、提出功能请求，还是提交 PR，都非常感谢！
 
 AI 驱动开发可参考 [AGENTS.md](AGENTS.md) 与 [openspec](openspec) 。
+
+### 📍 本地开发环境设置
+
+```bash
+# 克隆仓库
+git clone https://github.com/Sighthesia/interactive-choice-mcp.git
+cd interactive-choice-mcp
+
+# 同步依赖
+uv sync
+
+# 验证安装
+uv run pytest
+```
+
+- 可配置使用本地开发环境运行 MCP Server：
+
+
+  ```json
+  {
+    "mcpServers": {
+      "interactive-choice": {
+        "command": "uv",
+        "args": [
+          "--directory",
+          "/path/to/interactive-choice-mcp",
+          "run",
+          "server.py"
+        ]
+      }
+    }
+  }
+  ```
+
+  **提示**：将 `/path/to/interactive-choice-mcp` 替换为实际路径，如 `~/interactive-choice-mcp`。
 
 ### 🧪 测试
 
@@ -102,11 +118,12 @@ uv run mcp dev server.py
 ```
 
 ### 计划
-由于各类 AI IDE 与 Cli 倾向于将 AI 运行的终端命令静默化，终端模式的交互体验可能受限，还需要考虑可行性。
+- 功能仍然不够完善，可能需要重构
+- 由于各类 AI IDE 与 Cli 倾向于将 AI 运行的终端命令静默化，终端模式的交互体验可能受限，还需要考虑可行性
 
 ## 💖 感谢
 
-- [mcp-feedback-enhanced](https://github.com/Minidoracat/mcp-feedback-enhanced) - 项目参考和灵感来源
+- [Minidoracat](https://github.com/Minidoracat) - [mcp-feedback-enhanced](https://github.com/Minidoracat/mcp-feedback-enhanced) - 项目参考和灵感来源
 
 ## 📄 许可证
 
