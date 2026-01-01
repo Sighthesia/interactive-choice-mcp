@@ -7,6 +7,7 @@
     ],
     "scripts": [
         "scripts/bootstrap.js",
+        "scripts/notification-manager.js",
         "scripts/i18n.js",
         "scripts/config.js",
         "scripts/render.js",

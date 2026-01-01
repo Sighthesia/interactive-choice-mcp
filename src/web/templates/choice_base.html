@@ -247,23 +247,21 @@
 
                         <div class="config-item">
                             <label class="config-label">
-                                <input type="checkbox" id="notifyIfForeground" />
-                                <span data-i18n="settings.notify_if_foreground">Foreground, tab not focused</span>
+                                <span data-i18n="settings.notify_trigger_mode">Trigger Mode</span>
+                                <select id="notifyTriggerMode" style="margin-left: auto;">
+                                    <option value="always" data-i18n="settings.trigger_always">Always</option>
+                                    <option value="background" data-i18n="settings.trigger_background">Background only
+                                    </option>
+                                    <option value="tab_switch" data-i18n="settings.trigger_tab_switch">Tab switched
+                                    </option>
+                                    <option value="focus_lost" data-i18n="settings.trigger_focus_lost">Browser lost
+                                        focus
+                                    </option>
+                                </select>
                             </label>
-                        </div>
-
-                        <div class="config-item">
-                            <label class="config-label">
-                                <input type="checkbox" id="notifyIfFocused" />
-                                <span data-i18n="settings.notify_if_focused">Tab focused</span>
-                            </label>
-                        </div>
-
-                        <div class="config-item">
-                            <label class="config-label">
-                                <input type="checkbox" id="notifyIfBackground" />
-                                <span data-i18n="settings.notify_if_background">Browser in background</span>
-                            </label>
+                            <div class="config-desc" data-i18n="desc.notify_trigger_mode">
+                                When to show notifications based on window focus state.
+                            </div>
                         </div>
 
                         <div class="config-item">
@@ -272,7 +270,6 @@
                                 <span data-i18n="settings.notify_sound">Notification sound</span>
                             </label>
                         </div>
-
 
                     </div>
                 </div>

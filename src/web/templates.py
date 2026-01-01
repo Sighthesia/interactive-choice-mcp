@@ -115,9 +115,7 @@ def _render_html(
         "notify_upcoming": defaults.notify_upcoming,
         "upcoming_threshold": defaults.upcoming_threshold,
         "notify_timeout": defaults.notify_timeout,
-        "notify_if_foreground": defaults.notify_if_foreground,
-        "notify_if_focused": defaults.notify_if_focused,
-        "notify_if_background": defaults.notify_if_background,
+        "notify_trigger_mode": defaults.notify_trigger_mode.value,
         "notify_sound": defaults.notify_sound,
     }
 

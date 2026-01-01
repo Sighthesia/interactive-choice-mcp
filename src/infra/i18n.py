@@ -92,17 +92,29 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "en": "Trigger Conditions",
         "zh": "通知触发条件",
     },
-    "settings.notify_if_foreground": {
-        "en": "Foreground and tab not focused",
-        "zh": "浏览器处于前台而焦点不在标签页时",
+    "settings.notify_trigger_mode": {
+        "en": "Trigger Mode",
+        "zh": "触发模式",
     },
-    "settings.notify_if_focused": {
-        "en": "Tab focused",
-        "zh": "焦点在交互标签页时",
+    "settings.trigger_always": {
+        "en": "Always",
+        "zh": "总是通知",
     },
-    "settings.notify_if_background": {
-        "en": "Browser in background",
-        "zh": "浏览器不处于前台时",
+    "settings.trigger_background": {
+        "en": "Browser lost focus",
+        "zh": "浏览器失去焦点时",
+    },
+    "settings.trigger_tab_switch": {
+        "en": "Only interaction page lost focus",
+        "zh": "仅交互页面失去焦点时",
+    },
+    "settings.trigger_focus_lost": {
+        "en": "Interaction page and browser lost focus",
+        "zh": "交互页面和浏览器失去焦点时",
+    },
+    "desc.notify_trigger_mode": {
+        "en": "When to show notifications based on window focus state.",
+        "zh": "根据窗口焦点状态决定何时显示通知。",
     },
     "settings.notify_sound": {
         "en": "Notification sound",

@@ -2,62 +2,26 @@
  * timeout.js - Timeout countdown and notification handling
  */
 
-// Section: Notifications
+// Section: Notifications (Legacy - Replaced by NotificationManager)
+// These functions are kept for backward compatibility but delegate to NotificationManager
 function requestNotificationPermission() {
-    if (!('Notification' in window)) return;
-    if (Notification.permission === 'granted') return;
-    try {
-        Notification.requestPermission();
-    } catch (e) {
-        console.warn('[Notification] Permission request failed:', e);
+    const manager = getNotificationManager();
+    if (manager) {
+        manager.requestPermission();
     }
 }
 
-// Audio element for notification sounds
-let notificationAudio = null;
-
 function playNotificationSound() {
-    const defaults = window.mcpData.defaults || {};
-
-    // Check if sound is enabled
-    if (defaults.notify_sound === false) return;
-
-    try {
-        // Use custom sound path if provided, otherwise use default
-        const soundPath = defaults.notify_sound_path || '/static/sounds/notification.mp3';
-
-        // Reuse or create audio element
-        if (!notificationAudio) {
-            notificationAudio = new Audio();
-        }
-
-        // Only update source if different
-        if (notificationAudio.src !== soundPath && !notificationAudio.src.endsWith(soundPath)) {
-            notificationAudio.src = soundPath;
-        }
-
-        // Reset and play
-        notificationAudio.currentTime = 0;
-        notificationAudio.volume = 0.5;
-        notificationAudio.play().catch(e => {
-            // Autoplay may be blocked by browser policy
-            console.debug('[Notification] Sound playback blocked:', e.message);
-        });
-    } catch (e) {
-        console.warn('[Notification] Failed to play sound:', e);
+    const manager = getNotificationManager();
+    if (manager) {
+        manager.playSound();
     }
 }
 
 function notifyEvent(title, body) {
-    if (!('Notification' in window)) return;
-    if (Notification.permission !== 'granted') return;
-
-    try {
-        new Notification(title, { body });
-        // Play sound with notification
-        playNotificationSound();
-    } catch (e) {
-        console.warn('[Notification] Failed to show notification:', e);
+    const manager = getNotificationManager();
+    if (manager) {
+        manager.showNotification(title, body);
     }
 }
 
@@ -109,33 +73,10 @@ function renderTimeout() {
     const alreadyNotified = state.notifiedThreshold || sessionStorage.getItem(notifiedKey) === 'true';
 
     if (shouldNotifyUpcoming && state.timeoutRemaining <= upcomingThreshold && state.timeoutRemaining > 0 && !alreadyNotified) {
-        // Get notification visibility settings from config
-        const notifyIfForeground = window.mcpData.defaults?.notify_if_foreground === true;
-        const notifyIfFocused = window.mcpData.defaults?.notify_if_focused === true;
-        const notifyIfBackground = window.mcpData.defaults?.notify_if_background === true;
-
-        // Determine page visibility and focus state
-        const isBackground = document.hidden;
-        const isTabFocused = document.hasFocus();
-
-        let shouldNotify = false;
-
-        // Background (tab hidden): notify_if_background
-        if (isBackground && notifyIfBackground) {
-            shouldNotify = true;
-        }
-        // Foreground + tab focused: notify_if_focused
-        else if (!isBackground && isTabFocused && notifyIfFocused) {
-            shouldNotify = true;
-        }
-        // Foreground + tab NOT focused (user is on another tab): notify_if_foreground
-        else if (!isBackground && !isTabFocused && notifyIfForeground) {
-            shouldNotify = true;
-        }
-
-        if (shouldNotify) {
-            requestNotificationPermission();
-            notifyEvent('Timeout approaching', '~' + state.timeoutRemaining + 's remaining');
+        // Use NotificationManager for focus-aware notifications
+        const manager = getNotificationManager();
+        if (manager && manager.canNotify()) {
+            manager.notifyUpcoming(state.timeoutRemaining, state.timeoutTotal);
             state.notifiedThreshold = true;
             sessionStorage.setItem(notifiedKey, 'true');
         }
@@ -230,33 +171,10 @@ function handleTimeoutReached() {
     const sessionId = window.mcpData.choiceId;
     const timeoutNotifiedKey = 'mcp_notified_timeout_' + sessionId;
     if (!state.notifiedTimeout && sessionStorage.getItem(timeoutNotifiedKey) !== 'true') {
-        // Get notification visibility settings from config
-        const notifyIfForeground = window.mcpData.defaults?.notify_if_foreground === true;
-        const notifyIfFocused = window.mcpData.defaults?.notify_if_focused === true;
-        const notifyIfBackground = window.mcpData.defaults?.notify_if_background === true;
-
-        // Determine page visibility and focus state
-        const isBackground = document.hidden;
-        const isTabFocused = document.hasFocus();
-
-        let shouldNotify = false;
-
-        // Background (tab hidden): notify_if_background
-        if (isBackground && notifyIfBackground) {
-            shouldNotify = true;
-        }
-        // Foreground + tab focused: notify_if_focused
-        else if (!isBackground && isTabFocused && notifyIfFocused) {
-            shouldNotify = true;
-        }
-        // Foreground + tab NOT focused (user is on another tab): notify_if_foreground
-        else if (!isBackground && !isTabFocused && notifyIfForeground) {
-            shouldNotify = true;
-        }
-
-        if (shouldNotify) {
-            requestNotificationPermission();
-            notifyEvent('Interaction timed out', 'The choice session has expired.');
+        // Use NotificationManager for focus-aware notifications
+        const manager = getNotificationManager();
+        if (manager && manager.canNotify()) {
+            manager.notifyTimeout(config.timeout_action);
             state.notifiedTimeout = true;
             sessionStorage.setItem(timeoutNotifiedKey, 'true');
         }
@@ -266,7 +184,12 @@ function handleTimeoutReached() {
 // Section: Initialize Timeout
 function initializeTimeout() {
     debugLog('Timeout', 'Initializing...');
-    requestNotificationPermission();
+
+    // Initialize NotificationManager and request permission
+    const manager = getNotificationManager();
+    if (manager) {
+        manager.requestPermission();
+    }
 
     // Check sessionStorage for previous notification state
     const sessionId = window.mcpData.choiceId;

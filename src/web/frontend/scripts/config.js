@@ -61,9 +61,7 @@ async function saveGlobalSettings() {
         notify_upcoming: document.getElementById('notifyUpcoming')?.checked ?? true,
         upcoming_threshold: parseInt(document.getElementById('upcomingThreshold')?.value || '60', 10),
         notify_timeout: document.getElementById('notifyTimeout')?.checked ?? true,
-        notify_if_foreground: document.getElementById('notifyIfForeground')?.checked ?? true,
-        notify_if_focused: document.getElementById('notifyIfFocused')?.checked ?? true,
-        notify_if_background: document.getElementById('notifyIfBackground')?.checked ?? true,
+        notify_trigger_mode: document.getElementById('notifyTriggerMode')?.value || 'focus_lost',
         notify_sound: document.getElementById('notifySound')?.checked ?? true,
     };
     // Only include interface if it was explicitly changed by the user
@@ -164,9 +162,6 @@ function initializeConfig() {
         ['notifyNew', defaults.notify_new ?? true],
         ['notifyUpcoming', defaults.notify_upcoming ?? true],
         ['notifyTimeout', defaults.notify_timeout ?? true],
-        ['notifyIfForeground', defaults.notify_if_foreground ?? true],
-        ['notifyIfFocused', defaults.notify_if_focused ?? true],
-        ['notifyIfBackground', defaults.notify_if_background ?? true],
         ['notifySound', defaults.notify_sound ?? true]
     ];
 
@@ -174,6 +169,13 @@ function initializeConfig() {
         const el = document.getElementById(id);
         if (el) el.checked = value;
     });
+
+    // Initialize trigger mode (migrated from old three-state settings)
+    const triggerModeSelect = document.getElementById('notifyTriggerMode');
+    if (triggerModeSelect) {
+        // Use backend trigger mode if available, otherwise default to 'tab_switch'
+        triggerModeSelect.value = defaults.notify_trigger_mode || 'tab_switch';
+    }
 
     // Initialize single submit and use-default-option checkboxes from defaults
     const singleSubmitEl = document.getElementById('singleSubmitMode');
@@ -210,8 +212,8 @@ function initializeConfig() {
     const settingsControls = [
         'singleSubmitMode', 'useDefaultOption',
         'timeoutActionSelect', 'notifyNew', 'notifyUpcoming',
-        'upcomingThreshold', 'notifyTimeout', 'notifyIfForeground',
-        'notifyIfFocused', 'notifyIfBackground', 'notifySound'
+        'upcomingThreshold', 'notifyTimeout', 'notifyTriggerMode',
+        'notifySound'
     ];
 
     settingsControls.forEach(id => {

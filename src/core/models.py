@@ -28,6 +28,7 @@ __all__ = [
     "ValidationError",
     # Enums
     "InteractionStatus",
+    "NotificationTriggerMode",
     # Data classes
     "ProvideChoiceOption",
     "ProvideChoiceRequest",
@@ -76,6 +77,20 @@ class InteractionStatus(str, Enum):
         if action_status == "selected":
             return cls.SUBMITTED
         return cls.PENDING
+
+
+# Section: Notification Trigger Mode
+class NotificationTriggerMode(str, Enum):
+    """Notification trigger modes for different focus states."""
+    ALWAYS = "always"  # Always show notifications regardless of focus state
+    BACKGROUND = "background"  # Show when browser window loses focus (switched to another app)
+    TAB_SWITCH = "tab_switch"  # Show only when interaction page loses focus (tab is switched away)
+    FOCUS_LOST = "focus_lost"  # Show when interaction page loses focus OR browser window loses focus
+
+    @classmethod
+    def default(cls) -> "NotificationTriggerMode":
+        """Return the default trigger mode."""
+        return cls.TAB_SWITCH
 
 
 # Section: Data Models
@@ -135,9 +150,9 @@ class ProvideChoiceConfig:
     notify_upcoming: bool = True
     upcoming_threshold: int = 60
     notify_timeout: bool = True
-    notify_if_foreground: bool = True
-    notify_if_focused: bool = True
-    notify_if_background: bool = True
+    # Notification trigger mode: always/background/tab_switch/focus_lost
+    # Replaces the old three-state notify_if_foreground/focused/background settings
+    notify_trigger_mode: NotificationTriggerMode = NotificationTriggerMode.default()
     notify_sound: bool = True
     notify_sound_path: Optional[str] = None  # Custom sound file path
 

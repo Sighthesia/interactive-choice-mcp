@@ -17,6 +17,7 @@ from ..core.models import (
     VALID_TRANSPORTS,
     LANG_EN,
     VALID_LANGUAGES,
+    NotificationTriggerMode,
 )
 
 __all__ = ["ConfigStore"]
@@ -105,9 +106,32 @@ class ConfigStore:
                 except Exception:
                     upcoming_threshold = 60
             notify_timeout = bool(raw.get("notify_timeout", True))
-            notify_if_foreground = bool(raw.get("notify_if_foreground", True))
-            notify_if_focused = bool(raw.get("notify_if_focused", True))
-            notify_if_background = bool(raw.get("notify_if_background", True))
+            
+            # Migrate from old three-state settings to new trigger mode
+            # If old settings exist, derive trigger mode from them
+            notify_trigger_mode = NotificationTriggerMode.default()
+            raw_trigger_mode = raw.get("notify_trigger_mode")
+            if raw_trigger_mode in NotificationTriggerMode.__members__.values():
+                notify_trigger_mode = NotificationTriggerMode(raw_trigger_mode)
+            else:
+                # Migration: check for old three-state settings
+                old_foreground = raw.get("notify_if_foreground", True)
+                old_focused = raw.get("notify_if_focused", True)
+                old_background = raw.get("notify_if_background", True)
+                
+                # Derive trigger mode from old settings
+                # Only background selected -> BACKGROUND mode (browser lost focus)
+                # Only foreground and focused selected -> TAB_SWITCH mode (only page lost focus)
+                # All selected -> ALWAYS mode
+                # Otherwise -> TAB_SWITCH mode (most common use case)
+                if old_background and not old_foreground and not old_focused:
+                    notify_trigger_mode = NotificationTriggerMode.BACKGROUND
+                elif old_foreground and old_focused and old_background:
+                    notify_trigger_mode = NotificationTriggerMode.ALWAYS
+                else:
+                    # Default to TAB_SWITCH for other combinations
+                    notify_trigger_mode = NotificationTriggerMode.TAB_SWITCH
+            
             notify_sound = bool(raw.get("notify_sound", True))
             notify_sound_path = raw.get("notify_sound_path")
             if notify_sound_path is not None and not isinstance(notify_sound_path, str):
@@ -129,9 +153,7 @@ class ConfigStore:
                 notify_upcoming=notify_upcoming,
                 upcoming_threshold=upcoming_threshold,
                 notify_timeout=notify_timeout,
-                notify_if_foreground=notify_if_foreground,
-                notify_if_focused=notify_if_focused,
-                notify_if_background=notify_if_background,
+                notify_trigger_mode=notify_trigger_mode,
                 notify_sound=notify_sound,
                 notify_sound_path=notify_sound_path,
             )
@@ -164,9 +186,7 @@ class ConfigStore:
             "notify_upcoming": config.notify_upcoming,
             "upcoming_threshold": config.upcoming_threshold,
             "notify_timeout": config.notify_timeout,
-            "notify_if_foreground": config.notify_if_foreground,
-            "notify_if_focused": config.notify_if_focused,
-            "notify_if_background": config.notify_if_background,
+            "notify_trigger_mode": config.notify_trigger_mode.value,
             "notify_sound": config.notify_sound,
             "notify_sound_path": config.notify_sound_path,
         }

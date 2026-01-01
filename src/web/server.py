@@ -216,10 +216,9 @@ class WebChoiceServer:
                         notify_upcoming=latest_config.notify_upcoming,
                         upcoming_threshold=latest_config.upcoming_threshold,
                         notify_timeout=latest_config.notify_timeout,
-                        notify_if_foreground=latest_config.notify_if_foreground,
-                        notify_if_focused=latest_config.notify_if_focused,
-                        notify_if_background=latest_config.notify_if_background,
+                        notify_trigger_mode=latest_config.notify_trigger_mode,
                         notify_sound=latest_config.notify_sound,
+                        notify_sound_path=latest_config.notify_sound_path,
                     )
                 session_state = session.to_template_state()
                 choice_id = session.choice_id
@@ -479,10 +478,9 @@ class WebChoiceServer:
                         "notify_upcoming": parsed_config.notify_upcoming,
                         "upcoming_threshold": parsed_config.upcoming_threshold,
                         "notify_timeout": parsed_config.notify_timeout,
-                        "notify_if_foreground": parsed_config.notify_if_foreground,
-                        "notify_if_focused": parsed_config.notify_if_focused,
-                        "notify_if_background": parsed_config.notify_if_background,
+                        "notify_trigger_mode": parsed_config.notify_trigger_mode.value,
                         "notify_sound": parsed_config.notify_sound,
+                        "notify_sound_path": parsed_config.notify_sound_path,
                     },
                 })
             except Exception as exc:
@@ -821,10 +819,9 @@ class WebChoiceServer:
                         notify_upcoming=latest_config.notify_upcoming,
                         upcoming_threshold=latest_config.upcoming_threshold,
                         notify_timeout=latest_config.notify_timeout,
-                        notify_if_foreground=latest_config.notify_if_foreground,
-                        notify_if_focused=latest_config.notify_if_focused,
-                        notify_if_background=latest_config.notify_if_background,
+                        notify_trigger_mode=latest_config.notify_trigger_mode,
                         notify_sound=latest_config.notify_sound,
+                        notify_sound_path=latest_config.notify_sound_path,
                     )
                 # Render markdown for the prompt
                 prompt_html = markdown.markdown(session.req.prompt) if session.req.prompt else ""
@@ -1292,17 +1289,22 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
     if not isinstance(notify_timeout, bool):
         notify_timeout = defaults.notify_timeout
 
-    notify_if_foreground = payload.get("notify_if_foreground")
-    if not isinstance(notify_if_foreground, bool):
-        notify_if_foreground = defaults.notify_if_foreground
-
-    notify_if_focused = payload.get("notify_if_focused")
-    if not isinstance(notify_if_focused, bool):
-        notify_if_focused = defaults.notify_if_focused
-
-    notify_if_background = payload.get("notify_if_background")
-    if not isinstance(notify_if_background, bool):
-        notify_if_background = defaults.notify_if_background
+    # Notification trigger mode (replaces old three-state settings)
+    from ..core.models import NotificationTriggerMode
+    
+    notify_trigger_mode = payload.get("notify_trigger_mode")
+    valid_trigger_modes = ["always", "background", "tab_switch", "focus_lost"]
+    
+    # Determine the trigger mode value
+    if isinstance(notify_trigger_mode, str) and notify_trigger_mode in valid_trigger_modes:
+        # Use the value from payload
+        notify_trigger_mode = NotificationTriggerMode(notify_trigger_mode)
+    elif isinstance(defaults.notify_trigger_mode, NotificationTriggerMode):
+        # Use the value from defaults
+        notify_trigger_mode = defaults.notify_trigger_mode
+    else:
+        # Fallback to default
+        notify_trigger_mode = NotificationTriggerMode.default()
 
     notify_sound = payload.get("notify_sound")
     if not isinstance(notify_sound, bool):
@@ -1327,9 +1329,7 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
         notify_upcoming=notify_upcoming,
         upcoming_threshold=upcoming_threshold,
         notify_timeout=notify_timeout,
-        notify_if_foreground=notify_if_foreground,
-        notify_if_focused=notify_if_focused,
-        notify_if_background=notify_if_background,
+        notify_trigger_mode=notify_trigger_mode,
         notify_sound=notify_sound,
         notify_sound_path=notify_sound_path,
     )

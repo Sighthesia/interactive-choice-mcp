@@ -105,9 +105,7 @@ def test_save_and_load_preserves_notification_fields(tmp_path: Path):
         notify_upcoming=False,
         upcoming_threshold=42,
         notify_timeout=False,
-        notify_if_foreground=False,
-        notify_if_focused=False,
-        notify_if_background=False,
+        notify_trigger_mode=models.NotificationTriggerMode.ALWAYS,
         notify_sound=False,
     )
 
@@ -119,9 +117,7 @@ def test_save_and_load_preserves_notification_fields(tmp_path: Path):
     assert loaded.notify_upcoming is False
     assert loaded.upcoming_threshold == 42
     assert loaded.notify_timeout is False
-    assert loaded.notify_if_foreground is False
-    assert loaded.notify_if_focused is False
-    assert loaded.notify_if_background is False
+    assert loaded.notify_trigger_mode == models.NotificationTriggerMode.ALWAYS
     assert loaded.notify_sound is False
 
 
