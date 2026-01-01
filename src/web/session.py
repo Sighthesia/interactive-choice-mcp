@@ -41,6 +41,9 @@ def _remaining_seconds(deadline: float, *, now: Optional[float] = None) -> float
 
 def _status_label(action_status: str) -> str:
     if action_status.startswith("timeout"):
+        # Distinguish between auto-submitted (success) and cancelled (failure)
+        if action_status == "timeout_auto_submitted":
+            return "submitted"
         return "timeout"
     if action_status == "cancelled":
         return "cancelled"
