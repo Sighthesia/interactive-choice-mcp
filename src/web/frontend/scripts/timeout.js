@@ -206,9 +206,11 @@ function handleTimeoutReached() {
             submitBatch('timeout_auto_submitted');
         } else {
             const defaults = window.mcpData.defaults;
-            const hasDefault = defaults.timeout_default_enabled && defaults.timeout_default_index !== null;
-            if (hasDefault) {
-                submitPayload({ action_status: 'timeout_auto_submitted' }, 'timeout_auto_submitted');
+            const useRecommended = isUseDefaultOption();
+            if (useRecommended) {
+                // Apply recommended options selection and submit
+                applyDefaultSelections();
+                submitBatch('timeout_auto_submitted');
             } else {
                 submitPayload({ action_status: 'timeout_cancelled' }, 'timeout_cancelled');
             }

@@ -61,8 +61,6 @@ def _build_default_config(interface: str) -> ProvideChoiceConfig:
         interface=interface,
         timeout_seconds=600,
         single_submit_mode=True,
-        timeout_default_index=None,
-        timeout_default_enabled=False,
         use_default_option=False,
         timeout_action="submit",
         language="zh",

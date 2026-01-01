@@ -252,28 +252,14 @@ async def prompt_configuration(
             if timeout_action is None:
                 return None
 
-            timeout_default_enabled = questionary.confirm(
-                get_text("settings.adopt_recommended_options", lang), default=defaults.timeout_default_enabled
+            use_default_option = questionary.confirm(
+                get_text("settings.adopt_recommended_options", lang), default=defaults.use_default_option
             ).unsafe_ask()
-            timeout_default_idx = defaults.timeout_default_index
-            if timeout_default_enabled:
-                choices = _build_config_choices(req.options, list(range(len(req.options))), lang=lang)
-                default_val = None
-                if timeout_default_idx is not None and 0 <= timeout_default_idx < len(choices):
-                    default_val = choices[timeout_default_idx]
-
-                timeout_default_idx = questionary.select(
-                    get_text("settings.adopt_recommended_options", lang),
-                    choices=choices,
-                    default=default_val
-                ).unsafe_ask()
 
             return ProvideChoiceConfig(
                 interface=chosen_transport,
                 timeout_seconds=timeout_val,
                 single_submit_mode=bool(single_submit_choice),
-                timeout_default_enabled=timeout_default_enabled,
-                timeout_default_index=timeout_default_idx if timeout_default_idx is not None else 0,
                 use_default_option=bool(use_default_option),
                 timeout_action=timeout_action,
                 language=lang,

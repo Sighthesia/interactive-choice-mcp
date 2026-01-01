@@ -207,8 +207,6 @@ class WebChoiceServer:
                         interface=latest_config.interface,
                         timeout_seconds=latest_config.timeout_seconds,
                         single_submit_mode=latest_config.single_submit_mode,
-                        timeout_default_enabled=latest_config.timeout_default_enabled,
-                        timeout_default_index=display_defaults.timeout_default_index,  # Keep session value
                         use_default_option=latest_config.use_default_option,
                         timeout_action=latest_config.timeout_action,
                         language=latest_config.language,
@@ -470,7 +468,6 @@ class WebChoiceServer:
                         "interface": parsed_config.interface,
                         "timeout_seconds": parsed_config.timeout_seconds,
                         "single_submit_mode": parsed_config.single_submit_mode,
-                        "timeout_default_enabled": parsed_config.timeout_default_enabled,
                         "use_default_option": parsed_config.use_default_option,
                         "timeout_action": parsed_config.timeout_action,
                         "language": parsed_config.language,
@@ -615,8 +612,6 @@ class WebChoiceServer:
                             "interface": parsed_config.interface,
                             "timeout_seconds": parsed_config.timeout_seconds,
                             "single_submit_mode": parsed_config.single_submit_mode,
-                            "timeout_default_enabled": parsed_config.timeout_default_enabled,
-                            "timeout_default_index": parsed_config.timeout_default_index,
                             "use_default_option": parsed_config.use_default_option,
                             "timeout_action": parsed_config.timeout_action,
                         },
@@ -707,8 +702,6 @@ class WebChoiceServer:
                         "interface": parsed_config.interface,
                         "timeout_seconds": parsed_config.timeout_seconds,
                         "single_submit_mode": parsed_config.single_submit_mode,
-                        "timeout_default_enabled": parsed_config.timeout_default_enabled,
-                        "timeout_default_index": parsed_config.timeout_default_index,
                         "use_default_option": parsed_config.use_default_option,
                         "timeout_action": parsed_config.timeout_action,
                     },
@@ -810,8 +803,6 @@ class WebChoiceServer:
                         interface=latest_config.interface,
                         timeout_seconds=latest_config.timeout_seconds,
                         single_submit_mode=latest_config.single_submit_mode,
-                        timeout_default_enabled=latest_config.timeout_default_enabled,
-                        timeout_default_index=display_defaults.timeout_default_index,
                         use_default_option=latest_config.use_default_option,
                         timeout_action=latest_config.timeout_action,
                         language=latest_config.language,
@@ -844,8 +835,6 @@ class WebChoiceServer:
                         "interface": display_defaults.interface,
                         "timeout_seconds": display_defaults.timeout_seconds,
                         "single_submit_mode": display_defaults.single_submit_mode,
-                        "timeout_default_enabled": display_defaults.timeout_default_enabled,
-                        "timeout_default_index": display_defaults.timeout_default_index,
                         "use_default_option": display_defaults.use_default_option,
                         "timeout_action": display_defaults.timeout_action,
                         "language": display_defaults.language,
@@ -867,8 +856,6 @@ class WebChoiceServer:
                     "interface": latest_config.interface,
                     "timeout_seconds": latest_config.timeout_seconds,
                     "single_submit_mode": latest_config.single_submit_mode,
-                    "timeout_default_enabled": latest_config.timeout_default_enabled,
-                    "timeout_default_index": latest_config.timeout_default_index,
                     "use_default_option": latest_config.use_default_option,
                     "timeout_action": latest_config.timeout_action,
                     "language": latest_config.language,
@@ -1238,20 +1225,6 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
     if isinstance(single_submit_raw, bool):
         single_submit_val = single_submit_raw
 
-    timeout_default_enabled = payload.get("timeout_default_enabled")
-    if not isinstance(timeout_default_enabled, bool):
-        timeout_default_enabled = defaults.timeout_default_enabled
-
-    timeout_default_idx_raw = payload.get("timeout_default_index")
-    timeout_default_idx = defaults.timeout_default_index
-    if isinstance(timeout_default_idx_raw, (int, float, str)):
-        try:
-            timeout_default_idx = int(timeout_default_idx_raw)
-        except Exception:
-            timeout_default_idx = defaults.timeout_default_index
-    if timeout_default_idx is not None and (timeout_default_idx < 0 or timeout_default_idx >= len(req.options)):
-        timeout_default_idx = defaults.timeout_default_index
-
     use_default_option_raw = payload.get("use_default_option")
     use_default_option = defaults.use_default_option
     if isinstance(use_default_option_raw, bool):
@@ -1320,8 +1293,6 @@ def _parse_config_payload(defaults: ProvideChoiceConfig, payload: Dict[str, obje
         interface=interface,
         timeout_seconds=timeout_val,
         single_submit_mode=single_submit_val,
-        timeout_default_enabled=timeout_default_enabled,
-        timeout_default_index=timeout_default_idx,
         use_default_option=use_default_option,
         timeout_action=timeout_action,
         language=language,

@@ -106,8 +106,6 @@ def _render_html(
         "interface": defaults.interface,
         "timeout_seconds": defaults.timeout_seconds,
         "single_submit_mode": defaults.single_submit_mode,
-        "timeout_default_enabled": defaults.timeout_default_enabled,
-        "timeout_default_index": defaults.timeout_default_index,
         "use_default_option": defaults.use_default_option,
         "timeout_action": defaults.timeout_action,
         "language": lang,

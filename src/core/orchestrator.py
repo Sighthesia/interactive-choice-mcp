@@ -56,8 +56,6 @@ class ChoiceOrchestrator:
         timeout_seconds: Optional[int] = None,
         # Extended schema fields
         single_submit_mode: Optional[bool] = None,
-        timeout_default_index: Optional[int] = None,
-        timeout_default_enabled: Optional[bool] = None,
         use_default_option: Optional[bool] = None,
         timeout_action: Optional[str] = None,
         # Terminal hand-off support
@@ -101,8 +99,6 @@ class ChoiceOrchestrator:
             options=options,
             timeout_seconds=timeout_seconds,
             single_submit_mode=single_submit_mode,
-            timeout_default_index=timeout_default_index,
-            timeout_default_enabled=timeout_default_enabled,
             use_default_option=use_default_option,
             timeout_action=timeout_action,
         )
@@ -136,8 +132,6 @@ class ChoiceOrchestrator:
 
         # Extended settings: inherit from saved config or request defaults
         single_submit_pref = saved.single_submit_mode if saved else req.single_submit_mode
-        timeout_default_index_pref = saved.timeout_default_index if saved else req.timeout_default_index
-        timeout_default_enabled_pref = saved.timeout_default_enabled if saved else req.timeout_default_enabled
         use_default_option_pref = saved.use_default_option if saved else req.use_default_option
         timeout_action_pref = saved.timeout_action if saved else req.timeout_action
 
@@ -154,8 +148,6 @@ class ChoiceOrchestrator:
             interface=transport_pref,
             timeout_seconds=timeout_pref,
             single_submit_mode=single_submit_pref,
-            timeout_default_index=timeout_default_index_pref,
-            timeout_default_enabled=timeout_default_enabled_pref,
             use_default_option=use_default_option_pref,
             timeout_action=timeout_action_pref,
             language=language_pref,

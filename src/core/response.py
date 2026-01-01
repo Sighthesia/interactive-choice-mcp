@@ -128,13 +128,17 @@ def timeout_response(
     elif req.timeout_action == "cancel":
         action_status = "timeout_cancelled"
     else:
-        if req.timeout_default_enabled and req.timeout_default_index is not None:
-            idx = req.timeout_default_index
-            if idx < 0 or idx >= len(req.options):
-                raise ValidationError("timeout_default_index out of range")
-            ids = [req.options[idx].id]
-            action_status = "timeout_auto_submitted"
+        # Use recommended options if use_default_option is enabled
+        if req.use_default_option:
+            # Collect all recommended option IDs
+            ids = [opt.id for opt in req.options if opt.recommended]
+            if ids:
+                action_status = "timeout_auto_submitted"
+            else:
+                # No recommended options available, cancel
+                action_status = "timeout_cancelled"
         else:
+            # No user selection and use_default_option disabled, cancel
             action_status = "timeout_cancelled"
 
     return normalize_response(

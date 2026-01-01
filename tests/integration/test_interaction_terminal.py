@@ -45,8 +45,6 @@ class TestTerminalHandOff:
             interface=sample_terminal_config.interface,
             timeout_seconds=60,  # Use fixed 60s timeout for this test
             single_submit_mode=sample_terminal_config.single_submit_mode,
-            timeout_default_index=sample_terminal_config.timeout_default_index,
-            timeout_default_enabled=sample_terminal_config.timeout_default_enabled,
             use_default_option=sample_terminal_config.use_default_option,
             timeout_action=sample_terminal_config.timeout_action,
             language=sample_terminal_config.language,

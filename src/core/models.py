@@ -120,8 +120,6 @@ class ProvideChoiceRequest:
     timeout_seconds: int
     # Extended schema fields
     single_submit_mode: bool = True
-    timeout_default_index: Optional[int] = None
-    timeout_default_enabled: bool = False
     use_default_option: bool = False
     timeout_action: str = "submit"
 
@@ -134,8 +132,6 @@ class ProvideChoiceConfig:
     timeout_seconds: int
     # Extended settings
     single_submit_mode: bool = True
-    timeout_default_index: Optional[int] = None
-    timeout_default_enabled: bool = False
     use_default_option: bool = False
     timeout_action: str = "submit"
     # Persistence settings

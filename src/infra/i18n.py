@@ -349,16 +349,16 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "选中选项后自动提交",
     },
     "desc.adpot_recommended_options": {
-        "en": "Auto-select AI recommended options",
-        "zh": "自动选择 AI 推荐的选项",
+        "en": "Auto-select AI recommended options on load and on timeout",
+        "zh": "页面加载和超时时自动选中AI推荐的选项",
     },
     "desc.interface": {
         "en": "Interfaces for interactions",
         "zh": "交互界面选择",
     },
     "desc.timeout": {
-        "en": "Time limit for making a choice before auto-action",
-        "zh": "选择的时间限制，超时后自动执行",
+        "en": "Time limit for making a choice. If no selection is made and 'Adopt Recommended Options' is enabled, recommended options will be submitted.",
+        "zh": "选择的时间限制。若无选择且启用'采用推荐选项'，将提交推荐选项。",
     },
 
     # Section: Keyboard Hints

@@ -15,8 +15,6 @@ def test_save_and_load_roundtrip(tmp_path: Path):
         interface=models.TRANSPORT_WEB,
         timeout_seconds=45,
         single_submit_mode=False,
-        timeout_default_index=1,
-        timeout_default_enabled=True,
         use_default_option=True,
         timeout_action="cancel",
         language="zh",
@@ -29,8 +27,6 @@ def test_save_and_load_roundtrip(tmp_path: Path):
     assert loaded.interface == models.TRANSPORT_WEB
     assert loaded.timeout_seconds == 45
     assert loaded.single_submit_mode is False
-    assert loaded.timeout_default_index == 1
-    assert loaded.timeout_default_enabled is True
     assert loaded.use_default_option is True
     assert loaded.timeout_action == "cancel"
     assert loaded.language == "zh"

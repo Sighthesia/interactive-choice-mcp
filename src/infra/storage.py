@@ -62,14 +62,6 @@ class ConfigStore:
             timeout_seconds = timeout_seconds if timeout_seconds > 0 else DEFAULT_TIMEOUT_SECONDS
 
             single_submit_mode = bool(raw.get("single_submit_mode", True))
-            timeout_default_index = raw.get("timeout_default_index")
-            if timeout_default_index is not None:
-                try:
-                    timeout_default_index = int(timeout_default_index)
-                except Exception:
-                    timeout_default_index = None
-
-            timeout_default_enabled = bool(raw.get("timeout_default_enabled", False))
             use_default_option = bool(raw.get("use_default_option", False))
             timeout_action = raw.get("timeout_action", "submit") or "submit"
 
@@ -141,8 +133,6 @@ class ConfigStore:
                 interface=interface,
                 timeout_seconds=timeout_seconds,
                 single_submit_mode=single_submit_mode,
-                timeout_default_index=timeout_default_index,
-                timeout_default_enabled=timeout_default_enabled,
                 use_default_option=use_default_option,
                 timeout_action=timeout_action,
                 persistence_enabled=persistence_enabled,
@@ -174,8 +164,6 @@ class ConfigStore:
             "interface": config.interface,
             "timeout_seconds": config.timeout_seconds,
             "single_submit_mode": config.single_submit_mode,
-            "timeout_default_index": config.timeout_default_index,
-            "timeout_default_enabled": config.timeout_default_enabled,
             "use_default_option": config.use_default_option,
             "timeout_action": config.timeout_action,
             "persistence_enabled": config.persistence_enabled,

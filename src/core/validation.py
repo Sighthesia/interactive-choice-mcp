@@ -85,8 +85,6 @@ def parse_request(
     timeout_seconds: Optional[int] = None,
     # Extended schema fields
     single_submit_mode: Optional[bool] = None,
-    timeout_default_index: Optional[int] = None,
-    timeout_default_enabled: Optional[bool] = None,
     use_default_option: Optional[bool] = None,
     timeout_action: Optional[str] = None,
 ) -> "ProvideChoiceRequest":
@@ -117,10 +115,6 @@ def parse_request(
     if normalized_timeout <= 0:
         raise ValidationError("timeout_seconds must be positive")
 
-    if timeout_default_index is not None:
-        if timeout_default_index < 0 or timeout_default_index >= len(parsed_options):
-            raise ValidationError(f"timeout_default_index {timeout_default_index} out of range")
-
     recommended_count = sum(1 for opt in parsed_options if opt.recommended)
     if normalized_selection_mode == "single" and recommended_count > 1:
         raise ValidationError("single requests may only mark one recommended option")
@@ -132,8 +126,6 @@ def parse_request(
         options=parsed_options,
         timeout_seconds=normalized_timeout,
         single_submit_mode=single_submit_mode if single_submit_mode is not None else True,
-        timeout_default_index=timeout_default_index,
-        timeout_default_enabled=bool(timeout_default_enabled),
         use_default_option=bool(use_default_option),
         timeout_action=timeout_action or "submit",
     )
@@ -156,11 +148,6 @@ def apply_configuration(
     if config.timeout_seconds <= 0:
         raise ValidationError("timeout_seconds must be positive")
 
-    timeout_default_index = config.timeout_default_index
-    if timeout_default_index is not None:
-        if timeout_default_index < 0 or timeout_default_index >= len(req.options):
-            timeout_default_index = None
-
     return ProvideChoiceRequest(
         title=req.title,
         prompt=req.prompt,
@@ -168,8 +155,6 @@ def apply_configuration(
         options=req.options,
         timeout_seconds=config.timeout_seconds,
         single_submit_mode=config.single_submit_mode,
-        timeout_default_index=timeout_default_index,
-        timeout_default_enabled=config.timeout_default_enabled,
         use_default_option=config.use_default_option,
         timeout_action=config.timeout_action,
     )

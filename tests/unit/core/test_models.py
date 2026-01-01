@@ -141,12 +141,11 @@ def test_timeout_response_auto_select():
             {"id": "A", "description": "desc", "recommended": True},
             {"id": "B", "description": "desc"},
         ],
-        timeout_default_enabled=True,
-        timeout_default_index=1,
+        use_default_option=True,
     )
     resp = r.timeout_response(req=req, interface=models.TRANSPORT_TERMINAL)
     assert resp.action_status == "timeout_auto_submitted"
-    assert resp.selection.selected_indices == ["B"]
+    assert resp.selection.selected_indices == ["A"]
 
 
 def test_timeout_response_cancelled_when_no_default():
@@ -155,22 +154,28 @@ def test_timeout_response_cancelled_when_no_default():
         prompt="Prompt",
         selection_mode="single",
         options=[{"id": "A", "description": "desc", "recommended": True}],
-        timeout_default_enabled=False,
+        use_default_option=False,
     )
     resp = r.timeout_response(req=req, interface=models.TRANSPORT_TERMINAL)
     assert resp.action_status == "timeout_cancelled"
     assert resp.selection.selected_indices == []
 
 
-def test_timeout_default_index_out_of_range():
-    with pytest.raises(models.ValidationError):
-        v.parse_request(
-            title="Title",
-            prompt="Prompt",
-            selection_mode="multi",
-            options=[{"id": "A", "description": "desc", "recommended": True}],
-            timeout_default_index=2,
-        )
+def test_timeout_response_auto_select_multi():
+    req = v.parse_request(
+        title="Title",
+        prompt="Prompt",
+        selection_mode="multi",
+        options=[
+            {"id": "A", "description": "desc", "recommended": True},
+            {"id": "B", "description": "desc", "recommended": True},
+            {"id": "C", "description": "desc"},
+        ],
+        use_default_option=True,
+    )
+    resp = r.timeout_response(req=req, interface=models.TRANSPORT_TERMINAL)
+    assert resp.action_status == "timeout_auto_submitted"
+    assert set(resp.selection.selected_indices) == {"A", "B"}
 
 
 def test_apply_configuration():
