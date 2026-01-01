@@ -28,36 +28,30 @@ async def provide_choice(
     selection_mode: str,
     options: list[dict],
 ):
-    """Initiates a mandatory human-in-the-loop interaction to resolve ambiguity, confirm actions, or validate task completion.
+    """Mandatory interactive feedback and decision-making interface. 
+    Use this tool to resolve ambiguities, confirm high-risk actions, or validate task completion.
 
-    MANDATORY USAGE RULES:
-    1.  **Continuous Validation**: You MUST call this tool repeatedly at the end of every major step or when the task seems complete. Do not stop until the user explicitly selects an option indicating "Task Completed" or "End Session".
-    2.  **Contextual Summary**: In the `prompt` argument, you MUST summarize what has been done so far and what specific decision is needed now.
-    3.  **No Assumptions**: Never guess the user's preference. If multiple technical paths exist, ask. If a destructive action (delete/overwrite) is required, ask.
-    4.  **Feedback Loop**: If the user selects an option with annotations (feedback), you must adjust your plan and call this tool again to confirm the new direction.
+    STRICT USAGE RULES:
+    1. NO SILENT COMPLETION: You are FORBIDDEN from simply stating "Task complete" in plain text. You MUST call this tool to present your results for user final acceptance.
+    2. CONTINUOUS LOOP: Unless the user selects an option explicitly labeled as "Finish" or "End Session," you must continue calling this tool after every major sub-task.
+    3. MANDATORY SUMMARY: The `prompt` argument MUST follow this structure:
+       - [WORK COMPLETED]: A concise summary of actions taken and files modified.
+       - [NEXT STEP/QUESTION]: What you need the user to decide or if they are satisfied with the result.
+    4. NO GUESSING: If requirements are unclear or multiple technical paths exist, you must halt and call this tool.
+    5. FEEDBACK INTEGRATION: If a user provides `option_annotations` or `global_annotation`, treat them as new instructions, execute the changes, and call this tool AGAIN to re-verify.
 
-    Workflow & State Handling:
-    This tool supports both Web and Terminal interfaces. You must handle the `action_status` in the return value strictly:
-
-    [CASE A: Web Mode / Direct Result]
-    If `action_status` is "selected" or "cancelled":
-        - Action: Proceed immediately based on `selected_indices` and `option_annotations`.
-
-    [CASE B: Terminal Mode]
-    If `action_status` is "pending_terminal_launch":
-        - Action: Use the `terminal` tool to execute the command provided in `terminal_command`.
-        - **CRITICAL**: You must read the terminal output and parse for these markers:
-            1. `[SELECTION_COMPLETE] selected=...`: Interaction finished in terminal. Use these values.
-            2. `[CANCELLED]`: User cancelled in terminal.
-            3. `[SWITCH_TO_WEB] session_id=...`: User requested to move to Web.
-               -> **IMMEDIATE ACTION**: Call `poll_selection(session_id=...)` and wait for the result.
+    TERMINAL VS WEB WORKFLOW:
+    - If `action_status` == "pending_terminal_launch":
+        1. IMMEDIATELY execute the `terminal_command` using the terminal tool.
+        2. Monitor output for `[SWITCH_TO_WEB] session_id=xxx`. If found, call `poll_selection(session_id)`.
+        3. If `[SELECTION_COMPLETE]` appears, parse the result and proceed.
+    - If `action_status` == "selected": Proceed based on the chosen ID.
 
     Args:
-        title: Short title for the decision context.
-        prompt: Detailed context summary and the specific question/request for the user.
+        title: Short title of the decision context.
+        prompt: Structured summary and question (see Rule #3).
         selection_mode: "single" or "multi".
-        options: List of dicts, e.g., [{"id": "opt1", "description": "Deploy to Prod", "recommended": True}]. At least one option must be marked as recommended.
-    """
+        options: List of dicts (id, description). Always include a `recommended: true` option.Mandatory interactive feedback and decision-making interface."""
     from ..core.orchestrator import safe_handle
 
     if _orchestrator is None:
