@@ -160,7 +160,7 @@ def _render_html(
         "transport_options": "\n".join(transport_options),
         "timeout_value": defaults.timeout_seconds,
         "single_submit_checked": "checked" if defaults.single_submit_mode else "",
-        "mcp_version": "0.1.0",
+        "mcp_version": "0.2.0",
         "invocation_time": invocation_time,
         "i18n_json": json.dumps(_build_i18n_payload()),
         "prompt_json": json.dumps(prompt_payload),
