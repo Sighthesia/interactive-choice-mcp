@@ -349,8 +349,8 @@ TEXTS: Dict[str, Dict[str, str]] = {
         "zh": "选中选项后自动提交",
     },
     "desc.adpot_recommended_options": {
-        "en": "Auto-select AI recommended options on load and on timeout",
-        "zh": "页面加载和超时时自动选中AI推荐的选项",
+        "en": "Auto-select AI recommended options",
+        "zh": "自动选择 AI 推荐的选项",
     },
     "desc.interface": {
         "en": "Interfaces for interactions",
