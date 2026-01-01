@@ -72,7 +72,7 @@ function connectWebSocket() {
         if (data.type === 'status') {
             const serverIndices = Array.isArray(data.selected_indices) ? data.selected_indices : null;
             const serverAnnotations = data.option_annotations || null;
-            const serverGlobalAnnotation = typeof data.additional_annotation === 'string' ? data.additional_annotation : null;
+            const serveradditionalAnnotation = typeof data.additional_annotation === 'string' ? data.additional_annotation : null;
 
             if (typeof data.remaining_seconds === 'number') {
                 updateTimeoutFromServer(data.remaining_seconds, data.timeout_seconds);
@@ -83,21 +83,21 @@ function connectWebSocket() {
                     action_status: data.action_status || 'timeout',
                     selected_indices: serverIndices || Array.from(state.selectedIndices),
                     option_annotations: serverAnnotations || state.optionAnnotations,
-                    additional_annotation: serverGlobalAnnotation ?? (document.getElementById('globalAnnotation')?.value || null)
+                    additional_annotation: serveradditionalAnnotation ?? (document.getElementById('additionalAnnotation')?.value || null)
                 });
             } else if (data.status === 'submitted') {
                 applyFinalizedState({
                     action_status: data.action_status || 'selected',
                     selected_indices: serverIndices || Array.from(state.selectedIndices),
                     option_annotations: serverAnnotations || state.optionAnnotations,
-                    additional_annotation: serverGlobalAnnotation ?? (document.getElementById('globalAnnotation')?.value || null)
+                    additional_annotation: serveradditionalAnnotation ?? (document.getElementById('additionalAnnotation')?.value || null)
                 });
             } else if (data.status === 'cancelled') {
                 applyFinalizedState({
                     action_status: 'cancelled',
                     selected_indices: serverIndices || [],
                     option_annotations: serverAnnotations || state.optionAnnotations,
-                    additional_annotation: serverGlobalAnnotation ?? (document.getElementById('globalAnnotation')?.value || null)
+                    additional_annotation: serveradditionalAnnotation ?? (document.getElementById('additionalAnnotation')?.value || null)
                 });
             } else if (data.status === 'connected') {
                 updateConnectionStatus('Connected', '');
@@ -134,7 +134,7 @@ function applyFinalizedState(stateData) {
         state.optionAnnotations = stateData.option_annotations;
     }
     if (typeof stateData.additional_annotation === 'string') {
-        const globalEl = document.getElementById('globalAnnotation');
+        const globalEl = document.getElementById('additionalAnnotation');
         if (globalEl) {
             globalEl.value = stateData.additional_annotation || '';
         }

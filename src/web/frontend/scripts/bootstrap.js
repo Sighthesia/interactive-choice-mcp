@@ -169,7 +169,7 @@ window.mcpState = {
         state.optionAnnotations = sessionState.option_annotations;
     }
     if (typeof sessionState.additional_annotation === 'string') {
-        const globalEl = document.getElementById('globalAnnotation');
+        const globalEl = document.getElementById('additionalAnnotation');
         if (globalEl) {
             globalEl.value = sessionState.additional_annotation || '';
         }

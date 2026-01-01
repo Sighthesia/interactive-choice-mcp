@@ -193,7 +193,7 @@ function updateSubmitBtn() {
 
 function hasAnnotations() {
     if (!isAnnotationEnabled()) return false;
-    const g = document.getElementById('globalAnnotation')?.value || '';
+    const g = document.getElementById('additionalAnnotation')?.value || '';
     if (g && String(g).trim()) return true;
     return false;
 }
@@ -313,9 +313,9 @@ function initializeRender() {
     debugLog('Render', 'defaults.use_default_option:', defaults.use_default_option);
 
     // Set placeholder text: first line is hint, second line is keyboard shortcuts
-    const globalAnnotation = document.getElementById('globalAnnotation');
-    if (globalAnnotation) {
-        globalAnnotation.placeholder = t('hint.additional_annotation') + '\n' + t('hint.placeholder');
+    const additionalAnnotation = document.getElementById('additionalAnnotation');
+    if (additionalAnnotation) {
+        additionalAnnotation.placeholder = t('hint.additional_annotation') + '\n' + t('hint.placeholder');
     }
 
 
@@ -338,12 +338,12 @@ function initializeRender() {
     }
 
     // Global annotation input handler
-    if (globalAnnotation) {
-        globalAnnotation.addEventListener('input', () => {
+    if (additionalAnnotation) {
+        additionalAnnotation.addEventListener('input', () => {
             updateCancelBtn();
-            const section = globalAnnotation.closest('.additional-annotation-section');
+            const section = additionalAnnotation.closest('.additional-annotation-section');
             if (section) {
-                section.classList.toggle('has-content', globalAnnotation.value.trim());
+                section.classList.toggle('has-content', additionalAnnotation.value.trim());
             }
         });
     }
@@ -451,13 +451,13 @@ function refreshFullUI() {
     state.submitting = false;
 
     // Update global annotation
-    const globalAnnotation = document.getElementById('globalAnnotation');
-    if (globalAnnotation) {
-        globalAnnotation.value = sessionState.additional_annotation || '';
-        globalAnnotation.disabled = state.hasFinalResult;
+    const additionalAnnotation = document.getElementById('additionalAnnotation');
+    if (additionalAnnotation) {
+        additionalAnnotation.value = sessionState.additional_annotation || '';
+        additionalAnnotation.disabled = state.hasFinalResult;
 
         // Update annotation section styling based on content
-        const additionalAnnotationSection = globalAnnotation.closest('.additional-annotation-section');
+        const additionalAnnotationSection = additionalAnnotation.closest('.additional-annotation-section');
         if (additionalAnnotationSection) {
             const hasContent = !!(sessionState.additional_annotation && sessionState.additional_annotation.trim());
             additionalAnnotationSection.classList.toggle('has-content', hasContent);

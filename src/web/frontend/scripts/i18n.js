@@ -62,8 +62,8 @@ function updateUITexts() {
     });
 
     // Update annotation placeholder: first line is hint, second line is keyboard shortcuts
-    const globalAnnotation = document.getElementById('globalAnnotation');
-    if (globalAnnotation) globalAnnotation.placeholder = t('hint.additional_annotation') + '\n' + t('hint.placeholder');
+    const additionalAnnotation = document.getElementById('additionalAnnotation');
+    if (additionalAnnotation) additionalAnnotation.placeholder = t('hint.additional_annotation') + '\n' + t('hint.placeholder');
 
     // Update interaction loading text
     const interactionEmpty = document.querySelector('.interaction-empty');
