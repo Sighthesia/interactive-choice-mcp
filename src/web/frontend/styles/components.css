@@ -41,13 +41,16 @@
         opacity: 0;
         transform: translateY(-100px);
     }
+
     60% {
         opacity: 1;
         transform: translateY(10px);
     }
+
     80% {
         transform: translateY(-5px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);
@@ -64,13 +67,16 @@
         opacity: 0;
         transform: translateY(-80px);
     }
+
     60% {
         opacity: 1;
         transform: translateY(8px);
     }
+
     80% {
         transform: translateY(-4px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);
@@ -221,7 +227,6 @@ input[type="checkbox"] {
 }
 
 .option.selected {
-    border-color: var(--primary);
     background: rgba(79, 70, 229, 0.05);
 }
 
@@ -261,9 +266,12 @@ input[type="checkbox"] {
 }
 
 @keyframes breathe {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 0.4;
     }
+
     50% {
         opacity: 0.8;
     }

@@ -159,6 +159,7 @@ function applyDefaultSelections() {
             }
         });
     }
+    // Always re-render to update visual state
     renderOptions();
 }
 
