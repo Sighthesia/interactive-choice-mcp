@@ -29,11 +29,6 @@
     padding-bottom: 72px;
 }
 
-.main-column.transitioning {
-    opacity: 0;
-    transform: translateY(40px);
-}
-
 /* Initial page load animations */
 /* Elastic slide-in animation for main column */
 @keyframes slideInElasticMain {
@@ -104,10 +99,6 @@
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-.main-column.fade-in {
-    animation: fadeInUp 0.3s ease-out forwards;
 }
 
 /* Fade to gray animation for unselected items in submitted state */
