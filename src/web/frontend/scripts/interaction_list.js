@@ -11,6 +11,7 @@ let wsRetryCount = 0;
 const maxWsRetries = 3;
 let listCountdownTimer = null;
 let pollingInterval = null;
+let knownSessionIds = new Set(); // Track known sessions to detect new ones
 
 // Section: WebSocket Connection
 function connectInteractionListWs() {
@@ -62,6 +63,23 @@ function connectInteractionListWs() {
             debugLog('InteractionList', 'Received message type:', data.type);
             if (data.type === 'list') {
                 debugLog('InteractionList', 'Updating list with', data.interactions?.length || 0, 'items');
+
+                // Check for new sessions and trigger notifications
+                const newSessions = (data.interactions || []).filter(item =>
+                    item.status === 'pending' && !knownSessionIds.has(item.session_id) && item.session_id !== window.mcpData.choiceId
+                );
+
+                if (newSessions.length > 0) {
+                    const manager = getNotificationManager();
+                    if (manager) {
+                        newSessions.forEach(session => {
+                            manager.notifyNewSession(session.session_id, session.title || session.prompt || '');
+                        });
+                    }
+                    // Add new sessions to known set
+                    newSessions.forEach(session => knownSessionIds.add(session.session_id));
+                }
+
                 interactionListData = data.interactions || [];
                 renderInteractionList();
                 startListCountdown();
@@ -87,6 +105,23 @@ async function fetchInteractionListFallback() {
         if (response.ok) {
             const data = await response.json();
             debugLog('InteractionList', 'REST response:', data.interactions?.length || 0, 'items');
+
+            // Check for new sessions and trigger notifications
+            const newSessions = (data.interactions || []).filter(item =>
+                item.status === 'pending' && !knownSessionIds.has(item.session_id) && item.session_id !== window.mcpData.choiceId
+            );
+
+            if (newSessions.length > 0) {
+                const manager = getNotificationManager();
+                if (manager) {
+                    newSessions.forEach(session => {
+                        manager.notifyNewSession(session.session_id, session.title || session.prompt || '');
+                    });
+                }
+                // Add new sessions to known set
+                newSessions.forEach(session => knownSessionIds.add(session.session_id));
+            }
+
             if (data.interactions) {
                 const currentId = window.mcpData.choiceId;
                 const currentItem = data.interactions.find(i => i.session_id === currentId);
@@ -339,4 +374,7 @@ function initializeInteractionList() {
             navigateToInteraction(event.state.sessionId);
         }
     });
+
+    // Add current session to known set to avoid self-notification
+    knownSessionIds.add(window.mcpData.choiceId);
 }
