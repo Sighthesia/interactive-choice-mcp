@@ -182,6 +182,10 @@ function updateTimeoutFromServer(remainingSeconds, totalSeconds) {
         state.notifiedTimeout = false;
     }
     renderTimeout();
+    // Sync interaction list with updated timeout
+    if (typeof renderInteractionList === 'function') {
+        renderInteractionList();
+    }
     if (state.timeoutTotal > 0) {
         startTick();
     }

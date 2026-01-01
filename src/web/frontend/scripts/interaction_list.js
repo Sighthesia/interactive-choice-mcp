@@ -228,9 +228,13 @@ function renderInteractionList() {
             const progressBar = element.querySelector('.interaction-progress-bar');
             const metaElement = element.querySelector('.interaction-item-meta');
 
+            // For current session, use header timeout to ensure synchronization
+            const displayRemaining = isCurrent ? window.mcpState.timeoutRemaining : item.remaining_seconds;
+            const displayTimeout = isCurrent ? window.mcpState.timeoutTotal : item.timeout_seconds;
+
             // Update progress bar
-            if (progressBar && item.status === 'pending' && typeof item.remaining_seconds === 'number' && typeof item.timeout_seconds === 'number' && item.timeout_seconds > 0) {
-                const pct = Math.max(0, Math.min(100, (item.remaining_seconds / item.timeout_seconds) * 100));
+            if (progressBar && item.status === 'pending' && typeof displayRemaining === 'number' && typeof displayTimeout === 'number' && displayTimeout > 0) {
+                const pct = Math.max(0, Math.min(100, (displayRemaining / displayTimeout) * 100));
                 const barClass = pct < 20 ? 'danger' : (pct < 50 ? 'warning' : '');
                 progressBar.style.width = pct + '%';
                 progressBar.className = 'interaction-progress-bar ' + barClass;
@@ -238,8 +242,8 @@ function renderInteractionList() {
 
             // Update timeout hint in meta
             if (metaElement) {
-                const timeoutHint = item.status === 'pending' && typeof item.remaining_seconds === 'number'
-                    ? ' · timeout ~' + Math.ceil(item.remaining_seconds) + 's'
+                const timeoutHint = item.status === 'pending' && typeof displayRemaining === 'number'
+                    ? ' · Timeout: ' + Math.ceil(displayRemaining) + 's'
                     : '';
                 metaElement.textContent = item.started_at + timeoutHint;
             }
@@ -252,13 +256,18 @@ function renderInteractionList() {
         const statusBadge = '<span class="interaction-badge badge-' + item.status + '">' + item.status.replace('_', ' ') + '</span>';
         const transportBadge = '<span class="interaction-badge badge-' + item.interface + '">' + item.interface + '</span>';
         const clickAttr = isClickable ? 'data-session-id="' + item.session_id + '"' : '';
-        const timeoutHint = item.status === 'pending' && typeof item.remaining_seconds === 'number'
-            ? ' · timeout ~' + Math.ceil(item.remaining_seconds) + 's'
+
+        // For current session, use header timeout to ensure synchronization
+        const displayRemaining = isCurrent ? window.mcpState.timeoutRemaining : item.remaining_seconds;
+        const displayTimeout = isCurrent ? window.mcpState.timeoutTotal : item.timeout_seconds;
+
+        const timeoutHint = item.status === 'pending' && typeof displayRemaining === 'number'
+            ? ' · Timeout: ' + Math.ceil(displayRemaining) + 's'
             : '';
 
         let progressBar = '';
-        if (item.status === 'pending' && typeof item.remaining_seconds === 'number' && typeof item.timeout_seconds === 'number' && item.timeout_seconds > 0) {
-            const pct = Math.max(0, Math.min(100, (item.remaining_seconds / item.timeout_seconds) * 100));
+        if (item.status === 'pending' && typeof displayRemaining === 'number' && typeof displayTimeout === 'number' && displayTimeout > 0) {
+            const pct = Math.max(0, Math.min(100, (displayRemaining / displayTimeout) * 100));
             const barClass = pct < 20 ? 'danger' : (pct < 50 ? 'warning' : '');
             progressBar = '<div class="interaction-progress"><div class="interaction-progress-bar ' + barClass + '" style="width:' + pct + '%"></div></div>';
         }
