@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-interactive-choice-mcp = "server:mcp.run"
+interactive-choice-mcp = "src.server:mcp.run"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
