@@ -39,6 +39,9 @@ function connectInteractionListWs() {
     interactionListWs.onopen = () => {
         debugLog('InteractionList', 'WebSocket connected successfully');
         wsRetryCount = 0;
+        // Fetch fresh list after connection established to catch any updates
+        // that occurred while the connection was being established
+        fetchInteractionListFallback();
     };
 
     interactionListWs.onerror = (e) => {
