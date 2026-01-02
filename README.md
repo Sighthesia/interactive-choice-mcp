@@ -39,7 +39,7 @@
   - 为确保效果，建议在全局提示词中增加以下内容（仍然在调整中，欢迎给出建议）：
 
     ```markdown
-    严格遵守`interactive-choice-mcp/provide_choice`的规则。
+    严格遵守 `provide_choice` 工具的规则。
     ```
 
 #### 环境变量（可选）
