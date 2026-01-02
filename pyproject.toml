@@ -31,3 +31,11 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 include = ["src*"]
 where = ["."]
+
+[tool.setuptools.package-data]
+src = [
+    "web/templates/*.html",
+    "web/frontend/**/*.css",
+    "web/frontend/**/*.js",
+    "web/frontend/manifest.json",
+]
