@@ -12,6 +12,9 @@ An MCP Server that enables AI to provide options and launch an interactive inter
 - Showcase:
   ![Showcase](<Showcase.png>)
 
+# Similar project
+imhuso/[cunzhi](https://github.com/imhuso/cunzhi) - Also used to extend single-round AI conversations and provide options, it is more complete than this project. (In fact, I only discovered the cunzhi project after I finished this one. Don't make the same mistake as I did 😢)
+
 ## 📋 Table of Contents
 
 - [✨ Key Features](#-key-features)

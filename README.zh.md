@@ -12,6 +12,9 @@
 - 效果展示：
   ![Showcase](<Showcase.png>)
 
+# 相似项目
+imhuso/[cunzhi](https://github.com/imhuso/cunzhi) - 同样用于将单轮AI对话延长，并提供选项，比本项目更完善。（实际上我写完本项目才发现了 cunzhi 这个项目，不要再犯我的错误了 😢）
+
 ## 📋 目录
 
 - [✨ 主要功能](#-主要功能)
