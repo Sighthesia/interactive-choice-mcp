@@ -1,24 +1,43 @@
 # Interactive Choice MCP
 
-一个让 AI 在遇到选择问题时，能让 AI 提供选项并开启交互界面以进行选择，并反馈的 MCP Server。灵感来源于 [mcp-feedback-enhanced](https://github.com/astral-sh/mcp-feedback-enhanced), 使用 [FastMCP](https://github.com/jlowin/fastmcp) 开发。
+<div align="left">
+  <p>
+    <a href="README.zh.md">中文</a> | 
+    <a href="README.md">English</a>
+  </p>
+</div>
 
-## ✨ 主要功能
+An MCP Server that enables AI to provide options and launch an interactive interface for user selection when facing choice problems, then return the results. Inspired by [mcp-feedback-enhanced](https://github.com/astral-sh/mcp-feedback-enhanced), built with [FastMCP](https://github.com/jlowin/fastmcp).
 
-- **交互**：支持 Web 和终端（实验性）两种交互界面
-- **选择模式**：支持单选（single）和多选（multi）模式
-- **选项备注**：选项支持备注，便于修改 AI 提供的选项以提供正确反馈
-- **自动化**：AI 可提供推荐选项，支持超时自动提交以适应自动化场景
-- **会话持久化**：支持交互历史记录持久化，默认保留 3 天
+![alt text](<Showcase.png>)
 
-## 📦 安装
+## 📋 Table of Contents
 
-### 前置要求
-- Python 3.12 或更高版本
-- [uv](https://github.com/astral-sh/uv) 包管理器
+- [✨ Key Features](#-key-features)
+- [📦 Installation](#-installation)
+- [🤝 Contributing](#-contributing)
+- [📍 Local Development Environment Setup](#-local-development-environment-setup)
+- [💖 Acknowledgments](#-acknowledgments)
 
-### 🚀 快速配置
+## ✨ Key Features
 
-在 MCP 配置文件中添加：
+### 🎯 Core Capabilities
+- **Interactive Choice Interface**: AI presents options, users make selections through intuitive interfaces
+- **Dual Interface Support**: Web-based UI and Terminal UI (experimental)
+- **Selection Modes**: Single-select and multi-select modes
+- **Option Annotations**: Users can add annotations to options to provide correct feedback to AI
+- **Automation Ready**: AI can mark recommended options with timeout auto-submit
+
+
+## 📦 Installation
+
+### Prerequisites
+- Python 3.12 or higher
+- [uv](https://github.com/astral-sh/uv) package manager (recommended) or pip
+
+### 🚀 Quick Start
+
+Add the following configuration:
 
 ```json
 {
@@ -34,30 +53,31 @@
   }
 }
 ```
-  - 这会自动 Clone 项目仓库并安装依赖。
-  
-  - 为确保效果，建议在全局提示词中增加以下内容（仍然在调整中，欢迎给出建议）：
 
-    ```markdown
-    严格遵守 `provide_choice` 工具的规则。
-    ```
+- This will automatically clone the project repository and install dependencies.
 
-#### 环境变量（可选）
+- For best results, it is recommended to add the following content to your global prompt (still being adjusted, currently focusing on optimization for pay-per-use AI assistants, suggestions are welcome):
 
-可以通过向 MCP 配置中的 `env` 添加以下环境变量以覆盖保存的配置：
+  ```markdown
+  Strictly follow the rules of the `provide_choice` tool.
+  ```
 
-| 环境变量              | 说明           | 可选值                              | 默认值               |
-| --------------------- | -------------- | ----------------------------------- | -------------------- |
-| `CHOICE_WEB_HOST`     | Web 服务器主机 | 任意有效 IP 或主机名                | `127.0.0.1`          |
-| `CHOICE_WEB_PORT`     | Web 服务器端口 | 任意可用端口号                      | `9999`               |
-| `CHOICE_LANG`         | 界面语言       | `en`, `zh`                          | 根据系统语言自动选择 |
-| `CHOICE_LOG_LEVEL`    | 日志级别       | `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO`               |
-| `CHOICE_LOG_FILE`     | 日志文件路径   | 任意有效文件路径                    | 可选                 |
-| `CHOICE_MCP_DATA_DIR` | 数据存储目录   | 任意有效目录路径                    | `.mcp-data/`         |
+#### Environment Variables (Optional)
 
-##### 配置示例
+You can override saved configurations by adding the following environment variables to the `env` section in your MCP configuration:
 
-以下是一个包含环境变量的完整 MCP 配置示例：
+| Environment Variable  | Description        | Possible Values                     | Default                          |
+| --------------------- | ------------------ | ----------------------------------- | -------------------------------- |
+| `CHOICE_WEB_HOST`     | Web server host    | Any valid IP or hostname            | `127.0.0.1`                      |
+| `CHOICE_WEB_PORT`     | Web server port    | Any available port number           | `9999`                           |
+| `CHOICE_LANG`         | Interface language | `en`, `zh`                          | Auto-detected by system language |
+| `CHOICE_LOG_LEVEL`    | Log level          | `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO`                           |
+| `CHOICE_LOG_FILE`     | Log file path      | Any valid file path                 | Optional                         |
+| `CHOICE_MCP_DATA_DIR` | Data storage dir   | Any valid directory path            | `.mcp-data/`                     |
+
+##### Configuration Example
+
+Here is a complete MCP configuration example with environment variables:
 
 ```json
 {
@@ -82,28 +102,27 @@
 }
 ```
 
-## 🤝 贡献
+## 🤝 Contributing
 
-欢迎任何的贡献！无论是报告问题、提出功能请求，还是提交 PR，都非常感谢！
+Contributions are welcome! Whether it's reporting issues, requesting features, or submitting PRs, it's all greatly appreciated!
 
-AI 驱动开发可参考 [AGENTS.md](AGENTS.md) 与 [openspec](openspec) 。
+For AI-driven development, refer to [AGENTS.md](AGENTS.md) and [openspec](openspec).
 
-### 📍 本地开发环境设置
+### 📍 Local Development Environment Setup
 
 ```bash
-# 克隆仓库
+# Clone the repository
 git clone https://github.com/Sighthesia/interactive-choice-mcp.git
 cd interactive-choice-mcp
 
-# 同步依赖
+# Install dependencies
 uv sync
 
-# 验证安装
+# Verify installation
 uv run pytest
 ```
 
-- 可配置使用本地开发环境运行 MCP Server：
-
+- You can configure to use a local development environment to run the MCP Server:
 
   ```json
   {
@@ -121,45 +140,72 @@ uv run pytest
   }
   ```
 
-  **提示**：将 `/path/to/interactive-choice-mcp` 替换为实际路径，如 `~/interactive-choice-mcp`。
+  **Tip**: Replace `/path/to/interactive-choice-mcp` with the actual path, such as `~/interactive-choice-mcp`.
 
-### 🧪 测试
+### 🧪 Testing
 
-有关测试的详细帮助信息，请参阅 [tests/README.md](tests/README.md)。
+For detailed testing information, please refer to [tests/README.md](tests/README.md).
 
-以下为开发调试常用的测试命令：
+The following are common test commands for development and debugging:
 
-#### 运行交互式测试
+#### Running Interactive Tests
 
-临时运行 Web 服务器进行交互式测试，检验用户端交互效果：
+Temporarily run the Web server for interactive testing to verify user-side interaction effects:
 
-1. 打开 Web 交互界面并测试默认的单选模式
+1. Open Web interaction interface and test the default single-select mode
 
   ```bash
   uv run pytest tests/integration/test_interaction_web.py::TestWebInteractionManual::test_web_e2e_manual_interaction --interactive -v -s
   ```
 
-2. 打开终端交互界面并测试默认的单选模式
+2. Open terminal interaction interface and test the default single-select mode
 
   ```bash
   uv run pytest tests/integration/test_interaction_terminal.py::TestTerminalInteractionManual::test_terminal_e2e_manual_interaction --interactive -v -s
   ```
 
-#### 运行 MCP Server 调试
+#### Running MCP Server Debugging
 
-运行 MCP Inspector 检验 MCP Sever 工具输入输出效果：
+Run MCP Inspector to verify MCP Server tool input/output effects:
 
 ```bash
 uv run mcp dev server.py
 ```
 
-### 计划
-- 由于各类 AI IDE 与 Cli 倾向于将 AI 运行的终端命令静默化，终端模式的交互体验可能受限，还需要考虑可行性
+### 🏗️ Project Architecture
 
-## 💖 感谢
+```
+src/
+├── core/                    # Core orchestration and business logic
+│   ├── models.py           # Data models and schemas
+│   ├── orchestrator.py     # Main orchestration logic
+│   ├── validation.py       # Input validation
+│   └── response.py         # Response generation
+├── mcp/                    # MCP tool bindings
+│   ├── tools.py           # MCP tool definitions
+│   └── response_formatter.py
+├── web/                    # Web interface
+│   ├── server.py          # FastAPI web server
+│   ├── bundler.py         # Asset bundling
+│   └── templates.py       # HTML templates
+├── terminal/               # Terminal interface
+│   ├── ui.py              # Questionary-based UI
+│   └── session.py         # Terminal session management
+├── store/                  # Data persistence
+│   └── interaction_store.py
+└── infra/                  # Infrastructure
+    ├── logging.py         # Logging configuration
+    ├── i18n.py            # Internationalization
+    └── storage.py         # File system operations
+```
 
-- [Minidoracat](https://github.com/Minidoracat) - [mcp-feedback-enhanced](https://github.com/Minidoracat/mcp-feedback-enhanced) - 项目参考和灵感来源
+### Future Considerations
+- Since various AI IDEs and CLIs tend to silently run AI commands, the terminal mode interaction experience may be limited and requires further consideration for feasibility
 
-## 📄 许可证
+## 💖 Acknowledgments
 
-[MIT License](LICENSE)。
+- [Minidoracat](https://github.com/Minidoracat) - [mcp-feedback-enhanced](https://github.com/Minidoracat/mcp-feedback-enhanced) - Project reference and inspiration source. If you like this project, consider supporting them!
+
+## 📄 License
+
+[MIT License](LICENSE).
