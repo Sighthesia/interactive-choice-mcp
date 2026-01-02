@@ -227,14 +227,17 @@ function renderInteractionList() {
         // Update progress bar and meta if exists
         if (element) {
             const progressBar = element.querySelector('.interaction-progress-bar');
+            const progressContainer = element.querySelector('.interaction-progress');
             const metaElement = element.querySelector('.interaction-item-meta');
 
             // For current session, use header timeout to ensure synchronization
             const displayRemaining = isCurrent ? window.mcpState.timeoutRemaining : item.remaining_seconds;
             const displayTimeout = isCurrent ? window.mcpState.timeoutTotal : item.timeout_seconds;
 
-            // Update progress bar
-            if (progressBar && item.status === 'pending' && typeof displayRemaining === 'number' && typeof displayTimeout === 'number' && displayTimeout > 0) {
+            // Update progress bar - remove if status is not pending, update width if pending
+            if (item.status !== 'pending' && progressContainer) {
+                progressContainer.remove();
+            } else if (progressBar && item.status === 'pending' && typeof displayRemaining === 'number' && typeof displayTimeout === 'number' && displayTimeout > 0) {
                 const pct = Math.max(0, Math.min(100, (displayRemaining / displayTimeout) * 100));
                 const barClass = pct < 20 ? 'danger' : (pct < 50 ? 'warning' : '');
                 progressBar.style.width = pct + '%';
