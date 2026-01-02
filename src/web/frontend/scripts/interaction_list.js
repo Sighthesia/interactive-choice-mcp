@@ -235,10 +235,22 @@ function renderInteractionList() {
             const progressBar = element.querySelector('.interaction-progress-bar');
             const progressContainer = element.querySelector('.interaction-progress');
             const metaElement = element.querySelector('.interaction-item-meta');
+            const statusBadge = element.querySelector('.badge-' + element.dataset.currentStatus);
 
             // For current session, use header timeout to ensure synchronization
             const displayRemaining = isCurrent ? window.mcpState.timeoutRemaining : item.remaining_seconds;
             const displayTimeout = isCurrent ? window.mcpState.timeoutTotal : item.timeout_seconds;
+
+            // Update status badge
+            if (statusBadge) {
+                const oldStatus = element.dataset.currentStatus;
+                if (oldStatus !== item.status) {
+                    statusBadge.classList.remove('badge-' + oldStatus);
+                    statusBadge.classList.add('badge-' + item.status);
+                    statusBadge.textContent = item.status.replace('_', ' ');
+                    element.dataset.currentStatus = item.status;
+                }
+            }
 
             // Update progress bar - remove if status is not pending, update width if pending
             if (item.status !== 'pending' && progressContainer) {
@@ -304,6 +316,7 @@ function renderInteractionList() {
         const newElement = document.createElement('div');
         newElement.className = 'interaction-item' + (isCurrent ? ' current' : '') + disabledClass;
         if (clickAttr) newElement.dataset.sessionId = item.session_id;
+        newElement.dataset.currentStatus = item.status;
         newElement.innerHTML =
             '<div class="interaction-item-header">' +
             '<span class="interaction-item-title">' + (item.title || 'Untitled') + '</span>' +
