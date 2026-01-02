@@ -13,11 +13,16 @@
   ![Showcase](<Showcase.png>)
 
 # 相似项目
-- imhuso/[cunzhi](https://github.com/imhuso/cunzhi) - 同样用于将单轮AI对话延长，并提供选项，比本项目更完善。
-- paulp-o/[ask-user-questions-mcp](https://github.com/paulp-o/ask-user-questions-mcp0=) - 基于 CLI 的轻量级 MCP，用于澄清由多选/单选问题组成的问题。
-- chiisen/[AskUserQuestionTool](https://github.com/chiisen/AskUserQuestionTool)
-  
-（实际上我写完本项目才发现了这些项目，希望这些好项目能够让更多人发现）
+
+- **imhuso/[cunzhi](https://github.com/imhuso/cunzhi)** - 基于 Rust + Tauri 的桌面应用，专门用于**拦截** AI 过早结束对话。包含项目级记忆管理和代码搜索功能。功能更全面完善。
+
+- **paulp-o/[ask-user-questions-mcp](https://github.com/paulp-o/ask-user-questions-mcp)** - 基于 TypeScript + Node.js 的轻量级 MCP 服务器，专注于 **CLI 交互**。专为多 Agent 并行编码工作流设计，支持问题队列和 SSH。更轻量，专注终端界面。
+
+- **chiisen/[AskUserQuestionTool](https://github.com/chiisen/AskUserQuestionTool)** - 展示如何使用 Claude Code **内置** `ask-user-question` 工具进行需求访谈的示例。
+
+**差异**：本项目提供 **双界面支持**（Web + Terminal），在复杂度上保持平衡，专注于交互式选择场景。
+
+*（实际上我写完本项目才发现了这些项目，希望这些好项目能够让更多人发现）*
 
 ## 📋 目录
 

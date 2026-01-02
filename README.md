@@ -12,12 +12,17 @@ An MCP Server that enables AI to provide options and launch an interactive inter
 - Showcase:
   ![Showcase](<Showcase.png>)
 
-# Similar project
-- imhuso/[cunzhi](https://github.com/imhuso/cunzhi) - Also used to extend single-round AI conversations and provide options, it is more complete than this project.
-- paulp-o/[ask-user-questions-mcp](https://github.com/paulp-o/ask-user-questions-mcp0=) - CLI-Based and lightweight MCP for clarifying questions consisting of multiple-choice/single-choice questions.
-- chiisen/[AskUserQuestionTool](https://github.com/chiisen/AskUserQuestionTool)
+# Similar Projects
 
-(In fact, I only discovered these projects after I finished this one. I hope these good projects can be discovered by more people)
+- **imhuso/[cunzhi](https://github.com/imhuso/cunzhi)** - A Rust + Tauri desktop application that **intercepts** AI from ending conversations prematurely. Features memory management for project-specific preferences and includes code search capabilities. More comprehensive but heavier than this project.
+
+- **paulp-o/[ask-user-questions-mcp](https://github.com/paulp-o/ask-user-questions-mcp)** - A lightweight TypeScript + Node.js MCP server focused on **CLI-based** interaction. Designed for multi-agent parallel coding workflows with question queuing and SSH support. More lightweight but only supports terminal interface.
+
+- **chiisen/[AskUserQuestionTool](https://github.com/chiisen/AskUserQuestionTool)** - An example demonstrating how to use Claude Code's **built-in** `ask-user-question` tool for requirement gathering through deep interviews.
+
+**Differences**: This project provides **dual interface support** (Web + Terminal) with balanced complexity, focusing on interactive selection scenarios.
+
+*(I discovered these projects after completing this one. I hope these excellent projects receive more visibility.)*
 
 ## 📋 Table of Contents
 
