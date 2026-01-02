@@ -13,7 +13,11 @@
   ![Showcase](<Showcase.png>)
 
 # 相似项目
-imhuso/[cunzhi](https://github.com/imhuso/cunzhi) - 同样用于将单轮AI对话延长，并提供选项，比本项目更完善。（实际上我写完本项目才发现了 cunzhi 这个项目，不要再犯我的错误了 😢）
+- imhuso/[cunzhi](https://github.com/imhuso/cunzhi) - 同样用于将单轮AI对话延长，并提供选项，比本项目更完善。
+- paulp-o/[ask-user-questions-mcp](https://github.com/paulp-o/ask-user-questions-mcp0=) - 基于 CLI 的轻量级 MCP，用于澄清由多选/单选问题组成的问题。
+- chiisen/[AskUserQuestionTool](https://github.com/chiisen/AskUserQuestionTool)
+  
+（实际上我写完本项目才发现了这些项目，希望这些好项目能够让更多人发现）
 
 ## 📋 目录
 

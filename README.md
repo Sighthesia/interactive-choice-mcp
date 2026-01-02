@@ -13,7 +13,11 @@ An MCP Server that enables AI to provide options and launch an interactive inter
   ![Showcase](<Showcase.png>)
 
 # Similar project
-imhuso/[cunzhi](https://github.com/imhuso/cunzhi) - Also used to extend single-round AI conversations and provide options, it is more complete than this project. (In fact, I only discovered the cunzhi project after I finished this one. Don't make the same mistake as I did 😢)
+- imhuso/[cunzhi](https://github.com/imhuso/cunzhi) - Also used to extend single-round AI conversations and provide options, it is more complete than this project.
+- paulp-o/[ask-user-questions-mcp](https://github.com/paulp-o/ask-user-questions-mcp0=) - CLI-Based and lightweight MCP for clarifying questions consisting of multiple-choice/single-choice questions.
+- chiisen/[AskUserQuestionTool](https://github.com/chiisen/AskUserQuestionTool)
+
+(In fact, I only discovered these projects after I finished this one. I hope these good projects can be discovered by more people)
 
 ## 📋 Table of Contents
 
