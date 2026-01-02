@@ -226,6 +226,9 @@ function renderInteractionList() {
 
         // Update progress bar and meta if exists
         if (element) {
+            // Update current class to reflect the currently viewed interaction
+            element.classList.toggle('current', isCurrent);
+
             const progressBar = element.querySelector('.interaction-progress-bar');
             const progressContainer = element.querySelector('.interaction-progress');
             const metaElement = element.querySelector('.interaction-item-meta');

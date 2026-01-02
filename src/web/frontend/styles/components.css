@@ -566,9 +566,10 @@ body.submitted .status {
 }
 
 .interaction-item.current {
+    background: rgba(79, 70, 229, 0.05);
     border-color: var(--primary);
     border-width: 2px;
-    background: rgba(79, 70, 229, 0.05);
+    box-shadow: var(--focus-ring);
 }
 
 .interaction-item.disabled {
