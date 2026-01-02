@@ -9,7 +9,8 @@
 
 An MCP Server that enables AI to provide options and launch an interactive interface for user selection when facing choice problems, then return the results. Inspired by [mcp-feedback-enhanced](https://github.com/astral-sh/mcp-feedback-enhanced), built with [FastMCP](https://github.com/jlowin/fastmcp).
 
-![alt text](<Showcase.png>)
+- Showcase:
+  ![Showcase](<Showcase.png>)
 
 ## 📋 Table of Contents
 

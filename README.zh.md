@@ -9,7 +9,8 @@
 
 一个让 AI 在遇到选择问题时，能让 AI 提供选项并开启交互界面以进行选择，并反馈的 MCP Server。灵感来源于 [mcp-feedback-enhanced](https://github.com/astral-sh/mcp-feedback-enhanced), 使用 [FastMCP](https://github.com/jlowin/fastmcp) 开发。
 
-![alt text](<Showcase.png>)
+- 效果展示：
+  ![Showcase](<Showcase.png>)
 
 ## 📋 目录
 
