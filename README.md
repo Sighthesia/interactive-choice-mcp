@@ -18,7 +18,7 @@ An MCP Server that enables AI to provide options and launch an interactive inter
 
 - **paulp-o/[ask-user-questions-mcp](https://github.com/paulp-o/ask-user-questions-mcp)** - A lightweight TypeScript + Node.js MCP server focused on **CLI-based** interaction. Designed for multi-agent parallel coding workflows with question queuing and SSH support. More lightweight but only supports terminal interface.
 
-- **chiisen/[AskUserQuestionTool](https://github.com/chiisen/AskUserQuestionTool)** - An example demonstrating how to use Claude Code's **built-in** `ask-user-question` tool for requirement gathering through deep interviews.
+- **fhyfhy17/[panel-feedback](https://github.com/fhyfhy17/panel-feedback)** - Panel Feedback brings AI interaction directly into your IDE's sidebar - seamlessly integrated, always accessible, never intrusive.
 
 **Differences**: This project provides **dual interface support** (Web + Terminal) with balanced complexity, focusing on interactive selection scenarios.
 
@@ -69,10 +69,14 @@ Add the following configuration:
 
 - This will automatically clone the project repository and install dependencies.
 
-- For best results, it is recommended to add the following content to your global prompt (still being adjusted, currently focusing on optimization for pay-per-use AI assistants, suggestions are welcome):
+- For best results, it is recommended to add the following content to your global prompt (still being adjusted, prompts are from `cunzhi`, currently focusing on optimization for pay-per-use AI assistants, suggestions are welcome):
 
   ```markdown
-  Strictly follow the rules of the `provide_choice` tool.
+  - When the requirements are not clear, use `provide_choice` to ask for clarification and provide predefined options.
+  - When there are multiple solutions, use `provide_choice` to ask instead of making assumptions on your own.
+  - When there is a need to update a solution or strategy, use `provide_choice` to ask instead of making assumptions on your own.
+  - Before completing a request, you must call `provide_choice` to request feedback.
+  - Without a clear confirmation through the use of `provide_choice` to ask and receive permission to complete the task or end the conversation, it is prohibited to end the dialogue or request on your own initiative.
   ```
 
 #### Environment Variables (Optional)

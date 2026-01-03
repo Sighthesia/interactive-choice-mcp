@@ -18,7 +18,7 @@
 
 - **paulp-o/[ask-user-questions-mcp](https://github.com/paulp-o/ask-user-questions-mcp)** - 基于 TypeScript + Node.js 的轻量级 MCP 服务器，专注于 **CLI 交互**。专为多 Agent 并行编码工作流设计，支持问题队列和 SSH。更轻量，专注终端界面。
 
-- **chiisen/[AskUserQuestionTool](https://github.com/chiisen/AskUserQuestionTool)** - 展示如何使用 Claude Code **内置** `ask-user-question` 工具进行需求访谈的示例。
+- **fhyfhy17/[panel-feedback](https://github.com/fhyfhy17/panel-feedback)** - Panel Feedback 将 AI 交互直接嵌入 IDE 侧边栏 - 无缝集成，随时可用，永不打扰。
 
 **差异**：本项目提供 **双界面支持**（Web + Terminal），在复杂度上保持平衡，专注于交互式选择场景。
 
@@ -65,13 +65,17 @@
   }
 }
 ```
-  - 这会自动 Clone 项目仓库并安装依赖。
+- 这会自动 Clone 项目仓库并安装依赖。
   
-  - 为确保效果，建议在全局提示词中增加以下内容（仍然在调整中，目前针对按次数计费的 AI 助手优化 ，欢迎给出建议）：
+- 为确保效果，建议在全局提示词中增加以下内容（仍然在调整中， 提示词来自`寸止`，目前针对按次数计费的 AI 助手优化 ，欢迎给出建议）：
 
-    ```markdown
-    严格遵守 `provide_choice` 工具的规则。
-    ```
+  ```markdown
+  - 需求不明确时使用 `provide_choice` 询问澄清，提供预定义选项
+  - 在有多个方案的时候，需要使用 `provide_choice` 询问，而不是自作主张
+  - 在有方案/策略需要更新时，需要使用 `provide_choice` 询问，而不是自作主张
+  - 即将完成请求前必须调用 `provide_choice` 请求反馈
+  - 在没有明确通过使用 `provide_choice` 询问并得到可以完成任务/结束时，禁止主动结束对话/请求。
+  ```
 
 #### 环境变量（可选）
 
