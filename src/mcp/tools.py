@@ -28,24 +28,19 @@ async def provide_choice(
     selection_mode: str,
     options: list[dict],
 ):
-    """Mandatory interactive feedback and decision-making interface. 
-    Use this tool to resolve ambiguities, confirm high-risk actions, or validate task completion.
+    """Use this tool to resolve ambiguities, confirm high-risk actions, or validate task completion.
 
-    STRICT USAGE RULES:
-    1. NO SILENT COMPLETION: You are FORBIDDEN from simply stating "Task complete" in plain text. You MUST call this tool to present your results for user final acceptance.
-    2. CONTINUOUS LOOP: Unless the user selects an option explicitly labeled as "Finish" or "End Session," you must continue calling this tool after every major sub-task.
-    3. MANDATORY SUMMARY: The `prompt` argument MUST follow this structure:
+    USAGE RULES:
+    1. MANDATORY SUMMARY: The `prompt` argument MUST follow this structure:
        - [WORK COMPLETED]: A concise summary of actions taken and files modified.
        - [NEXT STEP/QUESTION]: What you need the user to decide or if they are satisfied with the result.
-    4. NO GUESSING: If requirements are unclear or multiple technical paths exist, you must halt and call this tool.
-    5. FEEDBACK INTEGRATION: If a user provides `option_annotations` or `global_annotation`, treat them as new instructions, execute the changes, and call this tool AGAIN to re-verify.
+    2. FEEDBACK INTEGRATION: If a user provides `option_annotations` or `additional_annotation`, treat them as new instructions, execute the changes, and call this tool AGAIN to re-verify.
 
-    TERMINAL AND WEB WORKFLOW:
+    TERMINAL WORKFLOW:
     - If `action_status` == "pending_terminal_launch":
         1. IMMEDIATELY execute the `terminal_command` using the terminal tool.
         2. Monitor output for `[SWITCH_TO_WEB] session_id=xxx`. If found, call `poll_selection(session_id)`.
         3. If `[SELECTION_COMPLETE]` appears, parse the result and proceed.
-    - If `action_status` == "selected": Proceed based on the chosen ID.
     
     Args:
         selection_mode: "single" or "multi".
@@ -70,9 +65,6 @@ async def provide_choice(
 
 async def poll_selection(session_id: str) -> dict[str, object]:
     """Polls for the result of an ongoing interaction session that was switched from Terminal to Web.
-    WHEN TO USE:
-
-    - ONLY call this tool if you executed a command from `provide_choice` and the terminal output contained the marker: `[SWITCH_TO_WEB] session_id=...`.
     """
     from ..web import poll_session_result
 
