@@ -31,9 +31,9 @@ async def provide_choice(
     """Use this tool to resolve ambiguities, confirm high-risk actions, or validate task completion.
 
     USAGE RULES:
-    1. MANDATORY SUMMARY: The `prompt` argument MUST follow this structure:
-       - [WORK COMPLETED]: A concise summary of actions taken and files modified.
-       - [NEXT STEP/QUESTION]: What you need the user to decide or if they are satisfied with the result.
+    1. SUMMARY: The `prompt` argument MUST follow this structure:
+       - A concise summary of actions taken and files modified.
+       - What you need the user to decide or if they are satisfied with the result.
     2. FEEDBACK INTEGRATION: If a user provides `option_annotations` or `additional_annotation`, treat them as new instructions, execute the changes, and call this tool AGAIN to re-verify.
 
     TERMINAL WORKFLOW:
